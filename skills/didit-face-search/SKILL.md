@@ -6,7 +6,7 @@ description: >
   search for matching faces, check if a face already exists in the system, prevent
   duplicate registrations, search against blocklist, or implement facial deduplication
   using Didit. Returns ranked matches with similarity percentages.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

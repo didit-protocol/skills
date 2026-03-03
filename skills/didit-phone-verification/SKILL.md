@@ -6,7 +6,7 @@ description: >
   check phone verification codes, detect disposable or VoIP numbers, or implement
   phone-based identity verification using Didit. Supports multiple delivery channels
   (SMS, WhatsApp, Telegram, voice), fraud signals, and policy-based auto-decline.
-version: 1.2.0
+version: 1.3.0
 metadata:
   openclaw:
     requires:

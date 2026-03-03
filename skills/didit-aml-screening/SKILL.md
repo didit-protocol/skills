@@ -7,7 +7,7 @@ description: >
   OFAC/UN/EU watchlists, calculate risk scores, or perform anti-money laundering screening
   using Didit. Supports 1300+ databases, fuzzy name matching, configurable scoring weights,
   and continuous monitoring.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

@@ -6,7 +6,7 @@ description: >
   comparison, facial recognition, or selfie-to-document matching using Didit.
   Returns a similarity score (0-100) with configurable decline threshold.
   Supports image rotation and multi-face detection.
-version: 1.2.0
+version: 1.3.0
 metadata:
   openclaw:
     requires:

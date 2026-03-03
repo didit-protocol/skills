@@ -6,7 +6,7 @@ description: >
   bank statements, government documents, extract address from documents, verify
   residential address, implement address verification, or perform PoA checks
   using Didit. Supports OCR extraction, geocoding, name matching, and multi-page documents.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

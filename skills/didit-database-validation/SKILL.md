@@ -7,7 +7,7 @@ description: >
   lookups, validate identity documents against official sources, or implement database
   verification for Latin American or Spanish identity documents using Didit.
   Supports 18 countries with 1x1 and 2x2 matching methods.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:
