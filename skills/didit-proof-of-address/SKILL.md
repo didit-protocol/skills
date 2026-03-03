@@ -41,13 +41,26 @@ Verifies address documents by submitting images or PDFs. Extracts address inform
 | Government-Issued | Tax assessment, residency certificate, voter registration |
 | Other PoA | Lease, rental agreement, insurance policy, employer letter |
 
-**API Reference:** https://docs.didit.me/reference/proof-of-address-standalone-api
+**API Reference:** https://docs.didit.me/standalone-apis/proof-of-address
+**Feature Guide:** https://docs.didit.me/core-technology/proof-of-address/overview
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 
@@ -221,4 +234,17 @@ Warning severity: `error` (→ Declined), `warning` (→ In Review), `informatio
 3. POST /v3/poa/ → verify address
 4. System auto-matches name between ID and PoA documents
 5. All Approved → identity + address verified
+```
+
+---
+
+## Utility Scripts
+
+**verify_address.py**: Verify proof of address documents from the command line.
+
+```bash
+# Requires: pip install requests
+export DIDIT_API_KEY="your_api_key"
+python scripts/verify_address.py utility_bill.pdf
+python scripts/verify_address.py bank_statement.jpg --vendor-data user-123
 ```

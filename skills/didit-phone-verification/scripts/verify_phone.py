@@ -40,7 +40,7 @@ def send_code(phone: str, channel: str = "whatsapp", code_size: int = 6, vendor_
     if vendor_data:
         payload["vendor_data"] = vendor_data
 
-    response = requests.post(f"{BASE_URL}/send/", headers=get_headers(), json=payload)
+    response = requests.post(f"{BASE_URL}/send/", headers=get_headers(), json=payload, timeout=30)
 
     if response.status_code not in (200, 429):
         print(f"Error {response.status_code}: {response.text}", file=sys.stderr)
@@ -57,7 +57,7 @@ def check_code(phone: str, code: str, decline_disposable: bool = False, decline_
         "voip_number_action": "DECLINE" if decline_voip else "NO_ACTION",
     }
 
-    response = requests.post(f"{BASE_URL}/check/", headers=get_headers(), json=payload)
+    response = requests.post(f"{BASE_URL}/check/", headers=get_headers(), json=payload, timeout=30)
 
     if response.status_code not in (200, 404):
         print(f"Error {response.status_code}: {response.text}", file=sys.stderr)

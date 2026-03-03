@@ -32,9 +32,7 @@ def check_liveness(user_image: str, threshold: int = None, rotate: bool = False,
         sys.exit(1)
 
     headers = {"x-api-key": api_key}
-    files = {"user_image": (os.path.basename(user_image), open(user_image, "rb"))}
     data = {}
-
     if threshold is not None:
         data["face_liveness_score_decline_threshold"] = str(threshold)
     if rotate:
@@ -42,7 +40,10 @@ def check_liveness(user_image: str, threshold: int = None, rotate: bool = False,
     if vendor_data:
         data["vendor_data"] = vendor_data
 
-    response = requests.post(API_URL, headers=headers, files=files, data=data)
+    with open(user_image, "rb") as f:
+        files = {"user_image": (os.path.basename(user_image), f)}
+        response = requests.post(API_URL, headers=headers, files=files,
+                                 data=data, timeout=60)
 
     if response.status_code != 200:
         print(f"Error {response.status_code}: {response.text}", file=sys.stderr)

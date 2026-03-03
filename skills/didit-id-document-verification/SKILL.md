@@ -1,11 +1,10 @@
 ---
-name: didit-id-verification
+name: didit-id-document-verification
 description: >
-  Integrate Didit ID Verification standalone API to verify identity documents.
-  Use when the user wants to verify an ID, passport, driver's license, residence permit,
-  or identity document using Didit, or mentions ID verification, document verification,
-  OCR extraction, MRZ parsing, KYC document checks, or document authenticity validation.
-  Supports 4000+ document types across 220+ countries.
+  Verifies identity documents via the Didit standalone API. Use when verifying a passport,
+  ID card, driver's license, or residence permit, performing OCR extraction, MRZ parsing,
+  document authenticity checks, or KYC document validation. Supports 4000+ document types
+  across 220+ countries.
 version: 1.2.0
 metadata:
   openclaw:
@@ -37,13 +36,27 @@ Verifies identity documents by submitting images of the front and back sides. Pe
 3. Template matching, security feature validation, tamper detection
 4. Document liveness (detects screen captures, printed copies, portrait manipulation)
 
-**API Reference:** https://docs.didit.me/reference/id-verification-standalone-api
+**API Reference:** https://docs.didit.me/standalone-apis/id-verification
+**Feature Guide:** https://docs.didit.me/core-technology/id-verification/overview
+**Supported Documents:** https://docs.didit.me/core-technology/id-verification/supported-documents-id-verification
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 

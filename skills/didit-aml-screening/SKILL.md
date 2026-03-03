@@ -36,13 +36,27 @@ Screens individuals or companies against 1,300+ global watchlists and high-risk 
 1. **Match Score** (0-100): Is this the same person? → classifies hits as False Positive or Unreviewed
 2. **Risk Score** (0-100): How risky is this entity? → determines final AML status
 
-**API Reference:** https://docs.didit.me/reference/aml-screening-standalone-api
+**API Reference:** https://docs.didit.me/standalone-apis/aml-screening
+**Feature Guide:** https://docs.didit.me/core-technology/aml-screening/overview
+**Risk Scoring:** https://docs.didit.me/core-technology/aml-screening/aml-risk-score
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 
@@ -274,4 +288,18 @@ Available on **Pro plan**. Automatically included for all AML-screened sessions.
 1. POST /v3/id-verification/ → extract name, DOB, nationality, document number
 2. POST /v3/aml/ → screen extracted data with all fields populated
 3. More data = higher match accuracy = fewer false positives
+```
+
+---
+
+## Utility Scripts
+
+**screen_aml.py**: Screen against AML watchlists from the command line.
+
+```bash
+# Requires: pip install requests
+export DIDIT_API_KEY="your_api_key"
+python scripts/screen_aml.py --name "John Smith"
+python scripts/screen_aml.py --name "John Smith" --dob 1985-03-15 --nationality US
+python scripts/screen_aml.py --name "Acme Corp" --entity-type company
 ```

@@ -31,20 +31,25 @@ def verify_id(front_image: str, back_image: str = None, vendor_data: str = None,
         print(f"Error: Front image not found: {front_image}", file=sys.stderr)
         sys.exit(1)
 
+    if back_image and not os.path.isfile(back_image):
+        print(f"Error: Back image not found: {back_image}", file=sys.stderr)
+        sys.exit(1)
+
     headers = {"x-api-key": api_key}
-    files = {"front_image": (os.path.basename(front_image), open(front_image, "rb"))}
     data = {"save_api_request": str(save).lower()}
-
-    if back_image:
-        if not os.path.isfile(back_image):
-            print(f"Error: Back image not found: {back_image}", file=sys.stderr)
-            sys.exit(1)
-        files["back_image"] = (os.path.basename(back_image), open(back_image, "rb"))
-
     if vendor_data:
         data["vendor_data"] = vendor_data
 
-    response = requests.post(API_URL, headers=headers, files=files, data=data)
+    with open(front_image, "rb") as front_f:
+        files = {"front_image": (os.path.basename(front_image), front_f)}
+        if back_image:
+            with open(back_image, "rb") as back_f:
+                files["back_image"] = (os.path.basename(back_image), back_f)
+                response = requests.post(API_URL, headers=headers, files=files,
+                                         data=data, timeout=60)
+        else:
+            response = requests.post(API_URL, headers=headers, files=files,
+                                     data=data, timeout=60)
 
     if response.status_code != 200:
         print(f"Error {response.status_code}: {response.text}", file=sys.stderr)

@@ -37,13 +37,27 @@ Verifies personal data and identity documents against trusted government and fin
 | **1x1** | Single data source validation | $0.05 |
 | **2x2** | Two data sources cross-validation | $0.30 |
 
-**API Reference:** https://docs.didit.me/reference/database-validation-api
+**API Reference:** https://docs.didit.me/standalone-apis/database-validation
+**Feature Guide:** https://docs.didit.me/core-technology/database-validation/overview
+**Supported Countries:** https://docs.didit.me/core-technology/database-validation/database-validation-supported-countries
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 
@@ -235,3 +249,16 @@ Requires matching against **2 independent data sources**:
 | Spain | 1x1 | 95% | Personal number + doc type + expiry |
 | Uruguay | 1x1 | 95% | Personal number + DOB |
 | Venezuela | 1x1 | 95% | Document number |
+
+---
+
+## Utility Scripts
+
+**validate_database.py**: Validate identity against government databases from the command line.
+
+```bash
+# Requires: pip install requests
+export DIDIT_API_KEY="your_api_key"
+python scripts/validate_database.py --id-number 12345678 --country PER --first-name Carlos --last-name Garcia
+python scripts/validate_database.py --id-number GARC850315HDFRRL09 --country MEX
+```

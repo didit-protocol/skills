@@ -39,7 +39,7 @@ def send_code(email: str, code_size: int = 6, alphanumeric: bool = False, vendor
     if vendor_data:
         payload["vendor_data"] = vendor_data
 
-    response = requests.post(f"{BASE_URL}/send/", headers=get_headers(), json=payload)
+    response = requests.post(f"{BASE_URL}/send/", headers=get_headers(), json=payload, timeout=30)
 
     if response.status_code != 200:
         print(f"Error {response.status_code}: {response.text}", file=sys.stderr)
@@ -56,7 +56,7 @@ def check_code(email: str, code: str, decline_breached: bool = False, decline_di
         "disposable_email_action": "DECLINE" if decline_disposable else "NO_ACTION",
     }
 
-    response = requests.post(f"{BASE_URL}/check/", headers=get_headers(), json=payload)
+    response = requests.post(f"{BASE_URL}/check/", headers=get_headers(), json=payload, timeout=30)
 
     if response.status_code not in (200, 404):
         print(f"Error {response.status_code}: {response.text}", file=sys.stderr)

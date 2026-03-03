@@ -27,5 +27,5 @@ docs/
 # ClawHub local state
 .clawhub/
 
-# Internal tooling
-scripts/
+# Byte-compiled caches inside skill scripts
+**/__pycache__/

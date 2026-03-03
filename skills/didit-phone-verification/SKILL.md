@@ -38,7 +38,8 @@ Two-step phone verification via one-time code:
 
 **Capabilities:** Detects disposable/temporary numbers, VoIP numbers, carrier info, and duplicate numbers. Supports fraud signals for risk scoring.
 
-**API Reference:** [Send Code](https://docs.didit.me/reference/send-phone-verification-code-api) | [Check Code](https://docs.didit.me/reference/check-phone-verification-code-api-1)
+**API Reference:** [Send Code](https://docs.didit.me/standalone-apis/phone-send) | [Check Code](https://docs.didit.me/standalone-apis/phone-check)
+**Feature Guide:** https://docs.didit.me/core-technology/phone-verification/overview
 
 ---
 
@@ -46,11 +47,23 @@ Two-step phone verification via one-time code:
 
 All requests require an API key via the `x-api-key` header.
 
-**How to obtain:** [Didit Business Console](https://business.didit.me) → API & Webhooks → Copy API key.
+**How to obtain:** [Didit Business Console](https://business.didit.me) → API & Webhooks → Copy API key, or via programmatic registration (see below).
 
 ```
 x-api-key: your_api_key_here
 ```
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 

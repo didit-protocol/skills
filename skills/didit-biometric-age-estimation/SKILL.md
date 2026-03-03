@@ -1,11 +1,10 @@
 ---
-name: didit-age-estimation
+name: didit-biometric-age-estimation
 description: >
-  Integrate Didit Age Estimation standalone API to estimate a person's age from a facial image.
-  Use when the user wants to estimate age, verify age, implement age gating, check if someone
-  is over 18/21, perform age verification for compliance, or use facial analysis for age detection
-  using Didit. Includes passive liveness check. Supports configurable thresholds, adaptive age
-  estimation with ID verification fallback, and per-country age restrictions.
+  Estimates a person's age from a facial image via the Didit standalone API. Use when
+  implementing age gating, checking if someone is over 18 or 21, performing age verification
+  for compliance, or detecting underage users. Includes passive liveness check. Supports
+  configurable thresholds, adaptive fallback to ID verification, and per-country restrictions.
 version: 1.0.0
 metadata:
   openclaw:
@@ -39,13 +38,26 @@ Estimates a person's age from a facial image using deep learning. Also performs 
 | `FLASHING` (3D Flash) | High | Financial services, identity verification |
 | `PASSIVE` (single-frame CNN) | Standard | Low-friction consumer apps |
 
-**API Reference:** https://docs.didit.me/reference/age-estimation-standalone-api
+**API Reference:** https://docs.didit.me/standalone-apis/age-estimation
+**Feature Guide:** https://docs.didit.me/core-technology/age-estimation/overview
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 
@@ -193,9 +205,11 @@ Warning severity: `error` (→ Declined), `warning` (→ In Review), `informatio
 
 ### Adaptive Age Estimation (Workflow Mode)
 
+Uses `workflow_type: "adaptive_age_verification"` — creates a session where borderline ages trigger automatic ID verification fallback.
+
 ```
-1. Configure workflow with age thresholds in Console
-2. POST /v3/session/ → create session with age-estimation workflow
+1. POST /v3/workflows/ → {"workflow_type": "adaptive_age_verification", "is_liveness_enabled": true, "is_age_restrictions_enabled": true}
+2. POST /v3/session/ → create session with the workflow_id from step 1
 3. User takes selfie → system estimates age
 4. Clear pass (well above threshold) → Approved instantly
    Clear fail (well below threshold) → Declined
@@ -215,3 +229,16 @@ Configure in Console per issuing country:
 | ARE | 21 | — |
 
 > Use "Apply age of majority" button in Console to auto-populate defaults.
+
+---
+
+## Utility Scripts
+
+**estimate_age.py**: Estimate age from a facial image via the command line.
+
+```bash
+# Requires: pip install requests
+export DIDIT_API_KEY="your_api_key"
+python scripts/estimate_age.py selfie.jpg
+python scripts/estimate_age.py photo.png --threshold 21 --vendor-data user-123
+```

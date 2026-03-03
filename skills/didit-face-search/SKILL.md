@@ -37,13 +37,26 @@ Compares a reference face against **all previously approved verification session
 | 70-89% | Possible match, may need manual review |
 | Below 70% | Likely different individuals |
 
-**API Reference:** https://docs.didit.me/reference/face-search-standalone-api
+**API Reference:** https://docs.didit.me/standalone-apis/face-search
+**Feature Guide:** https://docs.didit.me/core-technology/face-search/overview
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 
@@ -222,3 +235,16 @@ Warning severity: `error` (→ Declined), `warning` (→ In Review), `informatio
 ```
 
 > **Security:** Match image URLs expire after 60 minutes. Store only `session_id` and `similarity_percentage` — minimize biometric data on your servers.
+
+---
+
+## Utility Scripts
+
+**search_faces.py**: Search for matching faces from the command line.
+
+```bash
+# Requires: pip install requests
+export DIDIT_API_KEY="your_api_key"
+python scripts/search_faces.py selfie.jpg
+python scripts/search_faces.py photo.png --rotate --vendor-data user-123
+```

@@ -1,11 +1,10 @@
 ---
-name: didit-passive-liveness
+name: didit-liveness-detection
 description: >
-  Integrate Didit Passive Liveness standalone API to verify a user is physically present.
-  Use when the user wants to check liveness, detect spoofing attempts, verify real person
-  presence, implement anti-spoofing, or perform passive liveness detection using Didit.
-  Analyzes a single image without user interaction. Returns liveness score, face quality,
-  and luminance metrics. Detects presentation attacks and duplicate faces.
+  Detects liveness from a single selfie image via the Didit standalone API. Use when
+  checking if a person is physically present, detecting spoofing or presentation attacks,
+  implementing anti-spoofing measures, or performing passive liveness verification.
+  Returns liveness score, face quality, and luminance metrics. 99.9% accuracy.
 version: 1.2.0
 metadata:
   openclaw:
@@ -35,13 +34,26 @@ Verifies that a user is physically present by analyzing a single captured image 
 
 **Liveness methods:** This standalone endpoint uses `PASSIVE` method (single-frame CNN). Workflow mode also supports `ACTIVE_3D` (action + flash, highest security) and `FLASHING` (3D flash, high security).
 
-**API Reference:** https://docs.didit.me/reference/passive-liveness-api
+**API Reference:** https://docs.didit.me/standalone-apis/passive-liveness
+**Feature Guide:** https://docs.didit.me/core-technology/liveness/overview
 
 ---
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks.
+All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+
+## Getting Started (No Account Yet?)
+
+If you don't have a Didit API key, create one in 2 API calls:
+
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character OTP code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+
+See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
 ---
 
