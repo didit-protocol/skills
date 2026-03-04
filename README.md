@@ -48,21 +48,7 @@ Agents can go from nothing to a live verification link in **5 API calls**:
 
 ## Install
 
-### Option 1: Cursor IDE (project-level)
-
-```bash
-git clone https://github.com/didit-protocol/didit-agent-skills.git
-cp -r didit-agent-skills/skills/didit-* your-project/.cursor/skills/
-```
-
-### Option 2: Cursor IDE (global — all projects)
-
-```bash
-git clone https://github.com/didit-protocol/didit-agent-skills.git
-cp -r didit-agent-skills/skills/didit-* ~/.cursor/skills/
-```
-
-### Option 3: ClawHub
+### Option 1: ClawHub
 
 ```bash
 npx clawhub@latest install didit-verification-management
@@ -70,7 +56,15 @@ npx clawhub@latest install didit-id-document-verification
 # ... etc for each skill you need
 ```
 
-### Option 4: Manual
+### Option 2: Git Clone
+
+```bash
+git clone https://github.com/didit-protocol/didit-agent-skills.git
+```
+
+Copy the skills you need from `skills/` into your agent's skill directory.
+
+### Option 3: Manual
 
 Copy any `skills/<name>/SKILL.md` into your agent's skill directory. Each skill is self-contained.
 
