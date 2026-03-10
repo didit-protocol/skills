@@ -1,15 +1,15 @@
 <p align="center">
-  <strong>didit-agent-skills</strong><br>
+  <strong>didit/skills</strong><br>
   <em>Official AI Agent Skills for the Didit Identity Verification Platform</em>
 </p>
 
 <p align="center">
-  <a href="https://didit.me">didit.me</a> · <a href="https://docs.didit.me">API Docs</a> · <a href="https://business.didit.me">Business Console</a> · <a href="https://clawhub.ai">ClawHub</a>
+  <a href="https://didit.me">didit.me</a> · <a href="https://docs.didit.me">API Docs</a> · <a href="https://business.didit.me">Business Console</a> · <a href="https://agentskills.io">Agent Skills Standard</a>
 </p>
 
 ---
 
-12 production-ready skills that teach AI agents how to call every Didit API — from account registration to identity verification, KYC workflows, AML screening, biometric checks, billing, and user management. Drop them into **Cursor**, install from **ClawHub**, or use with any `SKILL.md`-compatible agent.
+12 production-ready skills that teach AI agents how to call every Didit API — from account registration to identity verification, KYC workflows, AML screening, biometric checks, billing, and user management. Works with **Cursor**, **Claude Code**, **Codex**, **OpenCode**, and any agent that supports the [Agent Skills](https://agentskills.io/) standard.
 
 ## What's Inside
 
@@ -48,18 +48,26 @@ Agents can go from nothing to a live verification link in **5 API calls**:
 
 ## Install
 
-### Option 1: ClawHub
+### Option 1: npx skills (recommended)
+
+Install all skills at once:
 
 ```bash
-npx clawhub@latest install didit-verification-management
-npx clawhub@latest install didit-id-document-verification
-# ... etc for each skill you need
+npx skills add didit-protocol/skills
 ```
+
+Or install a specific skill:
+
+```bash
+npx skills add didit-protocol/skills --skill didit-face-match
+```
+
+Works with Cursor, Claude Code, Codex, and OpenCode. The CLI auto-detects your agent and installs to the correct directory.
 
 ### Option 2: Git Clone
 
 ```bash
-git clone https://github.com/didit-protocol/didit-agent-skills.git
+git clone https://github.com/didit-protocol/skills.git
 ```
 
 Copy the skills you need from `skills/` into your agent's skill directory.
