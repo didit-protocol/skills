@@ -4,6 +4,11 @@ All notable changes to the Didit Agent Skills collection will be documented in t
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-07-09
+
+### Added
+- **New skill: didit-transaction-monitoring (1.0.0)** — real-time transaction monitoring (KYT), crypto wallet screening, and the FATF / EU TFR Travel Rule: create transactions (`POST /v3/transactions/`), on-demand wallet screening, Travel Rule settings + transfer lifecycle (rails, resend/cancel/finish), wallet address book, wallet-ownership widget, sunrise inbound registration, VASP directory, SDK transaction tokens (`POST /v3/transactions/sdk-token/`), `action_required` handling, and webhooks. Includes `scripts/submit_transaction.py` and live coverage in `tests/test_all_skills.py`.
+
 ## [4.1.0] - 2026-02-19
 
 ### Changed

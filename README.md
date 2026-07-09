@@ -27,6 +27,7 @@
 | [**didit-aml-screening**](skills/didit-aml-screening/) | 1.0.0 | Screens against 1300+ sanctions, PEP, and adverse media databases. Dual-score risk system. |
 | [**didit-proof-of-address**](skills/didit-proof-of-address/) | 1.0.0 | Verifies utility bills, bank statements, government documents. OCR extraction with geocoding. |
 | [**didit-database-validation**](skills/didit-database-validation/) | 1.0.0 | Validates identity against government databases in 18 countries. |
+| [**didit-transaction-monitoring**](skills/didit-transaction-monitoring/) | 1.0.0 | Real-time transaction monitoring (KYT), crypto wallet screening, and the FATF / EU TFR Travel Rule: rules + scoring, wallet-ownership proofs, SDK transaction tokens. |
 
 > **Naming convention:** Domain-term names that match how users naturally ask — `face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`. Lowercase kebab-case, `didit-` namespaced. Every standalone skill includes a **Getting Started** section for account creation + credits.
 
