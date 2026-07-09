@@ -997,6 +997,73 @@ def test_webhook_config():
 # Main
 # ---------------------------------------------------------------------------
 
+def test_transaction_monitoring():
+    print("\n19. Transaction Monitoring & Travel Rule")
+    txn_id = f"skill-test-{int(time.time())}"
+    txn_uuid = None
+    try:
+        r = requests.post(
+            f"{BASE_URL}/v3/transactions/",
+            headers=HEADERS_JSON,
+            json={
+                "transaction_id": txn_id,
+                "transaction_category": "finance",
+                "transaction_details": {"direction": "outbound", "amount": "10.00", "currency": "EUR"},
+                "subject": {"entity_type": "person", "vendor_data": "skill-test-suite", "full_name": "John Test Smith"},
+                "counterparty": {"entity_type": "company", "full_name": "Skill Test Counterparty"},
+            },
+            timeout=60,
+        )
+        body = r.json()
+        txn_uuid = body.get("uuid")
+        log("transaction-monitoring", "POST /v3/transactions/", r.status_code,
+            f"status={body.get('status', 'N/A')}, score={body.get('score', 'N/A')}", r.status_code in [200, 201])
+    except Exception as e:
+        log("transaction-monitoring", "POST /v3/transactions/", "ERR", str(e), False)
+
+    if txn_uuid:
+        try:
+            r = requests.get(f"{BASE_URL}/v3/transactions/{txn_uuid}/", headers=HEADERS_KEY, timeout=30)
+            body = r.json()
+            log("transaction-monitoring", "GET /v3/transactions/{id}/", r.status_code,
+                f"status={body.get('status', 'N/A')}, action_required={bool(body.get('action_required'))}",
+                r.status_code == 200)
+        except Exception as e:
+            log("transaction-monitoring", "GET /v3/transactions/{id}/", "ERR", str(e), False)
+
+    try:
+        r = requests.post(
+            f"{BASE_URL}/v3/transactions/sdk-token/",
+            headers=HEADERS_JSON,
+            json={"vendor_data": "skill-test-suite", "ttl_seconds": 300, "max_uses": 1},
+            timeout=30,
+        )
+        body = r.json()
+        log("transaction-monitoring", "POST /v3/transactions/sdk-token/", r.status_code,
+            f"token={'yes' if body.get('sdk_token') else 'no'}, expires_at={body.get('expires_at', 'N/A')}",
+            r.status_code in [200, 201])
+    except Exception as e:
+        log("transaction-monitoring", "POST /v3/transactions/sdk-token/", "ERR", str(e), False)
+
+    try:
+        r = requests.get(f"{BASE_URL}/v3/travel-rule/settings/", headers=HEADERS_KEY, timeout=30)
+        body = r.json()
+        log("transaction-monitoring", "GET /v3/travel-rule/settings/", r.status_code,
+            f"is_enabled={body.get('is_enabled', 'N/A')}, networks={list((body.get('networks') or {}).keys())}",
+            r.status_code == 200)
+    except Exception as e:
+        log("transaction-monitoring", "GET /v3/travel-rule/settings/", "ERR", str(e), False)
+
+    try:
+        r = requests.get(f"{BASE_URL}/v3/travel-rule/vasps/", headers=HEADERS_KEY,
+                         params={"search": "test", "limit": 5}, timeout=30)
+        body = r.json()
+        log("transaction-monitoring", "GET /v3/travel-rule/vasps/", r.status_code,
+            f"count={body.get('count', 'N/A')}", r.status_code == 200)
+    except Exception as e:
+        log("transaction-monitoring", "GET /v3/travel-rule/vasps/", "ERR", str(e), False)
+
+
 def main():
     if not API_KEY:
         print("ERROR: DIDIT_API_KEY environment variable not set")
@@ -1034,6 +1101,9 @@ def main():
     test_questionnaires()
     test_billing()
     test_users()
+
+    # Transaction monitoring + Travel Rule
+    test_transaction_monitoring()
 
     # Webhook configuration API
     test_webhook_config()
