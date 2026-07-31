@@ -3,9 +3,9 @@
 
 Usage:
     python scripts/manage_workflows.py list
-    python scripts/manage_workflows.py create [--label NAME] [--type TYPE] [--liveness] [--face-match] [--aml]
+    python scripts/manage_workflows.py create [--label NAME] [--ocr] [--liveness] [--face-match] [--aml] [--poa] [--email] [--phone]
     python scripts/manage_workflows.py get <uuid>
-    python scripts/manage_workflows.py update <uuid> [--enable-aml] [--aml-threshold N]
+    python scripts/manage_workflows.py update <uuid> [--label NAME] [--default] [--features '<json array>']
     python scripts/manage_workflows.py delete <uuid>
 
 Environment:
@@ -13,9 +13,14 @@ Environment:
 
 Examples:
     python scripts/manage_workflows.py list
-    python scripts/manage_workflows.py create --label "Standard KYC" --type kyc --liveness --face-match
-    python scripts/manage_workflows.py update abc-123 --enable-aml --aml-threshold 75
+    python scripts/manage_workflows.py create --label "Standard KYC" --liveness --face-match
+    python scripts/manage_workflows.py create --label "KYC + AML" --liveness --face-match --aml
+    python scripts/manage_workflows.py update abc-123 --label "Renamed KYC"
+    python scripts/manage_workflows.py update abc-123 --features '[{"feature":"OCR"},{"feature":"AML"}]'
     python scripts/manage_workflows.py delete abc-123
+
+Note: the v3 workflow API takes an ordered `features` array (uppercase feature
+values), NOT flat is_*_enabled flags or a workflow_type — those are rejected with 400.
 """
 import argparse
 import json
@@ -46,16 +51,40 @@ def list_workflows() -> list:
     return r.json()
 
 
-def create_workflow(label=None, wf_type="kyc", liveness=False, face_match=False, aml=False) -> dict:
-    payload = {"workflow_type": wf_type}
+def build_features(ocr=False, liveness=False, face_match=False, aml=False,
+                   poa=False, email=False, phone=False) -> list:
+    """Build the ordered features array. Dependency features (OCR) come first."""
+    features = []
+    # OCR must run first for any feature that consumes document/identity data
+    # (face match against the ID portrait, AML screening of the extracted name).
+    if ocr or face_match or aml:
+        features.append({"feature": "OCR"})
+    if liveness:
+        features.append({"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}})
+    if face_match:
+        features.append({"feature": "FACE_MATCH"})
+    if aml:
+        features.append({"feature": "AML"})
+    if poa:
+        features.append({"feature": "PROOF_OF_ADDRESS"})
+    if email:
+        features.append({"feature": "EMAIL_VERIFICATION"})
+    if phone:
+        features.append({"feature": "PHONE_VERIFICATION"})
+    # Sensible default: full KYC if no feature flags were given.
+    if not features:
+        features = [{"feature": "OCR"},
+                    {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+                    {"feature": "FACE_MATCH"}]
+    return features
+
+
+def create_workflow(label=None, features=None) -> dict:
+    if not features:
+        raise ValueError("create_workflow requires a non-empty features list")
+    payload = {"features": features}
     if label:
         payload["workflow_label"] = label
-    if liveness:
-        payload["is_liveness_enabled"] = True
-    if face_match:
-        payload["is_face_match_enabled"] = True
-    if aml:
-        payload["is_aml_enabled"] = True
     r = requests.post(f"{BASE_URL}/", headers=get_headers(content_type=True), json=payload, timeout=30)
     if r.status_code not in (200, 201):
         print(f"Error {r.status_code}: {r.text}", file=sys.stderr)
@@ -95,24 +124,25 @@ def main():
 
     create_p = sub.add_parser("create", help="Create a new workflow")
     create_p.add_argument("--label", help="Workflow display name")
-    create_p.add_argument("--type", dest="wf_type", default="kyc",
-                          choices=["kyc", "adaptive_age_verification", "biometric_authentication",
-                                   "address_verification", "questionnaire_verification",
-                                   "email_verification", "phone_verification"],
-                          help="Workflow type (default: kyc)")
-    create_p.add_argument("--liveness", action="store_true", help="Enable liveness detection")
-    create_p.add_argument("--face-match", action="store_true", help="Enable face match")
-    create_p.add_argument("--aml", action="store_true", help="Enable AML screening")
+    create_p.add_argument("--ocr", action="store_true", help="Add ID document (OCR) step")
+    create_p.add_argument("--liveness", action="store_true", help="Add liveness detection step")
+    create_p.add_argument("--face-match", action="store_true", help="Add face match step (implies OCR)")
+    create_p.add_argument("--aml", action="store_true", help="Add AML screening step")
+    create_p.add_argument("--poa", action="store_true", help="Add proof-of-address step")
+    create_p.add_argument("--email", action="store_true", help="Add email verification step")
+    create_p.add_argument("--phone", action="store_true", help="Add phone verification step")
+    create_p.add_argument("--features", help="Full features array as a JSON string (overrides the flags above; "
+                                             "use for NFC, DATABASE_VALIDATION, QUESTIONNAIRE, AGE_ESTIMATION, "
+                                             "IP_ANALYSIS, KYB_REGISTRY/DOCUMENTS/KEY_PEOPLE, or per-feature config)")
 
     get_p = sub.add_parser("get", help="Get workflow details")
     get_p.add_argument("uuid", help="Workflow UUID")
 
     update_p = sub.add_parser("update", help="Update a workflow")
     update_p.add_argument("uuid", help="Workflow UUID")
-    update_p.add_argument("--enable-aml", action="store_true", help="Enable AML screening")
-    update_p.add_argument("--disable-aml", action="store_true", help="Disable AML screening")
-    update_p.add_argument("--aml-threshold", type=int, help="AML decline threshold (0-100)")
     update_p.add_argument("--label", help="Update workflow label")
+    update_p.add_argument("--default", action="store_true", help="Set as the default workflow")
+    update_p.add_argument("--features", help="Replacement features array as a JSON string")
 
     del_p = sub.add_parser("delete", help="Delete a workflow")
     del_p.add_argument("uuid", help="Workflow UUID")
@@ -128,7 +158,16 @@ def main():
             print(f"  {wf['uuid']} — {wf.get('workflow_label', 'Untitled')} [{wf.get('workflow_type')}]{default}")
 
     elif args.command == "create":
-        result = create_workflow(args.label, args.wf_type, args.liveness, args.face_match, args.aml)
+        if args.features:
+            try:
+                features = json.loads(args.features)
+            except json.JSONDecodeError as e:
+                print(f"Invalid --features JSON: {e}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            features = build_features(args.ocr, args.liveness, args.face_match, args.aml,
+                                      args.poa, args.email, args.phone)
+        result = create_workflow(args.label, features)
         print(json.dumps(result, indent=2))
         print(f"\n--- Created workflow: {result.get('uuid')} ---")
 
@@ -138,16 +177,18 @@ def main():
 
     elif args.command == "update":
         changes = {}
-        if args.enable_aml:
-            changes["is_aml_enabled"] = True
-        if args.disable_aml:
-            changes["is_aml_enabled"] = False
-        if args.aml_threshold is not None:
-            changes["aml_decline_threshold"] = args.aml_threshold
         if args.label:
             changes["workflow_label"] = args.label
+        if args.default:
+            changes["is_default"] = True
+        if args.features:
+            try:
+                changes["features"] = json.loads(args.features)
+            except json.JSONDecodeError as e:
+                print(f"Invalid --features JSON: {e}", file=sys.stderr)
+                sys.exit(1)
         if not changes:
-            print("No changes specified. Use --enable-aml, --label, etc.", file=sys.stderr)
+            print("No changes specified. Use --label, --default, or --features.", file=sys.stderr)
             sys.exit(1)
         result = update_workflow(args.uuid, changes)
         print(json.dumps(result, indent=2))

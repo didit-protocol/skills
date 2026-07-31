@@ -46,20 +46,26 @@ def get_headers(content_type=False) -> dict:
 
 def setup_kyc_workflow(label="KYC Onboarding", liveness=True, face_match=True,
                        aml=False, nfc=False) -> dict:
-    """Create a KYC workflow with recommended defaults."""
+    """Create a KYC workflow with recommended defaults.
+
+    Workflows use a `features` array (a strict whitelist). Features run in order;
+    OCR goes first so downstream features can use the document data.
+    """
+    features = [{"feature": "OCR"}]
+    if nfc:
+        features.append({"feature": "NFC"})
+    if liveness:
+        features.append({"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}})
+    if face_match:
+        features.append({"feature": "FACE_MATCH", "config": {"face_match_score_decline_threshold": 50}})
+    if aml:
+        features.append({"feature": "AML"})
+
     payload = {
         "workflow_label": label,
-        "workflow_type": "kyc",
-        "is_liveness_enabled": liveness,
-        "is_face_match_enabled": face_match,
-        "face_match_score_decline_threshold": 50,
         "max_retry_attempts": 3,
+        "features": features,
     }
-    if aml:
-        payload["is_aml_enabled"] = True
-        payload["aml_decline_threshold"] = 80
-    if nfc:
-        payload["is_nfc_enabled"] = True
 
     r = requests.post(f"{BASE_URL}/workflows/", headers=get_headers(content_type=True),
                       json=payload, timeout=30)
@@ -166,7 +172,7 @@ def main():
         print(json.dumps(result, indent=2))
         print(f"\n--- KYC Workflow Created ---")
         print(f"Workflow ID: {result.get('uuid')}")
-        print(f"Type: {result.get('workflow_type')}")
+        print(f"Features: {result.get('features')}")
         print(f"Price per session: ${result.get('total_price', '?')}")
         print(f"\nSave this workflow_id — use it when creating sessions.")
 

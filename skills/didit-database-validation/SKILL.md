@@ -7,7 +7,7 @@ description: >
   lookups, validate identity documents against official sources, or implement database
   verification for Latin American or Spanish identity documents using Didit.
   Supports 18 countries with 1x1 and 2x2 matching methods.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -25,7 +25,7 @@ metadata:
 Verifies personal data and identity documents against trusted government and financial databases. Prevents synthetic identity fraud and ensures identity authenticity.
 
 **Key constraints:**
-- Requires at least the **national ID/document number** for the target country
+- Requires `issuing_state` (ISO alpha-2) to select the data sources, plus the country-specific number field
 - Coverage: **18 countries** (primarily Latin America + Spain)
 - Results: `full_match`, `partial_match`, or `no_match`
 - Only charged per **successful query** — no charge if insufficient data
@@ -78,36 +78,44 @@ POST https://verification.didit.me/v3/database-validation/
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `id_number` | string | **Yes** | Universal ID number — auto-maps to correct country field |
+| `issuing_state` | string | **Yes** | ISO 3166-1 alpha-2 country code — selects which data sources run |
 | `first_name` | string | No | First name for matching |
 | `last_name` | string | No | Last name for matching |
+| `middle_name` | string | No | Middle name for matching |
+| `full_name` | string | No | Full name for matching |
 | `date_of_birth` | string | No | DOB in `YYYY-MM-DD` (required for some countries) |
-| `issuing_state` | string | No | ISO 3166-1 alpha-3 country code |
+| `document_number` | string | No | Country-specific document number (see table below) |
+| `personal_number` | string | No | Country-specific personal number (see table below) |
+| `tax_number` | string | No | Country-specific tax number (see table below) |
+| `document_type` | string | No | Document type for matching |
+| `gender` | string | No | `M`, `F`, or `X` |
+| `nationality` | string | No | ISO country code |
+| `services` | array | No | `service_id`s to restrict which sources run |
 | `save_api_request` | boolean | No | Save in Business Console |
 | `vendor_data` | string | No | Your identifier for session tracking |
 
-The `id_number` field auto-maps to the correct country-specific field:
+Send the country-specific number field for the target country (the table shows which field name each country expects). `issuing_state` selects the data sources to query:
 
-| Country | Mapped Field | Document | Format |
+| Country | Number Field | Document | Format |
 |---|---|---|---|
-| ARG | `document_number` | DNI | — |
-| BOL | `document_number` | CI | — |
-| BRA | `tax_number` | CPF | 11 digits |
-| CHL | `personal_number` | RUT | — |
-| COL | `personal_number` | Cedula | — |
-| CRI | `personal_number` | Cedula | — |
-| DOM | `personal_number` | Cedula | 11 digits |
-| ECU | `personal_number` | Cedula | 10 digits |
-| ESP | `personal_number` | DNI/NIE | — |
-| GTM | `document_number` | DPI | — |
-| HND | `document_number` | DNI | — |
-| MEX | `personal_number` | CURP | 18 chars |
-| PAN | `document_number` | Cedula | — |
-| PER | `personal_number` | DNI | 8 digits |
-| PRY | `document_number` | CI | — |
-| SLV | `document_number` | DUI | — |
-| URY | `personal_number` | CI | — |
-| VEN | `document_number` | Cedula | — |
+| AR | `document_number` | DNI | — |
+| BO | `document_number` | CI | — |
+| BR | `tax_number` | CPF | 11 digits |
+| CL | `personal_number` | RUT | — |
+| CO | `personal_number` | Cedula | — |
+| CR | `personal_number` | Cedula | — |
+| DO | `personal_number` | Cedula | 11 digits |
+| EC | `personal_number` | Cedula | 10 digits |
+| ES | `personal_number` | DNI/NIE | — |
+| GT | `document_number` | DPI | — |
+| HN | `document_number` | DNI | — |
+| MX | `personal_number` | CURP | 18 chars |
+| PA | `document_number` | Cedula | — |
+| PE | `personal_number` | DNI | 8 digits |
+| PY | `document_number` | CI | — |
+| SV | `document_number` | DUI | — |
+| UY | `personal_number` | CI | — |
+| VE | `document_number` | Cedula | — |
 
 ### Example
 
@@ -118,10 +126,10 @@ response = requests.post(
     "https://verification.didit.me/v3/database-validation/",
     headers={"x-api-key": "YOUR_API_KEY", "Content-Type": "application/json"},
     json={
-        "id_number": "12345678",
+        "issuing_state": "PE",
+        "personal_number": "12345678",
         "first_name": "Carlos",
         "last_name": "Garcia",
-        "issuing_state": "PER",
     },
 )
 print(response.json())
@@ -132,10 +140,10 @@ const response = await fetch("https://verification.didit.me/v3/database-validati
   method: "POST",
   headers: { "x-api-key": "YOUR_API_KEY", "Content-Type": "application/json" },
   body: JSON.stringify({
-    id_number: "12345678",
+    issuing_state: "PE",
+    personal_number: "12345678",
     first_name: "Carlos",
     last_name: "Garcia",
-    issuing_state: "PER",
   }),
 });
 ```
@@ -148,7 +156,7 @@ const response = await fetch("https://verification.didit.me/v3/database-validati
   "database_validation": {
     "status": "Approved",
     "match_type": "full_match",
-    "issuing_state": "PER",
+    "issuing_state": "PE",
     "validation_type": "1x1",
     "screened_data": {
       "personal_number": "12345678",
@@ -219,7 +227,7 @@ Requires matching against **2 independent data sources**:
 
 | Tag | Description |
 |---|---|
-| `COULD_NOT_PERFORM_DATABASE_VALIDATION` | Missing required data — provide ID number, name, and country |
+| `COULD_NOT_PERFORM_DATABASE_VALIDATION` | Missing required data — provide the country-specific number field, name, and `issuing_state` |
 | `DATABASE_VALIDATION_PARTIAL_MATCH` | Partial match found — requires investigation |
 | `DATABASE_VALIDATION_NO_MATCH` | No match found in government records |
 
@@ -259,6 +267,9 @@ Requires matching against **2 independent data sources**:
 ```bash
 # Requires: pip install requests
 export DIDIT_API_KEY="your_api_key"
-python scripts/validate_database.py --id-number 12345678 --country PER --first-name Carlos --last-name Garcia
-python scripts/validate_database.py --id-number GARC850315HDFRRL09 --country MEX
+# Use the number field that matches the country (see the table above):
+# PE/MX/CL/CO/CR/DO/EC/ES/UY → --personal-number, BR → --tax-number, AR/BO/GT/HN/PA/PY/SV/VE → --document-number
+python scripts/validate_database.py --issuing-state PE --personal-number 12345678 --first-name Carlos --last-name Garcia
+python scripts/validate_database.py --issuing-state MX --personal-number GARC850315HDFRRL09
+python scripts/validate_database.py --issuing-state BR --tax-number 12345678901
 ```

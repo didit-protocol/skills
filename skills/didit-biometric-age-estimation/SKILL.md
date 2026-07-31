@@ -5,7 +5,7 @@ description: >
   implementing age gating, checking if someone is over 18 or 21, performing age verification
   for compliance, or detecting underage users. Includes passive liveness check. Supports
   configurable thresholds, adaptive fallback to ID verification, and per-country restrictions.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -152,7 +152,7 @@ const response = await fetch("https://verification.didit.me/v3/age-estimation/",
 | `method` | string | `"ACTIVE_3D"`, `"FLASHING"`, or `"PASSIVE"` |
 | `score` | float | 0-100 liveness confidence score |
 | `age_estimation` | float | Estimated age in years (e.g. `24.3`). `null` if no face |
-| `reference_image` | string | Temporary URL (expires 60 min) |
+| `reference_image` | string | Temporary URL (expires 4 hours) |
 | `video_url` | string | Temporary URL for active liveness video. `null` for passive |
 | `warnings` | array | `{risk, log_type, short_description, long_description}` |
 
@@ -205,10 +205,10 @@ Warning severity: `error` (→ Declined), `warning` (→ In Review), `informatio
 
 ### Adaptive Age Estimation (Workflow Mode)
 
-Uses `workflow_type: "adaptive_age_verification"` — creates a session where borderline ages trigger automatic ID verification fallback.
+Build a workflow with an `AGE_ESTIMATION` feature (optionally followed by `OCR` for the ID verification fallback) so borderline ages trigger automatic ID verification.
 
 ```
-1. POST /v3/workflows/ → {"workflow_type": "adaptive_age_verification", "is_liveness_enabled": true, "is_age_restrictions_enabled": true}
+1. POST /v3/workflows/ → {"workflow_label": "Adaptive Age", "features": [{"feature": "AGE_ESTIMATION"}, {"feature": "OCR"}]}
 2. POST /v3/session/ → create session with the workflow_id from step 1
 3. User takes selfie → system estimates age
 4. Clear pass (well above threshold) → Approved instantly

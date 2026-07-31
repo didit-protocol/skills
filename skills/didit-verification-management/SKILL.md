@@ -2,13 +2,14 @@
 name: didit-verification-management
 description: >
   Full Didit identity verification platform management — account creation, API keys,
-  sessions, workflows, questionnaires, users, billing, blocklist, and webhooks. Use when
-  someone needs to create a Didit account, get API keys, set up verification workflows,
-  create or retrieve verification sessions, approve or decline sessions, manage users,
-  check credit balance, top up credits, configure blocklists, configure webhooks
-  programmatically, handle webhook signatures, or perform any platform administration.
-  45+ endpoints across 9 categories.
-version: 4.1.0
+  sessions, bulk imports, workflows, questionnaires, users (KYC), businesses (KYB),
+  transactions, billing, branding, lists (block/allow), and webhooks. Use when someone
+  needs to create a Didit account, get API keys, set up verification workflows, create or
+  retrieve verification sessions, approve or decline sessions, manage users or businesses,
+  monitor transactions, check credit balance, top up credits, configure lists, configure
+  webhooks programmatically, handle webhook signatures, or perform any platform
+  administration. 60+ endpoints across 13 categories.
+version: 5.0.0
 metadata:
   openclaw:
     requires:
@@ -20,7 +21,7 @@ metadata:
 
 # Didit Identity Verification Platform
 
-The single skill for the entire Didit verification platform. Covers account creation, session management, workflow configuration, questionnaires, user management, billing, blocklist, and webhook configuration — 45+ endpoints across 9 categories.
+The single skill for the entire Didit verification platform. Covers account creation, session management, bulk imports, workflow configuration, questionnaires, user (KYC) and business (KYB) management, transaction monitoring, billing, branding customization, lists (block/allow), and webhook configuration — 60+ endpoints across 13 categories.
 
 **For standalone verification APIs** (ID scan, liveness, face match, AML, etc.), see the individual `didit-*` skills.
 
@@ -29,11 +30,15 @@ The single skill for the entire Didit verification platform. Covers account crea
 - **Sessions:** [Create](https://docs.didit.me/sessions-api/create-session) | [Retrieve](https://docs.didit.me/sessions-api/retrieve-session) | [List](https://docs.didit.me/sessions-api/list-sessions) | [Delete](https://docs.didit.me/sessions-api/delete-session) | [Update Status](https://docs.didit.me/sessions-api/update-status) | [PDF](https://docs.didit.me/sessions-api/generate-pdf) | [Share](https://docs.didit.me/sessions-api/share-session/share) | [Import](https://docs.didit.me/sessions-api/share-session/import)
 - **Workflows:** [Create](https://docs.didit.me/management-api/workflows/create) | [List](https://docs.didit.me/management-api/workflows/list) | [Get](https://docs.didit.me/management-api/workflows/get) | [Update](https://docs.didit.me/management-api/workflows/update) | [Delete](https://docs.didit.me/management-api/workflows/delete)
 - **Questionnaires:** [Create](https://docs.didit.me/management-api/questionnaires/create) | [List](https://docs.didit.me/management-api/questionnaires/list) | [Get](https://docs.didit.me/management-api/questionnaires/get) | [Update](https://docs.didit.me/management-api/questionnaires/update) | [Delete](https://docs.didit.me/management-api/questionnaires/delete)
-- **Users:** [List](https://docs.didit.me/management-api/users/list) | [Get](https://docs.didit.me/management-api/users/get) | [Update](https://docs.didit.me/management-api/users/update) | [Delete](https://docs.didit.me/management-api/users/delete)
+- **Users (KYC):** [List](https://docs.didit.me/management-api/users/list) | [Create](https://docs.didit.me/management-api/users/create) | [Get](https://docs.didit.me/management-api/users/get) | [Update](https://docs.didit.me/management-api/users/update) | [Update Status](https://docs.didit.me/management-api/users/update-status) | [Delete](https://docs.didit.me/management-api/users/delete)
+- **Businesses (KYB):** [List](https://docs.didit.me/management-api/businesses/list) | [Create](https://docs.didit.me/management-api/businesses/create) | [Get](https://docs.didit.me/management-api/businesses/get) | [Update](https://docs.didit.me/management-api/businesses/update) | [Update Status](https://docs.didit.me/management-api/businesses/update-status) | [Delete](https://docs.didit.me/management-api/businesses/delete)
+- **Transactions:** [List](https://docs.didit.me/management-api/transactions/list) | [Create](https://docs.didit.me/management-api/transactions/create) | [Get](https://docs.didit.me/management-api/transactions/get)
 - **Billing:** [Balance](https://docs.didit.me/management-api/billing/balance) | [Top Up](https://docs.didit.me/management-api/billing/top-up)
-- **Blocklist:** [Add](https://docs.didit.me/sessions-api/blocklist/add) | [Remove](https://docs.didit.me/sessions-api/blocklist/remove) | [List](https://docs.didit.me/sessions-api/blocklist/list)
+- **Customization:** [Get](https://docs.didit.me/management-api/customization/get) | [Update](https://docs.didit.me/management-api/customization/update)
+- **Lists (block/allow/custom):** [List](https://docs.didit.me/management-api/lists/list) | [Create](https://docs.didit.me/management-api/lists/create) | [Get](https://docs.didit.me/management-api/lists/get) | [Update](https://docs.didit.me/management-api/lists/update) | [Delete](https://docs.didit.me/management-api/lists/delete) | [Entries](https://docs.didit.me/management-api/lists/list-entries) | [Add Entry](https://docs.didit.me/management-api/lists/create-entry) | [Upload Face](https://docs.didit.me/management-api/lists/upload-face) | [Delete Entry](https://docs.didit.me/management-api/lists/delete-entry)
 - **Session Operations:** [Batch Delete](https://docs.didit.me/management-api/sessions/batch-delete) | [List Reviews](https://docs.didit.me/management-api/sessions/list-reviews) | [Create Review](https://docs.didit.me/management-api/sessions/create-review)
-- **Webhook Config:** [Get](https://docs.didit.me/management-api/webhook/get) | [Update](https://docs.didit.me/management-api/webhook/update)
+- **Bulk Import:** [Import Verifications](https://docs.didit.me/sessions-api/import-verifications)
+- **Webhook Destinations:** [List](https://docs.didit.me/management-api/webhook/list-destinations) | [Create](https://docs.didit.me/management-api/webhook/create-destination) | [Get](https://docs.didit.me/management-api/webhook/get-destination) | [Update](https://docs.didit.me/management-api/webhook/update-destination) | [Delete](https://docs.didit.me/management-api/webhook/delete-destination)
 - **Guides:** [Programmatic Registration](https://docs.didit.me/integration/programmatic-registration) | [Webhooks](https://docs.didit.me/integration/webhooks) | [AI Agent Integration](https://docs.didit.me/integration/ai-agent-integration) | [API Overview](https://docs.didit.me/sessions-api/management-api)
 
 ---
@@ -55,11 +60,14 @@ resp = requests.post("https://apx.didit.me/auth/v2/programmatic/verify-email/",
 api_key = resp.json()["application"]["api_key"]
 headers = {"x-api-key": api_key, "Content-Type": "application/json"}
 
-# 3. Create a KYC workflow
+# 3. Create a KYC workflow — pass an ordered `features` array (not is_*_enabled flags)
 wf = requests.post("https://verification.didit.me/v3/workflows/",
     headers=headers,
-    json={"workflow_label": "My KYC", "workflow_type": "kyc",
-          "is_liveness_enabled": True, "is_face_match_enabled": True}).json()
+    json={"workflow_label": "My KYC", "features": [
+        {"feature": "OCR"},
+        {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+        {"feature": "FACE_MATCH"},
+    ]}).json()
 
 # 4. Create a session → send user to the URL
 session = requests.post("https://verification.didit.me/v3/session/",
@@ -171,21 +179,24 @@ GET /organizations/me/{org_id}/applications/{app_id}/
 
 **Base URL:** `https://verification.didit.me/v3`
 
-Workflows define verification steps, thresholds, and accepted documents. Each has a UUID used as `workflow_id` when creating sessions.
+Workflows define verification steps, thresholds, and accepted documents. Each has a UUID used as `workflow_id` when creating sessions. You compose a workflow by listing **features in execution order** — there is no `workflow_type` field on the create API (sending one returns `400`). KYC vs KYB is determined by which features you include.
 
-**Workflow Types:**
+**Feature values** (use the exact uppercase strings in the `features` array):
+`OCR`, `NFC`, `LIVENESS`, `FACE_MATCH`, `PROOF_OF_ADDRESS`, `QUESTIONNAIRE`, `PHONE_VERIFICATION`, `EMAIL_VERIFICATION`, `DATABASE_VALIDATION`, `AML`, `IP_ANALYSIS`, `AGE_ESTIMATION`, `KYB_REGISTRY`, `KYB_DOCUMENTS`, `KYB_KEY_PEOPLE`.
 
-| Type | Purpose | Typical Features |
-|---|---|---|
-| `kyc` | Full identity verification (ID + selfie) | ID Verification, Liveness, Face Match, AML, NFC |
-| `adaptive_age_verification` | Age gating with ID fallback for borderline cases | Age Estimation, Liveness, per-country age restrictions |
-| `biometric_authentication` | Re-verify returning users (no document) | Liveness, Face Match against stored portrait |
-| `address_verification` | Verify proof of address documents | Proof of Address, geocoding, name matching |
-| `questionnaire_verification` | Custom form/questionnaire verification | Questionnaire, optional ID/liveness add-ons |
-| `email_verification` | Email OTP verification as a workflow | Email send/check, breach/disposable detection |
-| `phone_verification` | Phone OTP verification as a workflow | Phone send/check, carrier/VoIP detection |
+**Common compositions:**
 
-**Features (toggleable per workflow):** ID Verification, Liveness, Face Match, NFC, AML, Phone, Email, Proof of Address, Database Validation, IP Analysis, Age Estimation, Questionnaire.
+| Goal | Feature list (in order) |
+|---|---|
+| Full KYC (ID + selfie) | `OCR`, `LIVENESS`, `FACE_MATCH`, optionally `AML`, `NFC` |
+| Age gating | `AGE_ESTIMATION`, `LIVENESS` (add `OCR` for an ID fallback) |
+| Biometric re-auth (no document) | `LIVENESS`, `FACE_MATCH` (against a stored portrait) |
+| Proof of address | `PROOF_OF_ADDRESS` |
+| Questionnaire | `QUESTIONNAIRE` (set `config.questionnaire_uuid`) |
+| Email / phone only | `EMAIL_VERIFICATION` / `PHONE_VERIFICATION` |
+| KYB (business) | `KYB_REGISTRY`, `KYB_DOCUMENTS`, `KYB_KEY_PEOPLE`, optionally `AML` |
+
+**Ordering rule:** put dependency features first — `OCR` before `FACE_MATCH`, `NFC`, `DATABASE_VALIDATION`, or any `AML` check that relies on document data.
 
 ### 1. List Workflows
 
@@ -201,38 +212,36 @@ GET /v3/workflows/
 POST /v3/workflows/
 ```
 
+The body is a **strict whitelist** — only the fields below are accepted, and any unknown key (including `workflow_type` or flat `is_*_enabled` flags) is rejected with `400`. The only required field is `features`.
+
 | Body | Type | Default | Description |
 |---|---|---|---|
-| `workflow_label` | string | auto | Display name |
-| `workflow_type` | string | `kyc` | Workflow template type |
-| `is_default` | boolean | `false` | Set as default |
-| `is_liveness_enabled` | boolean | `false` | Liveness detection |
-| `face_liveness_method` | string | `passive` | `"passive"`, `"active_3d"`, `"flashing"` |
-| `face_liveness_score_decline_threshold` | integer | `50` | Below this → auto-decline |
-| `is_face_match_enabled` | boolean | `false` | Selfie-to-document match |
-| `face_match_score_decline_threshold` | integer | `50` | Below this → auto-decline |
-| `face_match_score_review_threshold` | integer | `70` | Below this → manual review |
-| `is_aml_enabled` | boolean | `false` | AML/PEP/sanctions screening |
-| `aml_decline_threshold` | integer | `80` | Above this → auto-decline |
-| `is_phone_verification_enabled` | boolean | `false` | Phone verification step |
-| `is_email_verification_enabled` | boolean | `false` | Email verification step |
-| `is_database_validation_enabled` | boolean | `false` | Gov database validation |
-| `is_ip_analysis_enabled` | boolean | `false` | IP risk analysis |
-| `is_nfc_enabled` | boolean | `false` | NFC chip reading (mobile only, ePassports) |
-| `is_age_restrictions_enabled` | boolean | `false` | Enable per-country age restrictions (for `adaptive_age_verification`) |
-| `documents_allowed` | object | `{}` | Restrict accepted countries/doc types (empty = accept all) |
-| `duplicated_user_action` | string | `no_action` | `no_action`, `review`, `decline` (set after creation via update) |
-| `max_retry_attempts` | integer | `3` | Max retries per session |
-| `retry_window_days` | integer | `7` | Days within which retries are allowed |
+| `features` | array | — | **Required.** Verification features in execution order. Each item: `{ "feature": "<UPPERCASE>", "config": { ... }, "label": "optional" }`. |
+| `workflow_label` | string | `ID Verification` | Display name (max 50 chars) — always set it |
+| `is_default` | boolean | `false` | Set as default workflow for new sessions |
+| `status` | string | `published` | `"published"` (default when omitted) or `"draft"` to save without publishing |
+| `is_white_label_enabled` | boolean | `false` | White-label the verification UI |
+| `is_desktop_allowed` | boolean | — | Allow desktop verification |
+| `max_retry_attempts` | integer | — | Max retries per session |
+| `retry_window_days` | integer | — | Days within which retries are allowed |
+| `face_liveness_max_attempts` | integer | — | Max liveness attempts |
+| `face_match_max_attempts` | integer | — | Max face-match attempts |
+| `session_expiration_time` | integer | — | Session lifetime (seconds) |
+
+**Per-feature `config`** (see the [feature configs reference](https://docs.didit.me/management-api/workflows/feature-configs)): e.g. `LIVENESS` → `face_liveness_method` (`"PASSIVE"`, `"ACTIVE_3D"`, `"FLASHING"`), `face_liveness_score_decline_threshold`; `FACE_MATCH` → `face_match_score_decline_threshold`, `face_match_score_review_threshold`; `AML` → `aml_score_approve_threshold` (default 80); `OCR` → `duplicated_user_action` (`no_action`/`review`/`decline`), `documents_allowed` (omit or `{}` to accept all); `QUESTIONNAIRE` → `questionnaire_uuid`.
 
 **Response (201):** Workflow object with `uuid`.
 
 ```python
 wf = requests.post("https://verification.didit.me/v3/workflows/",
     headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
-    json={"workflow_label": "KYC + AML", "workflow_type": "kyc",
-          "is_liveness_enabled": True, "is_face_match_enabled": True,
-          "is_aml_enabled": True}).json()
+    json={"workflow_label": "KYC + AML", "features": [
+        {"feature": "OCR"},
+        {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+        {"feature": "FACE_MATCH", "config": {"face_match_score_decline_threshold": 40,
+                                             "face_match_score_review_threshold": 60}},
+        {"feature": "AML", "config": {"aml_score_approve_threshold": 80}},
+    ]}).json()
 ```
 
 ### 3. Get Workflow
@@ -267,9 +276,9 @@ Sessions are the core unit of verification. Every verification starts by creatin
 
 **Lifecycle:** `Create → User verifies at URL → Webhook/poll decision → Optionally update status`
 
-**Statuses:** `Not Started`, `In Progress`, `In Review`, `Approved`, `Declined`, `Abandoned`, `Expired`, `Resubmitted`
+**Statuses:** `Not Started`, `In Progress`, `In Review`, `Approved`, `Declined`, `Expired`, `Abandoned`, `Kyc Expired`, `Resubmitted`, `Awaiting User` (there is no `Pending` status)
 
-**Rate limits:** 300 req/min per method. Session creation: 600/min. Decision polling: 100/min.
+**Rate limits:** generic GET and session creation 600/min; writes 300/min; decision polling 100/min; PDF generation 50/min.
 
 ### 1. Create Session
 
@@ -322,7 +331,7 @@ Send the user to `url` to complete verification.
 GET /v3/session/{sessionId}/decision/
 ```
 
-Returns all verification results. Image URLs expire after 60 minutes.
+Returns all verification results. Presigned image URLs expire after 4 hours.
 
 **Response (200):** Full decision with `status`, `features`, `id_verifications`, `liveness_checks`, `face_matches`, `aml_screenings`, `phone_verifications`, `email_verifications`, `poa_verifications`, `database_validations`, `ip_analyses`, `reviews`.
 
@@ -336,10 +345,13 @@ GET /v3/sessions/
 |---|---|---|---|
 | `vendor_data` | string | — | Filter by your user identifier |
 | `status` | string | — | Filter by status (e.g. `Approved`, `Declined`, `In Review`) |
+| `session_kind` | string | — | `user` (KYC), `business` (KYB), or `all` |
 | `country` | string | — | Filter by ISO 3166-1 alpha-3 country code |
 | `workflow_id` | string | — | Filter by workflow UUID |
+| `search` | string | — | Free-text search |
+| `date_from` / `date_to` | string | — | ISO date range bounds |
 | `offset` | integer | `0` | Number of items to skip |
-| `limit` | integer | `20` | Max items to return |
+| `limit` | integer | `50` | Max items to return |
 
 **Response (200):** Paginated list with `count`, `next`, `previous`, `results[]`.
 
@@ -379,13 +391,17 @@ PATCH /v3/session/{sessionId}/update-status/
 
 Resubmit requires session to be Declined, In Review, or Abandoned.
 
+**Reviewer data overrides** — correct extracted data on a session (only send fields to change):
+- `PATCH /v3/session/{sessionId}/update-data/` — KYC/ID fields (`document_type`, `document_number`, `date_of_birth`, `first_name`, `last_name`, `gender` `M`/`F`/`U`, `address`, `nationality`, `extra_fields`, …).
+- `PATCH /v3/session/{sessionId}/update-poa-data/` — Proof of Address fields (`document_type`, `issuer`, `issue_date`, `poa_address`, `name_on_document`, …).
+
 ### 7. Generate PDF Report
 
 ```
 GET /v3/session/{sessionId}/generate-pdf
 ```
 
-Rate limit: 100 req/min.
+Rate limit: 50 req/min.
 
 ### 8. Share Session
 
@@ -446,43 +462,100 @@ POST /v3/sessions/{session_id}/reviews/
 
 ---
 
-## Blocklist
+## Bulk Import (Migration)
 
-Block entities from a session to auto-decline future matches.
-
-### 1. Add to Blocklist
+Import historical verifications in bulk — e.g. migrating from another provider — from a hosted CSV or NDJSON file. All imports use Didit's canonical schema regardless of source.
 
 ```
-POST /v3/blocklist/add/
+POST /v3/session/imports/
 ```
 
 | Body | Type | Required | Description |
 |---|---|---|---|
-| `session_id` | uuid | **Yes** | Session to blocklist items from |
-| `blocklist_face` | boolean | No | Block biometric face template |
-| `blocklist_document` | boolean | No | Block document fingerprint |
-| `blocklist_phone` | boolean | No | Block phone number |
-| `blocklist_email` | boolean | No | Block email address |
+| `source_file_url` | string | **Yes*** | Publicly fetchable URL of the file (JSON body). *The multipart variant accepts a `file` upload instead. |
+| `import_type` | string | No | `user_verification` (default), `business_verification`, `status_rules`, or `transactions` |
+| `source_format` | string | No | `csv` (default) or `ndjson` |
+| `workflow_id` | string | No | Workflow to associate imported sessions with |
 
-**Warning tags on match:** `FACE_IN_BLOCKLIST`, `ID_DOCUMENT_IN_BLOCKLIST`, `PHONE_NUMBER_IN_BLOCKLIST`, `EMAIL_IN_BLOCKLIST`
+There is no provider request field — all imports use Didit's canonical schema. To label where a record came from, include the optional per-row `provider` column in the file itself (defaults to `generic`, stored as `metadata.imported_from`).
 
-### 2. Remove from Blocklist
-
-```
-POST /v3/blocklist/remove/
-```
-
-Same structure with `unblock_face`, `unblock_document`, `unblock_phone`, `unblock_email`.
-
-### 3. List Blocklist
+Track and inspect jobs:
 
 ```
-GET /v3/blocklist/
+GET /v3/session/imports/template/            # canonical column template
+GET /v3/session/imports/{importId}/          # job status + summary
+GET /v3/session/imports/{importId}/errors/   # per-row errors
 ```
 
-| Query | Type | Description |
-|---|---|---|
-| `item_type` | string | `"face"`, `"document"`, `"phone"`, `"email"`. Omit for all. |
+---
+
+## Lists (Block / Allow / Custom)
+
+Lists drive automatic enforcement: a **blocklist** match auto-declines future sessions, an **allowlist** match fast-tracks/suppresses duplicate actions, and **custom** lists feed workflow conditions and monitoring rules.
+
+- `list_type`: `blocklist` (system, auto-provisioned per entry type, **immutable** — you can't create or delete these) · `allowlist` · `custom`
+- `entry_type`: `face`, `document`, `phone`, `email`, `ip_address`, `device_fingerprint`, `wallet_address`, `bank_account`, `user`, `business`, `country`, `key`
+
+### 1. List Lists
+
+```
+GET /v3/lists/
+```
+
+Filters: `list_type`, `entry_type`, `limit`, `offset`.
+
+### 2. Create List
+
+```
+POST /v3/lists/
+```
+
+| Body | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | **Yes** | Unique per application |
+| `list_type` | string | **Yes** | `allowlist` or `custom` (blocklists are auto-provisioned) |
+| `entry_type` | string | **Yes** | One of the entry types above |
+| `description` | string | No | Optional description |
+
+### 3. Get / Update / Delete List
+
+```
+GET    /v3/lists/{list_uuid}/
+PATCH  /v3/lists/{list_uuid}/          # body: name, description (system blocklists are immutable)
+DELETE /v3/lists/{list_uuid}/          # allowlist/custom only
+```
+
+### 4. Add an Entry
+
+```
+POST /v3/lists/{list_uuid}/entries/
+```
+
+| Body | Type | Required | Description |
+|---|---|---|---|
+| `value` | string | Conditional | The value to add (phone, email, IP, etc.). Required unless `reference_session_id` is given. |
+| `reference_session_id` | uuid | Conditional | Auto-extracts the value from a session based on the list's `entry_type` (face, document, phone, email, ip_address, device_fingerprint) and marks the underlying model blocklisted. |
+| `reference_object_uuid` | uuid | No | Source entity (transaction / vendor user / business) for traceability |
+| `display_label` | string | No | Human-readable label |
+| `comment` | string | No | Reason / note |
+| `metadata` | object | No | e.g. `{ "reference_type": "vendor_user" }` |
+
+**Blocklist a session's face + document:** add one entry to the face blocklist and one to the document blocklist, each with `reference_session_id`. On future matches Didit raises `FACE_IN_BLOCKLIST` / `ID_DOCUMENT_IN_BLOCKLIST` / `PHONE_NUMBER_IN_BLOCKLIST` / `EMAIL_IN_BLOCKLIST` and auto-declines.
+
+### 5. Upload a Face Entry (no session)
+
+```
+POST /v3/lists/{list_uuid}/entries/face-upload/
+```
+
+For face lists when you have an image but no session. Body: `image` (base64 JPG/PNG/WebP, no `data:` prefix), optional `comment`. Requires a `face`-type list; returns `400` if no/multiple faces are detected.
+
+### 6. List / Delete Entries
+
+```
+GET    /v3/lists/{list_uuid}/entries/        # query: search, limit, offset
+DELETE /v3/lists/{list_uuid}/entries/{entry_uuid}/   # also unblocks the underlying user/business
+```
 
 ---
 
@@ -557,9 +630,9 @@ DELETE /v3/questionnaires/{questionnaire_uuid}/
 
 ---
 
-## Users
+## Users (KYC)
 
-Manage verified individuals identified by `vendor_data`.
+Manage verified individuals identified by `vendor_data`. A user's `status` is a **monitoring status** — `ACTIVE`, `FLAGGED`, or `BLOCKED` (not a verification decision).
 
 ### 1. List Users
 
@@ -569,33 +642,54 @@ GET /v3/users/
 
 | Query | Type | Description |
 |---|---|---|
-| `status` | string | `Approved`, `Declined`, `In Review`, `Pending` |
-| `search` | string | Search by name or identifier |
-| `country` | string | ISO 3166-1 alpha-3 |
-| `limit` | integer | Results per page (max 200) |
+| `limit` | integer | Results per page |
 | `offset` | integer | Pagination offset |
 
 **Response (200):** Paginated list with `vendor_data`, `full_name`, `status`, `session_count`, `issuing_states`, `approved_emails`, `approved_phones`.
 
-### 2. Get User
+### 2. Create User
+
+```
+POST /v3/users/create/
+```
+
+| Body | Type | Required | Description |
+|---|---|---|---|
+| `vendor_data` | string | **Yes** | Your unique identifier |
+| `full_name` | string | No | |
+| `display_name` | string | No | |
+| `date_of_birth` | string | No | `YYYY-MM-DD` |
+| `status` | string | No | `ACTIVE`, `FLAGGED`, or `BLOCKED` |
+| `metadata` | object | No | Custom JSON |
+| `approved_emails` | array | No | Allowlisted emails |
+| `approved_phones` | array | No | Allowlisted phones |
+| `issuing_states` | array | No | Allowed issuing states |
+
+### 3. Get User
 
 ```
 GET /v3/users/{vendor_data}/
 ```
 
-### 3. Update User
+### 4. Update User
 
 ```
 PATCH /v3/users/{vendor_data}/
 ```
 
-| Body | Type | Description |
-|---|---|---|
-| `display_name` | string | Custom display name |
-| `status` | string | Manual override: `Approved`, `Declined`, `In Review` |
-| `metadata` | object | Custom JSON metadata |
+Send only the fields to change: `full_name`, `display_name`, `date_of_birth`, `status` (`ACTIVE`/`FLAGGED`/`BLOCKED`), `metadata`, `approved_emails`, `approved_phones`, `issuing_states`.
 
-### 4. Batch Delete Users
+### 5. Update User Status
+
+```
+PATCH /v3/users/{vendor_data}/update-status/
+```
+
+| Body | Type | Required | Description |
+|---|---|---|---|
+| `status` | string | **Yes** | `ACTIVE`, `FLAGGED`, or `BLOCKED` |
+
+### 6. Batch Delete Users
 
 ```
 POST /v3/users/delete/
@@ -605,6 +699,37 @@ POST /v3/users/delete/
 |---|---|---|
 | `vendor_data_list` | array | List of vendor_data strings |
 | `delete_all` | boolean | Delete all users |
+
+---
+
+## Businesses (KYB)
+
+Manage verified businesses identified by `vendor_data`. Same `ACTIVE`/`FLAGGED`/`BLOCKED` monitoring status as users.
+
+```
+GET    /v3/businesses/                          # list (limit, offset)
+POST   /v3/businesses/create/                   # vendor_data, display_name, legal_name, registration_number, country_code (ISO alpha-2), status, metadata
+GET    /v3/businesses/{vendor_data}/            # get
+PATCH  /v3/businesses/{vendor_data}/            # update (same fields as create)
+PATCH  /v3/businesses/{vendor_data}/update-status/   # body: status (ACTIVE|FLAGGED|BLOCKED)
+POST   /v3/businesses/delete/                   # vendor_data_list[], didit_internal_id_list[], delete_all
+```
+
+**Standalone KYB registry lookup** (no session): `POST /v3/kyb/search/` with `country_code` (required) + `name`/`registration_number` returns candidates; pass a candidate's `kyb_response_id` to `POST /v3/kyb/select/` to pull the full company record.
+
+---
+
+## Transactions (AML monitoring)
+
+Submit transactions for rule evaluation and ongoing monitoring.
+
+```
+GET   /v3/transactions/                  # list (limit, offset)
+POST  /v3/transactions/                  # create
+GET   /v3/transactions/{transaction_id}/ # get + rule-evaluation result
+```
+
+Create body — required: `transaction_id`, `transaction_category` (`finance`, `kyc`, `travel_rule`, `user_event`, `audit_trail_event`, `gambling_bet`, `gambling_limit_change`, `gambling_bonus_change`), `transaction_details` (object), `subject` (object). Optional: `counterparty`, `transaction_at`, `time_zone`, `custom_properties` (referenced in rules as `custom_values.<key>`), `travel_rule_details`, `network_snapshot`, `include_crypto_screening`.
 
 ---
 
@@ -652,82 +777,74 @@ Present `checkout_session_url` to the user for payment.
 
 ---
 
-## Webhook Configuration
+## Customization (Branding)
 
-Set up webhooks **programmatically** — no console needed.
-
-### 1. Get Webhook Configuration
+Brand the hosted verification UI with your own logos.
 
 ```
-GET /v3/webhook/
+GET   /v3/customization/      # current branding
+PATCH /v3/customization/      # multipart/form-data
 ```
 
-**Response (200):**
+Update fields (image files, `multipart/form-data`): `image_square`, `image_rectangular`, `image_favicon`. Send only the images you want to change.
 
-```json
-{
-  "webhook_url": "https://myapp.com/webhooks/didit",
-  "webhook_version": "v3",
-  "secret_shared_key": "whsec_a1b2c3d4e5f6g7h8i9j0...",
-  "capture_method": "both",
-  "data_retention_months": null
-}
-```
+---
 
-| Field | Type | Description |
-|---|---|---|
-| `webhook_url` | string/null | URL where notifications are sent (`null` if not configured) |
-| `webhook_version` | string | `"v1"`, `"v2"`, or `"v3"` (v3 recommended) |
-| `secret_shared_key` | string | HMAC secret for verifying webhook signatures |
-| `capture_method` | string | `"mobile"`, `"desktop"`, or `"both"` |
-| `data_retention_months` | integer/null | Months to retain session data (`null` = unlimited) |
+## Webhook Destinations
 
-### 2. Update Webhook Configuration
+Configure webhooks **programmatically** — no console needed. You can register **multiple destinations**, each with its own URL, payload version, enabled flag, subscribed events, and signing secret.
+
+### 1. List Destinations
 
 ```
-PATCH /v3/webhook/
+GET /v3/webhook/destinations/
+```
+
+**Response (200):** Array of destinations, each with `uuid`, `label`, `url`, `enabled`, `webhook_version`, `subscribed_events`, and the signing `secret`.
+
+### 2. Create Destination
+
+```
+POST /v3/webhook/destinations/
 ```
 
 | Body | Type | Required | Description |
 |---|---|---|---|
-| `webhook_url` | string/null | No | URL for notifications (set `null` to disable) |
-| `webhook_version` | string | No | `"v1"`, `"v2"`, or `"v3"` |
-| `rotate_secret_key` | boolean | No | `true` to generate a new secret (old one immediately invalidated) |
-| `capture_method` | string | No | `"mobile"`, `"desktop"`, or `"both"` |
-| `data_retention_months` | integer/null | No | 1–120 months, or `null` for unlimited |
+| `label` | string | **Yes** | Human-readable name |
+| `url` | string | **Yes** | HTTPS endpoint to receive events |
+| `enabled` | boolean | No | Whether the destination receives events (default `true`) |
+| `webhook_version` | string | No | `"v1"`, `"v2"`, or `"v3"` (v3 recommended) |
+| `subscribed_events` | array | No | Event types to deliver (omit to receive all) |
 
-**Example — set webhook URL:**
+**Response (201):** the created destination, including the `secret` used to verify the `X-Signature` header. Store it securely.
+
+```python
+dest = requests.post(
+    "https://verification.didit.me/v3/webhook/destinations/",
+    headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
+    json={"label": "Prod", "url": "https://myapp.com/webhooks/didit",
+          "webhook_version": "v3", "subscribed_events": ["status.updated", "data.updated"]},
+).json()
+secret = dest["secret"]
+```
+
+### 3. Get / Update / Delete Destination
+
+```
+GET    /v3/webhook/destinations/{destination_uuid}/   # includes the signing secret
+PATCH  /v3/webhook/destinations/{destination_uuid}/   # label, url, enabled, webhook_version, subscribed_events
+DELETE /v3/webhook/destinations/{destination_uuid}/   # stop delivering to this endpoint
+```
+
+**Example — disable a destination without deleting it:**
 
 ```python
 requests.patch(
-    "https://verification.didit.me/v3/webhook/",
+    f"https://verification.didit.me/v3/webhook/destinations/{dest['uuid']}/",
     headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
-    json={"webhook_url": "https://myapp.com/webhooks/didit", "webhook_version": "v3"},
+    json={"enabled": False},
 )
 ```
-
-**Example — rotate secret:**
-
-```python
-r = requests.patch(
-    "https://verification.didit.me/v3/webhook/",
-    headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
-    json={"rotate_secret_key": True},
-)
-new_secret = r.json()["secret_shared_key"]
-```
-
-**Example — disable webhooks:**
-
-```python
-requests.patch(
-    "https://verification.didit.me/v3/webhook/",
-    headers={"x-api-key": API_KEY, "Content-Type": "application/json"},
-    json={"webhook_url": None},
-)
-```
-
-**Response (200):** Same shape as GET — returns the updated configuration.
 
 ---
 
@@ -748,11 +865,13 @@ Didit sends `POST` requests to your webhook URL when session status changes. Ret
 }
 ```
 
-**Event types:** `status.updated` (status change), `data.updated` (KYC/POA data manually updated).
+**Event types:** `status.updated` (session status change), `data.updated` (KYC/POA data manually updated), `user.created`, `user.updated`, `business.created`, `business.updated`, `transaction.created`, `transaction.updated`. Subscribe a destination to specific events via `subscribed_events`, or omit it to receive all.
 
-### Signature Verification (V2 — recommended)
+**Idempotency:** dedupe on `session_id` + `status` + `webhook_type` (not `timestamp`). The `event_id` is stable across retries.
 
-Two headers: `X-Signature-V2` (HMAC-SHA256 hex) and `X-Timestamp` (Unix seconds).
+### Signature Verification (recommended)
+
+Two headers: `X-Signature` (HMAC-SHA256 hex) and `X-Timestamp` (Unix seconds). The canonical string is the JSON body with floats shortened, keys sorted, compact separators, and `ensure_ascii=False`; the signed message is `{timestamp}:{canonical}`.
 
 ```python
 import hashlib, hmac, time, json
@@ -804,11 +923,11 @@ def verify_webhook_simple(session_id, status, webhook_type, timestamp, signature
 ### Full KYC Onboarding
 
 ```
-1. POST /programmatic/register/      → register
-2. POST /programmatic/verify-email/  → get api_key
-3. POST /v3/workflows/               → create KYC workflow
-4. PATCH /v3/webhook/                → set webhook_url + webhook_version "v3"
-5. POST /v3/session/                 → create session → get URL
+1. POST /programmatic/register/          → register
+2. POST /programmatic/verify-email/      → get api_key
+3. POST /v3/workflows/                    → create KYC workflow (features array)
+4. POST /v3/webhook/destinations/         → register webhook URL + version "v3"
+5. POST /v3/session/                      → create session → get URL
 6. User completes verification at URL
 7. Webhook fires → GET /v3/session/{id}/decision/ → read results
 ```
@@ -818,7 +937,8 @@ def verify_webhook_simple(session_id, status, webhook_type, timestamp, signature
 ```
 1. Webhook: status "In Review"
 2. GET /v3/session/{id}/decision/   → inspect results
-3. If fraud: PATCH update-status → Declined + POST /v3/blocklist/add/
+3. If fraud: PATCH update-status → Declined, then
+   POST /v3/lists/{blocklist_uuid}/entries/ with reference_session_id
    If legit: PATCH update-status → Approved
 ```
 
@@ -865,9 +985,9 @@ python scripts/setup_account.py login you@gmail.com 'MyStr0ng!Pass'
 ```bash
 export DIDIT_API_KEY="your_key"
 python scripts/manage_workflows.py list
-python scripts/manage_workflows.py create --label "My KYC" --type kyc --liveness --face-match
+python scripts/manage_workflows.py create --label "My KYC" --liveness --face-match
 python scripts/manage_workflows.py get <uuid>
-python scripts/manage_workflows.py update <uuid> --enable-aml --aml-threshold 75
+python scripts/manage_workflows.py update <uuid> --label "Renamed KYC"
 python scripts/manage_workflows.py delete <uuid>
 ```
 

@@ -6,7 +6,7 @@ description: >
   bank statements, government documents, extract address from documents, verify
   residential address, implement address verification, or perform PoA checks
   using Didit. Supports OCR extraction, geocoding, name matching, and multi-page documents.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -175,7 +175,7 @@ const response = await fetch("https://verification.didit.me/v3/poa/", {
 | `poa_formatted_address` | string | Formatted address |
 | `poa_parsed_address` | object | `{street_1, street_2, city, region, postal_code}` |
 | `poa_parsed_address.raw_results.geometry.location` | object | `{lat, lng}` geocoded coordinates |
-| `document_file` | string | Temporary URL (expires **60 min**) |
+| `document_file` | string | Temporary URL (expires **4 hours**) |
 | `warnings` | array | `{risk, log_type, short_description, long_description}` |
 
 ---
