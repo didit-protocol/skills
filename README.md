@@ -15,18 +15,18 @@
 
 | Skill | v | What it does |
 |---|---|---|
-| [**didit-verification-management**](skills/didit-verification-management/) | 4.1.0 | **The hub** — account setup, sessions, workflows, questionnaires, users, billing, blocklist, webhook config. 45+ endpoints. |
-| [**didit-kyc-onboarding**](skills/didit-kyc-onboarding/) | 1.0.0 | **KYC recipe** — creates a KYC workflow + session for full human identity verification (ID scan + selfie + face match). |
+| [**didit-verification-management**](skills/didit-verification-management/) | 5.0.0 | **The hub** — account setup, sessions, bulk imports, workflows, questionnaires, users (KYC), businesses (KYB), transactions, billing, customization, lists (block/allow), webhook destinations. 60+ endpoints. |
+| [**didit-kyc-onboarding**](skills/didit-kyc-onboarding/) | 1.1.0 | **KYC recipe** — creates a KYC workflow + session for full human identity verification (ID scan + selfie + face match). |
 | [**didit-id-document-verification**](skills/didit-id-document-verification/) | 1.2.0 | Verifies passports, ID cards, driver's licenses. OCR, MRZ, NFC. 4000+ document types, 220+ countries. |
 | [**didit-liveness-detection**](skills/didit-liveness-detection/) | 1.2.0 | Detects liveness from a single selfie. 99.9% accuracy. Anti-spoofing for print, screen, and mask attacks. |
-| [**didit-face-match**](skills/didit-face-match/) | 1.2.0 | Compares two faces. Returns similarity score 0–100. Selfie-to-document matching. |
-| [**didit-face-search**](skills/didit-face-search/) | 1.0.0 | Searches for matching faces across all verified sessions. 1:N deduplication and blocklist checks. |
-| [**didit-biometric-age-estimation**](skills/didit-biometric-age-estimation/) | 1.0.0 | Estimates age from a selfie. Built-in liveness check. Configurable thresholds for age-gated services. |
+| [**didit-face-match**](skills/didit-face-match/) | 1.4.0 | Compares two faces. Returns similarity score 0–100. Selfie-to-document matching. |
+| [**didit-face-search**](skills/didit-face-search/) | 1.2.0 | Searches for matching faces across all verified sessions. 1:N deduplication and blocklist checks. |
+| [**didit-biometric-age-estimation**](skills/didit-biometric-age-estimation/) | 1.1.0 | Estimates age from a selfie. Built-in liveness check. Configurable thresholds for age-gated services. |
 | [**didit-email-verification**](skills/didit-email-verification/) | 1.2.0 | Verifies email addresses via OTP. Detects breached, disposable, and undeliverable addresses. |
-| [**didit-phone-verification**](skills/didit-phone-verification/) | 1.2.0 | Verifies phone numbers via SMS, WhatsApp, or Telegram OTP. Detects VoIP and disposable numbers. |
-| [**didit-aml-screening**](skills/didit-aml-screening/) | 1.0.0 | Screens against 1300+ sanctions, PEP, and adverse media databases. Dual-score risk system. |
-| [**didit-proof-of-address**](skills/didit-proof-of-address/) | 1.0.0 | Verifies utility bills, bank statements, government documents. OCR extraction with geocoding. |
-| [**didit-database-validation**](skills/didit-database-validation/) | 1.0.0 | Validates identity against government databases in 18 countries. |
+| [**didit-phone-verification**](skills/didit-phone-verification/) | 1.3.0 | Verifies phone numbers via SMS, WhatsApp, or Telegram OTP. Detects VoIP and disposable numbers. |
+| [**didit-aml-screening**](skills/didit-aml-screening/) | 1.2.0 | Screens against 1300+ sanctions, PEP, and adverse media databases. Dual-score risk system. |
+| [**didit-proof-of-address**](skills/didit-proof-of-address/) | 1.2.0 | Verifies utility bills, bank statements, government documents. OCR extraction with geocoding. |
+| [**didit-database-validation**](skills/didit-database-validation/) | 1.2.0 | Validates identity against government databases in 18 countries. |
 | [**didit-transaction-monitoring**](skills/didit-transaction-monitoring/) | 1.0.0 | Real-time transaction monitoring (KYT), crypto wallet screening, and the FATF / EU TFR Travel Rule: rules + scoring, wallet-ownership proofs, SDK transaction tokens. |
 
 > **Naming convention:** Domain-term names that match how users naturally ask — `face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`. Lowercase kebab-case, `didit-` namespaced. Every standalone skill includes a **Getting Started** section for account creation + credits.
@@ -38,11 +38,11 @@
 Agents can go from nothing to a live verification link in **5 API calls**:
 
 ```
-1. POST /programmatic/register/      → register with any email
-2. POST /programmatic/verify-email/   → verify OTP, get api_key
-3. POST /v3/workflows/               → create verification workflow
-4. PATCH /v3/webhook/                 → set webhook URL (no console needed)
-5. POST /v3/session/                  → create session → get verification URL
+1. POST /programmatic/register/           → register with any email
+2. POST /programmatic/verify-email/        → verify OTP, get api_key
+3. POST /v3/workflows/                     → create workflow (features array)
+4. POST /v3/webhook/destinations/          → register webhook URL (no console needed)
+5. POST /v3/session/                       → create session → get verification URL
 ```
 
 ---
@@ -130,13 +130,18 @@ export DIDIT_WEBHOOK_SECRET="your_secret"      # from Console → API & Webhooks
 | Category | Skill | Endpoints |
 |---|---|---|
 | Account Setup | `didit-verification-management` | `POST /programmatic/register/`, `POST /programmatic/verify-email/`, `POST /programmatic/login/`, `GET /organizations/me/`, `GET /organizations/me/{org_id}/applications/{app_id}/` |
-| KYC Flow | `didit-kyc-onboarding` | `POST /v3/workflows/` (KYC type), `POST /v3/session/`, `GET /v3/session/{id}/decision/`, `PATCH /v3/session/{id}/update-status/` |
+| KYC Flow | `didit-kyc-onboarding` | `POST /v3/workflows/` (features array), `POST /v3/session/`, `GET /v3/session/{id}/decision/`, `PATCH /v3/session/{id}/update-status/` |
 | Workflows | `didit-verification-management` | `GET /v3/workflows/`, `POST /v3/workflows/`, `GET /v3/workflows/{id}/`, `PATCH /v3/workflows/{id}/`, `DELETE /v3/workflows/{id}/` |
-| Sessions & Blocklist | `didit-verification-management` | `POST /v3/session/`, `GET /v3/session/{id}/decision/`, `GET /v3/sessions/`, `DELETE /v3/session/{id}/delete/`, `POST /v3/sessions/delete/`, `PATCH /v3/session/{id}/update-status/`, `GET /v3/session/{id}/generate-pdf`, `POST /v3/session/{id}/share/`, `POST /v3/session/import-shared/`, `GET /v3/sessions/{id}/reviews/`, `POST /v3/sessions/{id}/reviews/`, `POST /v3/blocklist/add/`, `POST /v3/blocklist/remove/`, `GET /v3/blocklist/` |
+| Sessions | `didit-verification-management` | `POST /v3/session/`, `GET /v3/session/{id}/decision/`, `GET /v3/sessions/`, `DELETE /v3/session/{id}/delete/`, `POST /v3/sessions/delete/`, `PATCH /v3/session/{id}/update-status/`, `PATCH /v3/session/{id}/update-data/`, `PATCH /v3/session/{id}/update-poa-data/`, `GET /v3/session/{id}/generate-pdf`, `POST /v3/session/{id}/share/`, `POST /v3/session/import-shared/`, `GET`+`POST /v3/sessions/{id}/reviews/` |
+| Bulk Import | `didit-verification-management` | `POST /v3/session/imports/`, `GET /v3/session/imports/template/`, `GET /v3/session/imports/{id}/`, `GET /v3/session/imports/{id}/errors/` |
+| Lists (block/allow/custom) | `didit-verification-management` | `GET`+`POST /v3/lists/`, `GET`+`PATCH`+`DELETE /v3/lists/{id}/`, `GET`+`POST /v3/lists/{id}/entries/`, `POST /v3/lists/{id}/entries/face-upload/`, `DELETE /v3/lists/{id}/entries/{entry}/` |
 | Questionnaires | `didit-verification-management` | `GET /v3/questionnaires/`, `POST /v3/questionnaires/`, `GET /v3/questionnaires/{id}/`, `PATCH /v3/questionnaires/{id}/`, `DELETE /v3/questionnaires/{id}/` |
-| Users | `didit-verification-management` | `GET /v3/users/`, `GET /v3/users/{vendor_data}/`, `PATCH /v3/users/{vendor_data}/`, `POST /v3/users/delete/` |
+| Users (KYC) | `didit-verification-management` | `GET /v3/users/`, `POST /v3/users/create/`, `GET /v3/users/{vendor_data}/`, `PATCH /v3/users/{vendor_data}/`, `PATCH /v3/users/{vendor_data}/update-status/`, `POST /v3/users/delete/` |
+| Businesses (KYB) | `didit-verification-management` | `GET /v3/businesses/`, `POST /v3/businesses/create/`, `GET`+`PATCH /v3/businesses/{vendor_data}/`, `PATCH /v3/businesses/{vendor_data}/update-status/`, `POST /v3/businesses/delete/`, `POST /v3/kyb/search/`, `POST /v3/kyb/select/` |
+| Transactions | `didit-verification-management` | `GET`+`POST /v3/transactions/`, `GET /v3/transactions/{id}/` |
 | Billing | `didit-verification-management` | `GET /v3/billing/balance/`, `POST /v3/billing/top-up/` |
-| Webhook Config | `didit-verification-management` | `GET /v3/webhook/`, `PATCH /v3/webhook/` |
+| Customization | `didit-verification-management` | `GET`+`PATCH /v3/customization/` |
+| Webhook Destinations | `didit-verification-management` | `GET`+`POST /v3/webhook/destinations/`, `GET`+`PATCH`+`DELETE /v3/webhook/destinations/{id}/` |
 | ID Verification | `didit-id-document-verification` | `POST /v3/id-verification/` |
 | Liveness | `didit-liveness-detection` | `POST /v3/passive-liveness/` |
 | Face Match | `didit-face-match` | `POST /v3/face-match/` |
@@ -148,7 +153,7 @@ export DIDIT_WEBHOOK_SECRET="your_secret"      # from Console → API & Webhooks
 | Proof of Address | `didit-proof-of-address` | `POST /v3/poa/` |
 | Database Validation | `didit-database-validation` | `POST /v3/database-validation/` |
 
-**51 endpoints total**, all tested.
+**60+ endpoints total** across the platform.
 
 ---
 
@@ -182,7 +187,7 @@ skills/                              ← 12 skills (1 hub + 1 KYC recipe + 10 st
 ├── didit-aml-screening/              SKILL.md + scripts/screen_aml.py
 ├── didit-proof-of-address/           SKILL.md + scripts/verify_address.py
 └── didit-database-validation/        SKILL.md + scripts/validate_database.py
-tests/test_all_skills.py            ← 51 endpoint test suite
+tests/test_all_skills.py            ← endpoint test suite
 ```
 
 Each `SKILL.md` follows the **three-tier information architecture**:

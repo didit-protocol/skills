@@ -4,6 +4,33 @@ All notable changes to the Didit Agent Skills collection will be documented in t
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-07-31
+
+Accuracy sync with the audited Didit OpenAPI spec. Corrects API contracts that would
+return `400`/`404` against production and expands the hub to the full platform surface.
+
+### Changed (breaking — corrected request contracts)
+- **didit-verification-management (4.1.0 → 5.0.0):**
+  - **Workflow creation/update** now uses the required ordered `features` array (uppercase feature values) instead of `workflow_type` + flat `is_*_enabled` flags. The create API is a strict whitelist and rejects unknown keys (including `workflow_type`) with `400`. `scripts/manage_workflows.py` rewritten accordingly.
+  - **Webhooks**: replaced the removed singular `GET/PATCH /v3/webhook/` config (with `secret_shared_key`/`rotate_secret_key`) with the **webhook destinations** model (`/v3/webhook/destinations/` CRUD; multiple destinations, each with its own URL, version, events, and signing secret).
+  - **Lists**: replaced the removed `/v3/blocklist/add|remove` + `GET /v3/blocklist/` with the **Lists API** (`/v3/lists/` and `/v3/lists/{id}/entries/`, including `face-upload`).
+  - **Users**: `status` corrected to the monitoring enum `ACTIVE`/`FLAGGED`/`BLOCKED` (was `Approved`/`Declined`/`Pending`); added `POST /v3/users/create/` and `PATCH .../update-status/` and the full update field set.
+- **didit-kyc-onboarding (1.0.0 → 1.1.0):** workflow creation switched to the `features` array; "block fraudulent users" switched from `/v3/blocklist/add/` to the Lists API; `scripts/run_kyc.py` updated.
+- **didit-database-validation (1.1.0 → 1.2.0):** `issuing_state` (ISO alpha-2) is the required field; removed the fabricated universal `id_number`; documented the real optional fields and country-specific number fields; country table converted alpha-3 → alpha-2. `scripts/validate_database.py` updated.
+
+### Changed (corrections)
+- Presigned image/document URL expiry corrected from "60 minutes" to **4 hours** across face-match, face-search, age-estimation, proof-of-address, and the hub.
+- PDF generation rate limit corrected to **50/min**; session statuses completed (`Kyc Expired`, `Awaiting User`; removed the non-existent `Pending`).
+- AML status `Rejected` → `Declined` (aml-screening).
+- Removed an internal library name from a skill (confidentiality).
+- Minor version bumps for the corrected standalone skills: face-match → 1.4.0, face-search → 1.2.0, biometric-age-estimation → 1.1.0, proof-of-address → 1.2.0, aml-screening → 1.2.0.
+
+### Added
+- **didit-verification-management** now documents **Businesses (KYB)**, **Transactions** (AML monitoring), **Bulk Import** (canonical schema; no provider request field), **Customization** (branding), and reviewer **session data overrides** (`update-data` / `update-poa-data`).
+
+### Tests
+- `tests/test_all_skills.py` updated to the corrected contracts (Lists API, webhook destinations CRUD, `features`-array workflow creation, database-validation `issuing_state`).
+
 ## [4.2.0] - 2026-07-09
 
 ### Added

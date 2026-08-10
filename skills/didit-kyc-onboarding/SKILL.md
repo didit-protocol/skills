@@ -7,7 +7,7 @@ description: >
   session for a user, set up ID + liveness + face match verification, or implement user
   onboarding with document and biometric checks. Creates a KYC workflow, generates a
   verification URL, and retrieves the decision.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -68,11 +68,12 @@ BASE = "https://verification.didit.me/v3"
 # 1. Create a KYC workflow (one-time setup — reuse the workflow_id for all users)
 workflow = requests.post(f"{BASE}/workflows/", headers=headers, json={
     "workflow_label": "KYC Onboarding",
-    "workflow_type": "kyc",
-    "is_liveness_enabled": True,
-    "is_face_match_enabled": True,
-    "face_match_score_decline_threshold": 50,
     "max_retry_attempts": 3,
+    "features": [
+        {"feature": "OCR"},
+        {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+        {"feature": "FACE_MATCH", "config": {"face_match_score_decline_threshold": 50}},
+    ],
 }).json()
 workflow_id = workflow["uuid"]
 
@@ -120,13 +121,15 @@ POST https://verification.didit.me/v3/workflows/
 
 ### Recommended KYC Configuration
 
-| Parameter | Value | Why |
+The workflow body uses a `features` array (run in order). Put `OCR` first so downstream features can use the document data.
+
+| Field | Value | Why |
 |---|---|---|
-| `workflow_type` | `"kyc"` | Full KYC template with ID + selfie |
-| `is_liveness_enabled` | `true` | Prevents spoofing (printed photos, screens) |
-| `is_face_match_enabled` | `true` | Compares selfie to document photo |
-| `face_match_score_decline_threshold` | `50` | Match below 50% → auto-decline |
-| `is_aml_enabled` | `false` | Set `true` for sanctions/PEP screening (+cost) |
+| `workflow_label` | `"KYC Onboarding"` | Display name (max 50 chars) |
+| `features[].feature` | `"OCR"`, `"LIVENESS"`, `"FACE_MATCH"` | Full KYC: ID + selfie + match |
+| `LIVENESS` → `config.face_liveness_method` | `"PASSIVE"` | Anti-spoofing method (uppercase) |
+| `FACE_MATCH` → `config.face_match_score_decline_threshold` | `50` | Match below 50% → auto-decline |
+| (add) `{"feature": "AML"}` | — | Sanctions/PEP screening (+cost) |
 | `max_retry_attempts` | `3` | User can retry 3 times on failure |
 
 ### Response
@@ -135,7 +138,6 @@ POST https://verification.didit.me/v3/workflows/
 {
   "uuid": "d8d2fa2d-c69c-471c-b7bc-bc71512b43ef",
   "workflow_label": "KYC Onboarding",
-  "workflow_type": "kyc",
   "features": ["ocr", "liveness", "face_match"],
   "total_price": "0.10",
   "workflow_url": "https://verify.didit.me/..."
@@ -283,13 +285,19 @@ requests.patch(f"{BASE}/session/{session_id}/update-status/",
 
 ### Block Fraudulent Users
 
+Add an entry to a system blocklist via the Lists API. Reference the session to auto-extract and block the underlying face/document/phone/email:
+
 ```python
-requests.post(f"{BASE}/blocklist/add/",
+# Find the face blocklist (auto-provisioned), then add the session's face/document
+lists = requests.get(f"{BASE}/lists/", headers=headers,
+                     params={"list_type": "blocklist", "entry_type": "face"}).json()
+list_uuid = lists["results"][0]["uuid"]
+requests.post(f"{BASE}/lists/{list_uuid}/entries/",
     headers=headers,
-    json={"session_id": session_id, "blocklist_face": True, "blocklist_document": True})
+    json={"reference_session_id": session_id})
 ```
 
-**API Reference:** https://docs.didit.me/sessions-api/blocklist/add
+**API Reference:** https://docs.didit.me/management-api/lists/create-entry
 
 ### Generate PDF Report
 
@@ -310,11 +318,13 @@ Add sanctions/PEP screening to catch high-risk individuals:
 
 ```python
 requests.post(f"{BASE}/workflows/", headers=headers, json={
-    "workflow_type": "kyc",
-    "is_liveness_enabled": True,
-    "is_face_match_enabled": True,
-    "is_aml_enabled": True,
-    "aml_decline_threshold": 80,
+    "workflow_label": "KYC + AML",
+    "features": [
+        {"feature": "OCR"},
+        {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+        {"feature": "FACE_MATCH"},
+        {"feature": "AML"},
+    ],
 })
 ```
 
@@ -324,11 +334,14 @@ Add contact verification to the flow:
 
 ```python
 requests.post(f"{BASE}/workflows/", headers=headers, json={
-    "workflow_type": "kyc",
-    "is_liveness_enabled": True,
-    "is_face_match_enabled": True,
-    "is_phone_verification_enabled": True,
-    "is_email_verification_enabled": True,
+    "workflow_label": "KYC + Contact",
+    "features": [
+        {"feature": "OCR"},
+        {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+        {"feature": "FACE_MATCH"},
+        {"feature": "PHONE_VERIFICATION"},
+        {"feature": "EMAIL_VERIFICATION"},
+    ],
 })
 ```
 
@@ -338,10 +351,13 @@ For passports with NFC chips — highest assurance:
 
 ```python
 requests.post(f"{BASE}/workflows/", headers=headers, json={
-    "workflow_type": "kyc",
-    "is_liveness_enabled": True,
-    "is_face_match_enabled": True,
-    "is_nfc_enabled": True,
+    "workflow_label": "KYC + NFC",
+    "features": [
+        {"feature": "OCR"},
+        {"feature": "NFC"},
+        {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+        {"feature": "FACE_MATCH"},
+    ],
 })
 ```
 

@@ -6,7 +6,7 @@ description: >
   search for matching faces, check if a face already exists in the system, prevent
   duplicate registrations, search against blocklist, or implement facial deduplication
   using Didit. Returns ranked matches with similarity percentages.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -174,7 +174,7 @@ const response = await fetch("https://verification.didit.me/v3/face-search/", {
 | `user_details.name` | string | Name from the matching session |
 | `user_details.document_type` | string | Document type used |
 | `user_details.document_number` | string | Partially masked document number |
-| `match_image_url` | string | Temporary URL (expires **60 min**) |
+| `match_image_url` | string | Temporary URL (expires **4 hours**) |
 | `status` | string | Status of the matching session |
 | `is_blocklisted` | boolean | Whether the match is from the blocklist |
 
@@ -234,7 +234,7 @@ Warning severity: `error` (→ Declined), `warning` (→ In Review), `informatio
 5. All Approved → verified, unique, real user
 ```
 
-> **Security:** Match image URLs expire after 60 minutes. Store only `session_id` and `similarity_percentage` — minimize biometric data on your servers.
+> **Security:** Match image URLs expire after 4 hours. Store only `session_id` and `similarity_percentage` — minimize biometric data on your servers.
 
 ---
 

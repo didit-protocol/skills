@@ -2,9 +2,9 @@
 """
 Comprehensive test suite for all 12 Didit agent skills (1 hub + 1 KYC + 10 standalone).
 Tests API connectivity, authentication, and basic request/response for each endpoint.
-Covers 51 endpoints across identity verification, KYC flows, account setup, sessions,
-workflows, questionnaires, users, billing, webhook configuration, and 10 standalone
-verification APIs.
+Covers identity verification, KYC flows, account setup, sessions, workflows (features
+array), questionnaires, users, billing, lists (block/allow), webhook destinations, and
+10 standalone verification APIs.
 
 Usage:
     export DIDIT_API_KEY="your_api_key"
@@ -267,10 +267,10 @@ def test_database_validation():
             f"{BASE_URL}/v3/database-validation/",
             headers=HEADERS_JSON,
             json={
-                "id_number": "12345678",
+                "issuing_state": "PE",
+                "personal_number": "12345678",
                 "first_name": "Test",
                 "last_name": "User",
-                "issuing_state": "PER",
                 "vendor_data": "skill-test-suite",
             },
             timeout=30,
@@ -430,45 +430,34 @@ def test_sessions():
 # Blocklist tests (existing)
 # ---------------------------------------------------------------------------
 
-def test_blocklist():
-    print("\n12. Blocklist")
+def test_lists():
+    print("\n12. Lists (block/allow/custom)")
 
     try:
         r = requests.get(
-            f"{BASE_URL}/v3/blocklist/",
+            f"{BASE_URL}/v3/lists/",
             headers=HEADERS_KEY,
             timeout=30,
         )
         body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
         count = len(body) if isinstance(body, list) else body.get("count", "N/A")
-        log("blocklist", "GET /v3/blocklist/ (list)", r.status_code,
+        log("lists", "GET /v3/lists/ (list)", r.status_code,
             f"items={count}", r.status_code == 200)
     except Exception as e:
-        log("blocklist", "GET /v3/blocklist/ (list)", "ERR", str(e), False)
+        log("lists", "GET /v3/lists/ (list)", "ERR", str(e), False)
 
+    # Add an entry to a non-existent list — confirms auth + routing (expect 400/404).
     try:
         r = requests.post(
-            f"{BASE_URL}/v3/blocklist/add/",
+            f"{BASE_URL}/v3/lists/00000000-0000-0000-0000-000000000000/entries/",
             headers=HEADERS_JSON,
-            json={"session_id": "00000000-0000-0000-0000-000000000000", "blocklist_face": True},
+            json={"reference_session_id": "00000000-0000-0000-0000-000000000000"},
             timeout=30,
         )
-        log("blocklist", "POST /v3/blocklist/add/", r.status_code,
-            "auth OK (expected 400/404 for dummy session)", r.status_code in [200, 400, 404])
+        log("lists", "POST /v3/lists/{uuid}/entries/", r.status_code,
+            "auth OK (expected 400/404 for dummy list)", r.status_code in [200, 201, 400, 404])
     except Exception as e:
-        log("blocklist", "POST /v3/blocklist/add/", "ERR", str(e), False)
-
-    try:
-        r = requests.post(
-            f"{BASE_URL}/v3/blocklist/remove/",
-            headers=HEADERS_JSON,
-            json={"session_id": "00000000-0000-0000-0000-000000000000", "unblock_face": True},
-            timeout=30,
-        )
-        log("blocklist", "POST /v3/blocklist/remove/", r.status_code,
-            "auth OK (expected 400/404 for dummy session)", r.status_code in [200, 400, 404])
-    except Exception as e:
-        log("blocklist", "POST /v3/blocklist/remove/", "ERR", str(e), False)
+        log("lists", "POST /v3/lists/{uuid}/entries/", "ERR", str(e), False)
 
 
 # ---------------------------------------------------------------------------
@@ -578,8 +567,10 @@ def test_workflows():
             headers=HEADERS_JSON,
             json={
                 "workflow_label": "Test Suite Workflow",
-                "workflow_type": "kyc",
-                "is_liveness_enabled": True,
+                "features": [
+                    {"feature": "OCR"},
+                    {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+                ],
             },
             timeout=30,
         )
@@ -833,20 +824,20 @@ def test_kyc_flow():
             headers=HEADERS_JSON,
             json={
                 "workflow_label": "KYC Test Suite",
-                "workflow_type": "kyc",
-                "is_liveness_enabled": True,
-                "is_face_match_enabled": True,
-                "face_match_score_decline_threshold": 50,
+                "features": [
+                    {"feature": "OCR"},
+                    {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}},
+                    {"feature": "FACE_MATCH", "config": {"face_match_score_decline_threshold": 50}},
+                ],
                 "max_retry_attempts": 3,
             },
             timeout=30,
         )
         body = r.json()
         kyc_workflow_id = body.get("uuid", None)
-        wf_type = body.get("workflow_type", "N/A")
         price = body.get("total_price", "N/A")
         log("kyc-flow", "POST /v3/workflows/ (create KYC workflow)", r.status_code,
-            f"uuid={kyc_workflow_id}, type={wf_type}, price=${price}", r.status_code in [200, 201])
+            f"uuid={kyc_workflow_id}, price=${price}", r.status_code in [200, 201])
     except Exception as e:
         log("kyc-flow", "POST /v3/workflows/ (create KYC workflow)", "ERR", str(e), False)
 
@@ -921,76 +912,66 @@ def test_kyc_flow():
 # ---------------------------------------------------------------------------
 
 def test_webhook_config():
-    print("\n20. Webhook Configuration (GET/PATCH /v3/webhook/)")
-    original_url = None
+    print("\n20. Webhook Destinations (CRUD /v3/webhook/destinations/)")
+    created_uuid = None
 
     try:
-        # GET current webhook config
+        # LIST destinations
         r = requests.get(
-            f"{BASE_URL}/v3/webhook/",
+            f"{BASE_URL}/v3/webhook/destinations/",
             headers=HEADERS_KEY,
             timeout=30,
         )
         assert r.status_code == 200, f"Expected 200, got {r.status_code}"
         data = r.json()
-        original_url = data.get("webhook_url")
-        has_secret = bool(data.get("secret_shared_key"))
-        version = data.get("webhook_version", "?")
-        capture = data.get("capture_method", "?")
-        log("webhook-config", "GET /v3/webhook/ (get config)", r.status_code,
-            f"url={original_url}, version={version}, capture={capture}, has_secret={has_secret}", True)
+        count = len(data) if isinstance(data, list) else data.get("count", "N/A")
+        log("webhook-destinations", "GET /v3/webhook/destinations/ (list)", r.status_code,
+            f"destinations={count}", True)
     except Exception as e:
-        log("webhook-config", "GET /v3/webhook/ (get config)", "ERR", str(e), False)
+        log("webhook-destinations", "GET /v3/webhook/destinations/ (list)", "ERR", str(e), False)
         return
 
     try:
-        # PATCH — set a test webhook URL
-        test_url = "https://httpbin.org/post"
-        r = requests.patch(
-            f"{BASE_URL}/v3/webhook/",
+        # CREATE a test destination
+        r = requests.post(
+            f"{BASE_URL}/v3/webhook/destinations/",
             headers=HEADERS_JSON,
-            json={"webhook_url": test_url, "webhook_version": "v3"},
+            json={"label": "Test Suite", "url": "https://httpbin.org/post", "webhook_version": "v3"},
             timeout=30,
         )
-        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        assert r.status_code in (200, 201), f"Expected 201, got {r.status_code}"
         data = r.json()
-        assert data.get("webhook_url") == test_url
-        assert data.get("webhook_version") == "v3"
-        log("webhook-config", "PATCH /v3/webhook/ (set url)", r.status_code,
-            f"url={data['webhook_url']}, version={data['webhook_version']}", True)
+        created_uuid = data.get("uuid")
+        has_secret = bool(data.get("secret"))
+        log("webhook-destinations", "POST /v3/webhook/destinations/ (create)", r.status_code,
+            f"uuid={created_uuid}, has_secret={has_secret}", True)
     except Exception as e:
-        log("webhook-config", "PATCH /v3/webhook/ (set url)", "ERR", str(e), False)
+        log("webhook-destinations", "POST /v3/webhook/destinations/ (create)", "ERR", str(e), False)
 
-    try:
-        # PATCH — rotate secret key
-        r = requests.patch(
-            f"{BASE_URL}/v3/webhook/",
-            headers=HEADERS_JSON,
-            json={"rotate_secret_key": True},
-            timeout=30,
-        )
-        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
-        data = r.json()
-        new_secret = data.get("secret_shared_key", "")
-        log("webhook-config", "PATCH /v3/webhook/ (rotate secret)", r.status_code,
-            f"new_secret={new_secret[:12]}...", True)
-    except Exception as e:
-        log("webhook-config", "PATCH /v3/webhook/ (rotate secret)", "ERR", str(e), False)
+    if created_uuid:
+        try:
+            # GET the destination
+            r = requests.get(
+                f"{BASE_URL}/v3/webhook/destinations/{created_uuid}/",
+                headers=HEADERS_KEY,
+                timeout=30,
+            )
+            log("webhook-destinations", "GET /v3/webhook/destinations/{uuid}/", r.status_code,
+                "fetched", r.status_code == 200)
+        except Exception as e:
+            log("webhook-destinations", "GET /v3/webhook/destinations/{uuid}/", "ERR", str(e), False)
 
-    try:
-        # Restore original webhook URL
-        restore_payload = {"webhook_url": original_url}
-        r = requests.patch(
-            f"{BASE_URL}/v3/webhook/",
-            headers=HEADERS_JSON,
-            json=restore_payload,
-            timeout=30,
-        )
-        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
-        log("webhook-config", "PATCH /v3/webhook/ (restore original)", r.status_code,
-            f"url restored to {original_url}", True)
-    except Exception as e:
-        log("webhook-config", "PATCH /v3/webhook/ (restore original)", "ERR", str(e), False)
+        try:
+            # DELETE (cleanup)
+            r = requests.delete(
+                f"{BASE_URL}/v3/webhook/destinations/{created_uuid}/",
+                headers=HEADERS_KEY,
+                timeout=30,
+            )
+            log("webhook-destinations", "DELETE /v3/webhook/destinations/{uuid}/ (cleanup)", r.status_code,
+                "deleted", r.status_code in [200, 204])
+        except Exception as e:
+            log("webhook-destinations", "DELETE /v3/webhook/destinations/{uuid}/ (cleanup)", "ERR", str(e), False)
 
 
 # ---------------------------------------------------------------------------
@@ -1090,9 +1071,9 @@ def main():
     test_proof_of_address()
     test_database_validation()
 
-    # Sessions + blocklist + webhooks
+    # Sessions + lists + webhooks
     test_sessions()
-    test_blocklist()
+    test_lists()
     test_webhooks_skill()
 
     # Management & Auth APIs
@@ -1127,7 +1108,7 @@ def main():
 
     print("\nNOTE: Image-based APIs return 'Declined' with NO_FACE_DETECTED for tiny")
     print("test images — this is EXPECTED and confirms the API is working correctly.")
-    print("Session/blocklist tests with dummy IDs return 400/404 — also expected.")
+    print("Session/list tests with dummy IDs return 400/404 — also expected.")
     print("Auth API tests use invalid credentials to verify endpoint reachability.")
 
     return 0 if failed == 0 else 1

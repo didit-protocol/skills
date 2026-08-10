@@ -7,7 +7,7 @@ description: >
   OFAC/UN/EU watchlists, calculate risk scores, or perform anti-money laundering screening
   using Didit. Supports 1300+ databases, fuzzy name matching, configurable scoring weights,
   and continuous monitoring.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -169,7 +169,7 @@ const response = await fetch("https://verification.didit.me/v3/aml/", {
 
 | Component | Default Weight | Algorithm |
 |---|---|---|
-| Name | 60% | RapidFuzz WRatio — handles typos, word order, middle name variations |
+| Name | 60% | Fuzzy name matching — handles typos, word order, middle name variations |
 | DOB | 25% | Exact=100%, Year-only=100%, Same year diff date=50%, Mismatch=-100% |
 | Country | 15% | Exact=100%, Mismatch=-50%, Missing=0%. Auto-converts ISO codes |
 
@@ -218,7 +218,7 @@ const response = await fetch("https://verification.didit.me/v3/aml/", {
 |---|---|---|
 | `"Approved"` | No significant matches or all False Positives | Safe to proceed |
 | `"In Review"` | Matches found with moderate risk | Manual compliance review needed |
-| `"Rejected"` | High-risk matches confirmed | Block or escalate per your policy |
+| `"Declined"` | High-risk matches confirmed | Block or escalate per your policy |
 | `"Not Started"` | Screening not yet performed | Check for missing data |
 
 ### Error Responses
@@ -279,7 +279,7 @@ Available on **Pro plan**. Automatically included for all AML-screened sessions.
 1. POST /v3/aml/ → {"full_name": "John Smith", "nationality": "US"}
 2. If "Approved" → no significant watchlist matches
    If "In Review" → review hits[].datasets, hits[].risk_view for details
-   If "Rejected" → block user, check hits for sanctions/PEP details
+   If "Declined" → block user, check hits for sanctions/PEP details
 ```
 
 ### Comprehensive KYC + AML

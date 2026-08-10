@@ -6,7 +6,7 @@ description: >
   comparison, facial recognition, or selfie-to-document matching using Didit.
   Returns a similarity score (0-100) with configurable decline threshold.
   Supports image rotation and multi-face detection.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -174,7 +174,7 @@ const response = await fetch("https://verification.didit.me/v3/face-match/", {
 | `NO_FACE_DETECTED` | No face detected in one or both images | Yes |
 | `LOW_FACE_MATCH_SIMILARITY` | Score below threshold — potential identity mismatch | Configurable |
 
-> **Security best practice:** Only store the status and score. Minimize biometric image data on your servers. Image URLs (in workflow mode) expire after 60 minutes.
+> **Security best practice:** Only store the status and score. Minimize biometric image data on your servers. Image URLs (in workflow mode) expire after 4 hours.
 
 ---
 
