@@ -1,6 +1,6 @@
 # Tests and development files
 tests/
-scripts/
+# Keep scripts/: SKILL.md references these runtime helpers.
 docs/
 
 # Git and IDE
