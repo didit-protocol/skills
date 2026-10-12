@@ -116,7 +116,7 @@ export DIDIT_API_KEY="the_api_key_from_response"
 export DIDIT_API_KEY="your_api_key"
 ```
 
-3. **(Optional)** For webhook verification, keep the destination's signing secret (`secret_shared_key`, returned once when you create the destination):
+3. **(Optional)** For webhook verification, keep the destination's signing secret (`secret_shared_key`, returned when you create the destination and by `GET /v3/webhook/destinations/{id}/`):
 
 ```bash
 export DIDIT_WEBHOOK_SECRET="your_secret"
