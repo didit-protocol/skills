@@ -164,14 +164,14 @@ To let an AI assistant work in your Didit account as you (no API key), connect t
 | Proof of Address | `didit-proof-of-address` | `POST /v3/poa/` |
 | Database Validation | `didit-database-validation` | `POST /v3/database-validation/` |
 | Document AI | `didit-document-ai` | `POST /v3/document-ai/` |
-| Transactions | `didit-transaction-monitoring` | `GET`+`POST /v3/transactions/`, `GET /v3/transactions/{uuid}/`, `POST /v3/transactions/sdk-token/`, `/v3/transactions/rules/` (CRUD, `library/`, `install/`, `backtest/`), `POST /v3/wallet-screening/`, `POST /v3/wallet-screening/pdf/`, `/v3/travel-rule/` (settings, transfers, wallets, VASPs, widget, inbound) |
+| Transactions | `didit-transaction-monitoring` | `GET`+`POST /v3/transactions/`, `GET /v3/transactions/{uuid}/`, `POST /v3/transactions/sdk-token/`, `/v3/transactions/rules/` (CRUD, `library/`, `install/`, `backtest/`), `POST /v3/wallet-screening/`, `POST /v3/wallet-screening/pdf/`, `PATCH /v3/transactions/{uuid}/travel-rule/` (+ `ownership/`), `/v3/travel-rule/` (settings, wallet addresses, VASPs, widget, inbound) |
 | Events | `didit-event-monitoring` | `GET`+`POST /v3/events/`, `POST /v3/events/batch/`, `GET /v3/events/{uuid}/`, `GET /v3/events/subjects/{vendor_data}/`, `DELETE /v3/events/{uuid}/delete/`, `POST /v3/events/sdk-token/`, `POST /v1/events/`, `POST /v1/events/batch/` |
 | Fraud Check | `didit-fraud-check` | `POST /v3/fraud/checks/`, `POST /v3/fraud/checks/plan/`, `GET /v3/fraud/checks/{check_id}/`, `POST /v3/ip/risk/` |
 | Cases | `didit-case-management` | `/v3/organization/{org}/application/{app}/cases/` (list, create, update, assign, transfer, escalate, resolve, reopen, approvals, notes, links, checklist, bulk, statistics), `.../cases/blueprints/`, `.../report-templates/`, `.../regulatory-reports/` |
 | Fraud Networks | `didit-fraud-networks` | `/v3/organization/{org}/application/{app}/networks/` (list, get, graph, members, signals, timeline, map, report) and `.../{sessions,users,businesses,transactions}/{id}/networks/` |
 | SDK clients | `didit-sdk-integration` | `POST /v1/transactions/` (`X-Transaction-Token`), `POST /v1/events/` (`X-Monitoring-Token`) |
 
-**150+ endpoints** across the platform.
+**130 endpoint paths** across the platform, most with several methods.
 
 ---
 
