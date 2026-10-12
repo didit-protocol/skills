@@ -108,7 +108,7 @@ Base URL: `https://verification.didit.me`
 | `transaction_details.payment_reference_id` | string | No | External reference; for crypto, the on-chain hash (switches to hash screening). |
 | `transaction_details.crypto_params.crypto_chain` | string | No | Network for screening (`BTC`, `ETH`, `LTC`, `XRP`, `BCH`, `DOGE`, `TRX`, `SOL`, `MATIC`, `BNB`, `BASE`, `OP`, `ARB`; `LIGHTNING` only with a connected Elliptic or Chainalysis key). |
 | `transaction_details.amount_in_default_currency`, `default_currency`, `payment_details` | | No | Pre-converted amount and its currency; free-text memo. |
-| `subject.vendor_data` | string | **Yes** | Your user id: links the transaction to the same user profile your KYC sessions use (velocity, stored face for step-up). |
+| `subject.vendor_data` | string | **Yes** | Max 255 chars. Your user id: links the transaction to the same user profile your KYC sessions use (velocity, stored face for step-up). |
 | `subject.full_name` | string | **Yes** | |
 | `subject.entity_type` | string | No | `individual` (default) or `company`. |
 | `subject.*` | | No | `first_name`, `last_name`, `date_of_birth` (YYYY-MM-DD), `address` (`country` ISO alpha-3, `town`, `state`, `street`, `post_code`), `institution_details`, `device_context`, `payment_method`. |
@@ -119,7 +119,7 @@ Base URL: `https://verification.didit.me`
 | `include_crypto_screening` | boolean | No | Per-call override of the application default (`null`/omitted = default). |
 | `transaction_at`, `time_zone` | string | No | ISO timestamp (default now) and IANA zone. Aliases `txnDate`, `zoneId`. |
 
-Blocklisted subject or counterparty `vendor_data` returns `400`.
+A subject or counterparty `vendor_data` on your user/business blocklist returns `400` (nothing is created). A blocklisted wallet, bank account, IP or device fingerprint is created and immediately `DECLINED` with `decision_reason_code: "blocklisted"`, before rules run.
 
 ### Example
 
