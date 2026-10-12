@@ -569,6 +569,8 @@ Custom forms run by the `QUESTIONNAIRE` workflow feature.
 | `max_files` | 1-5, for `file_upload` and `image` |
 | `validation` | `short_text`/`long_text`: `pattern`, `min_length`, `max_length`; `number`: `min`, `max` |
 
+The API builds simple, linear questionnaires. Branching, conditional questions and repeatable groups are built in the Console: `element_type: "repeatable_group"` and the `branches`, `required_if` and `repeatable_config` fields return `400`. Answers to a Console-built repeatable group come back in the decision as `REPEATABLE_GROUP` elements.
+
 ```python
 q = requests.post("https://verification.didit.me/v3/questionnaires/",
     headers={"x-api-key": API_KEY},
