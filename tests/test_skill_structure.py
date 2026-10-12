@@ -174,7 +174,7 @@ class BundleTest(unittest.TestCase):
     """Exercise publishing policies with Git's ignore matcher, without an API key.
 
     ClawHub reads ignore files from the individual publication folder. The README
-    stages both repository policies there; skill-local policies are applied last.
+    stages both repository policies there, appending matching skill-local rules.
     The actual CLI collector is checked separately before human publication.
     """
 
@@ -185,8 +185,8 @@ class BundleTest(unittest.TestCase):
             subprocess.run(["git", "init", "--quiet", tmp], check=True, capture_output=True)
             for skill in SKILLS:
                 folder = SKILLS_DIR / skill
-                policies = [ROOT / ".gitignore", ROOT / ".clawhubignore",
-                            folder / ".gitignore", folder / ".clawhubignore"]
+                policies = [ROOT / ".gitignore", folder / ".gitignore",
+                            ROOT / ".clawhubignore", folder / ".clawhubignore"]
                 (Path(tmp) / ".gitignore").write_text(
                     "\n".join(p.read_text(encoding="utf-8") for p in policies if p.exists()),
                     encoding="utf-8",

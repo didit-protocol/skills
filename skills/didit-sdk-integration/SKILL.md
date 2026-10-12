@@ -27,7 +27,7 @@ metadata:
 
 Choose Identity verification, Transaction monitoring, Authentication, or any combination. For verification and monitoring, your backend uses the API key to create what the client needs; the client receives a credential for that purpose. End-user Authentication uses its own session credentials and requires an enabled application. Start with the [three-product prompt](#three-product-integration-prompt).
 
-| Product | Backend call (API key) | Client receives | Client SDK call |
+| Product | Backend preparation | Client receives | Client integration |
 |---|---|---|---|
 | Verification sessions | `POST /v3/session/` | `url` (web) or `session_token` (iOS, Android, React Native, Flutter) | `startVerification` |
 | Transactions | `POST /v3/transactions/sdk-token/` | `sdk_token` | `submitTransaction`, plus `getTransaction` on mobile |
@@ -86,6 +86,7 @@ Application context:
 
 Support each selection independently:
 | Selection | Build |
+|---|---|
 | Identity verification | Verification sessions and backend decisions |
 | Transaction monitoring | Transactions and selected application events |
 | Authentication | End-user sign-up, login, session validation and logout |

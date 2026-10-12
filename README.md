@@ -276,7 +276,7 @@ Publication is a human step. The seven SK1 additions below still need ClawHub pu
 
 Before publishing, check the registry's existing version for each skill and choose an unused version if necessary. Previously published skills affected by the script exclusion also need corrected bundles.
 
-Stage each complete skill folder in a clean temporary directory. Include the repository `.gitignore` and `.clawhubignore` at that folder's root, appending any skill-local policies after the repository policies. ClawHub reads these files from the publication folder; it does not inherit the repository's filters when publishing a nested skill directly. Keep `scripts/` included and exclude credentials, caches and development files. See the [ClawHub skill format](https://github.com/openclaw/clawhub/blob/main/docs/skill-format.md).
+Stage each complete skill folder in a clean temporary directory. Include the repository `.gitignore` and `.clawhubignore` at that folder's root, appending any skill-local rules to the matching policy file. ClawHub reads these files from the publication folder; it does not inherit the repository's filters when publishing a nested skill directly. Keep `scripts/` included and exclude credentials, caches and development files. See the [ClawHub skill format](https://github.com/openclaw/clawhub/blob/main/docs/skill-format.md).
 
 Run the offline checks above, inspect the staged file list and confirm every referenced helper is present. Publish each staged skill folder individually, using its name and reviewed version, only when the human publisher is ready. After publication, install into an empty directory and verify `SKILL.md`, the helper files and their `--help` commands before announcing availability.
 
