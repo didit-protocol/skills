@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+venv/
+.venv/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.cursor/
+
+# Docs (moved to mintlify-docs repo)
+docs/
+
+# ClawHub local state
+.clawhub/
+
+# Byte-compiled caches inside skill scripts
+**/__pycache__/

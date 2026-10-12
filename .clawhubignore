@@ -1,0 +1,27 @@
+# Tests and development files
+tests/
+scripts/
+docs/
+
+# Git and IDE
+.git/
+.cursor/
+.vscode/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# Repo metadata (not needed in published skill bundles)
+README.md
+CHANGELOG.md
+LICENSE
+.gitignore
