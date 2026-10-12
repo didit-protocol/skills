@@ -4,7 +4,7 @@ description: >
   Connect an AI assistant to the Didit identity platform through the Didit MCP server
   (Model Context Protocol). Use when the user wants to install or configure the Didit MCP
   server in Claude Code, Claude Desktop or claude.ai, Cursor, VS Code, Windsurf, Zed or any
-  MCP client; sign in with "Log in with Didit" (OAuth 2.1); run the server headless over
+  MCP client; sign in with a Didit console account (OAuth 2.1); run the server headless over
   stdio with a user access token or self-host it; or have an agent act in the Didit Business
   Console as the signed-in user: build workflows, create and review verification sessions,
   run standalone checks, manage users, transactions and rules, lists, cases, webhooks,
@@ -27,7 +27,7 @@ The Didit MCP server lets an MCP client call the Didit platform through tools. I
 
 **Key facts:**
 - Hosted endpoint: `https://mcp.didit.me/mcp` (Streamable HTTP, stateless, `POST` only; `GET` and `DELETE` answer `405`). Health check: `GET https://mcp.didit.me/healthz` returns `{"status": "ok", "service": "didit-mcp-server", "version": "..."}`.
-- Sign-in is **Log in with Didit** (OAuth 2.1 with PKCE). There is **no API-key mode**: every tool calls the user-scoped console endpoints, which reject `x-api-key`.
+- Sign-in is OAuth 2.1 with PKCE against your Didit Business Console account (the docs call it **Log in with Didit**). There is **no API-key mode**: every tool calls the user-scoped console endpoints, which reject `x-api-key`.
 - Tools return the verbatim JSON of the underlying Didit endpoints.
 - Open source (MIT): https://github.com/didit-protocol/mcp, published on npm as `@didit-protocol/mcp-server` (binary `didit-mcp-server`).
 

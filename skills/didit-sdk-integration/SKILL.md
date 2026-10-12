@@ -650,8 +650,8 @@ Device endpoints (`/v1/transactions/`, `/v1/events/`):
 ### Step-up check on a risky withdrawal from the app
 
 1. Backend mints `POST /v3/transactions/sdk-token/` for the user's `vendor_data` (`max_uses: 1`).
-2. App calls `submitTransaction`; a rule moves it to `AWAITING_USER` with `actionRequired.type == "verification_session"`.
-3. App starts the verification with `actionRequired.sessionToken` (web: `url`); Didit matches a new selfie against the face from onboarding.
+2. App calls `submitTransaction`; a rule (Transactions > Rules, action **Change status > AWAITING_USER** with a Biometric Authentication workflow) moves it to `AWAITING_USER` with `actionRequired.type == "verification_session"`.
+3. App starts the verification with `actionRequired.sessionToken` (web: `url`); Didit matches a live selfie against the face verified at onboarding for the same `vendor_data`.
 4. The transaction re-evaluates to `APPROVED` or `DECLINED`; the backend gets `transaction.status.updated` and settles only then.
 
 ---
