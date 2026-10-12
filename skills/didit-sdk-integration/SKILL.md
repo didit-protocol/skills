@@ -9,13 +9,13 @@ description: >
   client; handle SDK results, callbacks and errors; submit monitored transactions from the
   device with a transaction SDK token (submitTransaction, wallet ownership, step-up
   verification); or send monitoring events from a device with a monitoring token. Keeps the
-  API key on the backend.
-version: 1.0.0
+  API key on the backend. Also use for any combination of Identity verification,
+  Transaction monitoring and end-user Authentication, checking release availability first.
+version: 1.1.0
 metadata:
   openclaw:
     requires:
-      env:
-        - DIDIT_API_KEY
+      env: []
     primaryEnv: DIDIT_API_KEY
     emoji: "🧩"
     homepage: https://docs.didit.me
@@ -25,20 +25,21 @@ metadata:
 
 ## Overview
 
-Your backend uses the API key to create what the client needs; the client only ever holds a short-lived credential for one purpose. This skill is organized by product.
+Choose Identity verification, Transaction monitoring, Authentication, or any combination. For verification and monitoring, your backend uses the API key to create what the client needs; the client receives a credential for that purpose. End-user Authentication uses its own session credentials and requires an enabled application. Start with the [three-product prompt](#three-product-integration-prompt).
 
-| Product | Backend call (API key) | Client receives | Client SDK call |
+| Product | Backend preparation | Client receives | Client integration |
 |---|---|---|---|
 | Verification sessions | `POST /v3/session/` | `url` (web) or `session_token` (iOS, Android, React Native, Flutter) | `startVerification` |
 | Transactions | `POST /v3/transactions/sdk-token/` | `sdk_token` | `submitTransaction`, plus `getTransaction` on mobile |
 | Events | `POST /v3/events/sdk-token/` | `monitoring_token` | None: plain HTTPS to `POST /v1/events/` |
+| End-user Authentication (early access) | Confirm the enabled application's Authentication runtime | End-user access/refresh tokens | Hosted PKCE flow; dedicated SDKs are release-dependent |
 
 **Rules:**
 - Never put the API key in a browser, app or WebView. It stays on your backend.
 - SDK results are UX hints. Grant access only after your backend confirms the outcome with a webhook or `GET /v3/session/{session_id}/decision/` (sessions) or `GET /v3/transactions/{uuid}/` (transactions).
 - Colors, logo and intro screens come from the console White Label settings, not from SDK options.
 
-**Versions documented here:** Web SDK 0.4.0, iOS 4.9.1, Android 4.9.1, React Native 4.9.1, Flutter 4.9.1.
+**Verification/transaction versions documented here:** Web SDK 0.4.0, iOS 4.9.1, Android 4.9.1, React Native 4.9.1, Flutter 4.9.1. These versions do not establish availability of Authentication or `@didit-protocol/signals`.
 
 **Pricing:** The SDKs have no list price of their own. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one ($0.02 Transaction Screening). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
 
@@ -46,15 +47,17 @@ Your backend uses the API key to create what the client needs; the client only e
 
 ---
 
-## Authentication
+## Backend API credentials
 
-Every backend request needs the `x-api-key` header. Use your application's API key from the [Didit Business Console](https://business.didit.me) under **Developers > API keys**, or create an account and key programmatically (see Getting Started). Named keys with custom access need **Sessions** write to create sessions (a key without it gets `url` and `session_token` back as `null`) and **Transactions** write to mint transaction or monitoring tokens; a key limited to some workflows can only create sessions for those workflows and cannot mint tokens.
+The verification and monitoring backend requests below need `DIDIT_API_KEY`, sent in the `x-api-key` header. Use your application's API key from the [Didit Business Console](https://business.didit.me) under **Developers > API keys**, or create an account and key programmatically (see Getting Started). Named keys with custom access need **Sessions** write to create sessions (a key without it gets `url` and `session_token` back as `null`) and **Transactions** write to mint transaction or monitoring tokens; a key limited to some workflows can only create sessions for those workflows and cannot mint tokens.
 
 The device-facing `/v1/` endpoints never take the API key: they take `X-Transaction-Token` or `X-Monitoring-Token`.
 
+Authentication-only integrations do not need this API key or a verification workflow. An end-user Bearer token is separate from a console token, verification `session_token`, transaction token and monitoring token. A publishable key identifies an application; it does not authorize server operations.
+
 ## Getting Started (No Account Yet?)
 
-If you don't have a Didit API key, create one in 2 API calls:
+This provisions a developer account for verification/monitoring, not an end user's sign-up. Reuse an existing application when available. If you need a Didit API key, create one in 2 API calls:
 
 1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
 2. **Check email** for a 6-character verification code
@@ -66,7 +69,112 @@ See the **didit-verification-management** skill for full platform management (wo
 
 ---
 
-## Choose an Integration
+## Three-product integration prompt
+
+Copy the prompt below and fill in the application context. It follows the [canonical integration prompt](https://docs.didit.me/integration/integration-prompt), with the audited platform examples in this skill. Authentication SDKs, JWT/JWKS, automatic auth events and Authentication step-ups remain release-dependent; selecting them does not establish readiness.
+
+```text
+Integrate only the Didit products I select into my application.
+
+Application context:
+- Stack: [framework and language]
+- Surface: [web, iOS, Android, React Native, Flutter, or backend-only]
+- Products: [Identity verification, Transaction monitoring, Authentication]
+- Didit application/environment: [existing application or setup needed]
+- Person reference: [stable server-owned identifier used as vendor_data]
+- Use case and database: [describe]
+
+Support each selection independently:
+| Selection | Build |
+|---|---|
+| Identity verification | Verification sessions and backend decisions |
+| Transaction monitoring | Transactions and selected application events |
+| Authentication | End-user sign-up, login, session validation and logout |
+| Identity verification + Transaction monitoring | Both with one person reference |
+| Identity verification + Authentication | Sign-in and policy-driven verification |
+| Transaction monitoring + Authentication | Bind monitoring to the signed-in person |
+| Identity verification + Transaction monitoring + Authentication | All three, separate decisions |
+
+Inspect my installed/published SDK versions, their exports, and the application's
+enabled capabilities before writing adapters. Authentication SDKs (@didit-protocol/auth*,
+DiditAuth on native platforms, didit_auth), @didit-protocol/signals, JWT/JWKS,
+automatic auth events and Authentication step-ups are release-dependent. Keep an
+unavailable adapter disabled, report the missing capability and finish independently
+available products. Never invent a package version, SDK method, issuer or successful flow.
+
+Use the same Didit application/environment across products, with sandbox and live
+kept separate. Resolve vendor_data from my authenticated user on the server, never
+from a client-selected user ID. For an enabled current Authentication runtime, map
+its validated sub to my stable vendor_data on the server. The upcoming external_id
+mapping and vendor_data claim are release-dependent; do not send undocumented fields
+to hosted authorization or link people by unverified email.
+
+Keep credentials separate:
+- x-api-key stays on the backend for verification/monitoring.
+- Verification url/session_token goes only to the user's verification client.
+- sdk_token uses X-Transaction-Token for device transactions.
+- monitoring_token uses X-Monitoring-Token for device events.
+- End-user Bearer access/refresh tokens belong to Authentication, not console login.
+- A publishable key identifies the application and is not server authorization.
+Never log tokens, callback codes, secrets or credential-bearing verification URLs.
+
+Identity verification, only if selected:
+Reuse or create a workflow. Create POST /v3/session/ on my authenticated backend
+with the server-owned vendor_data. Send the returned url to the web SDK/redirect,
+or session_token to a native SDK. Use the returned URL as-is. SDK callbacks and
+redirect status are UI hints: verify the signed webhook or fetch
+GET /v3/session/{session_id}/decision/ on the backend, check ownership, and act on
+the actual decision. Sign-in success alone never approves identity verification.
+
+Transaction monitoring, only if selected:
+No verification workflow is needed just to submit transactions. Mint
+POST /v3/transactions/sdk-token/ on the backend for the user's vendor_data and
+return sdk_token to submitTransaction. Use the platform's actual payload schema:
+web category/details differ from mobile type/info and the REST wire schema.
+Preserve transaction IDs and reconcile an uncertain submission before resending;
+a repeated transaction_id is rejected, not an idempotent success. For pending
+verification_session actions, open the supported verification flow if selected,
+or hold the transaction for supported continuation. Never treat SDK completion
+or authentication as payment authorization: read the backend transaction result.
+
+For application-owned events, enable event monitoring and mint
+POST /v3/events/sdk-token/ with narrow categories and limits. Read monitoring_token;
+send it as X-Monitoring-Token to POST /v1/events/ or POST /v1/events/batch/.
+Use the documented event envelope and preserve event_id and occurred_at on retries.
+Use HTTPS while a signals SDK is unavailable. Do not duplicate automatically
+delivered Didit Authentication events with customer-submitted login events.
+
+Authentication, only if selected and enabled:
+Read https://docs.didit.me/authentication/overview and the matching quickstart.
+Developer account registration is not end-user sign-up. Confirm the application's
+runtime URL and exact registered redirects/origins. The documented early-access
+hosted sign-in/ flow uses random state and S256 PKCE, handles configured sign-up,
+login, reset and MFA, and returns a code. Check callback state, then exchange the
+code at token/ with the original verifier and redirect URI. Validate the resulting
+opaque access token via GET session/; do not decode it as a JWT or invent JWKS.
+Serialize refreshes through token/ and replace both tokens together: replay of a
+consumed refresh token revokes the session. Do not blindly retry uncertain refreshes.
+DELETE session/ revokes logout; clear local user state and report revocation failures.
+Use secure HttpOnly cookies with CSRF protection for server sessions, and protected
+native token storage. Authentication-only must not create verification workflows
+or mint transaction/monitoring tokens. Never fabricate a step-up or event subscription.
+Read https://docs.didit.me/authentication/tokens-and-jwks and
+https://docs.didit.me/authentication/events-and-webhooks for the release gates.
+When JWTs become available, use a trusted configured issuer/JWKS, validate signature,
+algorithm, issuer, audience and time claims, and use a live session check when immediate
+revocation matters. An ID token is not an API access token.
+
+Test the selected products alone and together using one server-resolved vendor_data.
+Cover cross-user/application rejection, callback state/replay, expiry, refresh races,
+logout, backend verification decisions, pending transaction actions, webhook signature
+rejection and duplicate delivery as applicable. Respect Retry-After; distinguish invalid
+input from credential/capability errors. Report actual results and missing live/release
+checks. Disabled or simulated integrations must not be reported as production-ready.
+```
+
+---
+
+## Choose a Verification Integration
 
 | Option | Use when | Client input | How the client learns the outcome |
 |---|---|---|---|
@@ -573,7 +681,7 @@ if (result.actionRequired?.type === "verification_session" && result.actionRequi
 
 ## Events (device lane)
 
-No Didit SDK has an events method. Mint a monitoring token on your backend, then post events from the device with your own HTTP client (`fetch`, `URLSession`, OkHttp). Event ingestion must be on (**Transactions > Settings > Event monitoring**); otherwise every write answers `403` with `{"code": "event_monitoring_disabled"}`. Full event envelope, categories and rules: **didit-event-monitoring**.
+The SDK versions documented here have no events method. The dedicated `@didit-protocol/signals` package is release-dependent: verify its published exports before using it. Mint a monitoring token on your backend, then post events from the device with your own HTTP client (`fetch`, `URLSession`, OkHttp). Event ingestion must be on (**Transactions > Settings > Event monitoring**); otherwise every write answers `403` with `{"code": "event_monitoring_disabled"}`. Full event envelope, categories and rules: **didit-event-monitoring**.
 
 ```
 POST https://verification.didit.me/v3/events/sdk-token/

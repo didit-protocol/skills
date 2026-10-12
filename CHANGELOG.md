@@ -4,6 +4,27 @@ All notable changes to the Didit Agent Skills collection will be documented in t
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- ClawHub bundles keep `scripts/`, so the helpers referenced by skills are included. Credential,
+  cache and development exclusions remain in place. Manual installation now copies complete folders.
+
+### Changed
+- **didit-sdk-integration (1.0.0 to 1.1.0):** adds a three-product prompt for all seven combinations of
+  Identity verification, Transaction monitoring and end-user Authentication. Uses one server-owned
+  `vendor_data`, separate credentials and backend-confirmed decisions; keeps unavailable Authentication,
+  signals, issuer, automatic-event and step-up capabilities gated. An API key is required only for the
+  selected verification/monitoring paths, not Authentication-only guidance.
+- README lists the seven SK1 additions awaiting human ClawHub publication and the per-skill staging
+  procedure. No ClawHub publication is performed by this change.
+- Dedicated Authentication, electronic-signature and biometric-consent skills remain deferred until
+  their APIs are merged and documented. The integration guidance does not certify runtime readiness.
+
+### Tests
+- Offline publication-filter regression verifies that every skill's Python helpers survive the ignore
+  policies and that credential, cache and development files stay excluded.
+
 ## [5.1.0] - 2026-10-12
 
 Every skill re-checked against the Didit backend, the public OpenAPI spec and the docs. Fixes requests that
