@@ -11,7 +11,8 @@ Environment:
 Examples:
     # Plain finance transaction
     python scripts/submit_transaction.py --txn-id tx-0001 --amount 1500.50 --currency EUR \
-        --vendor-data user-42 --subject-name "John Doe" --counterparty-name "Acme Energy"
+        --vendor-data user-42 --subject-name "John Doe" --counterparty-name "Acme Energy" \
+        --counterparty-entity-type company
 
     # Outbound crypto withdrawal with wallet screening
     python scripts/submit_transaction.py --txn-id wd-0001 --amount 0.25 --currency ETH --chain ETH \
@@ -69,7 +70,8 @@ def build_payload(args: argparse.Namespace) -> dict:
         payload["include_crypto_screening"] = True
 
     if args.counterparty_name or args.wallet:
-        counterparty = {"entity_type": "individual", "full_name": args.counterparty_name or args.subject_name}
+        counterparty = {"entity_type": args.counterparty_entity_type,
+                        "full_name": args.counterparty_name or args.subject_name}
         if args.wallet:
             counterparty["payment_method"] = {
                 "method_type": "unhosted_wallet" if args.unhosted else "crypto_wallet",
@@ -108,6 +110,8 @@ def main() -> None:
     parser.add_argument("--entity-type", default="individual", choices=["individual", "company"],
                         help="Subject entity type (default: individual)")
     parser.add_argument("--counterparty-name", help="Counterparty full name")
+    parser.add_argument("--counterparty-entity-type", default="individual", choices=["individual", "company"],
+                        help="Counterparty entity type (default: individual)")
     parser.add_argument("--wallet", help="Counterparty wallet address (crypto)")
     parser.add_argument("--crypto", action="store_true", help="Mark as crypto and request screening")
     parser.add_argument("--chain", help="Network for screening, e.g. ETH, BTC, TRX, SOL, BASE, OP, ARB")

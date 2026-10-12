@@ -478,7 +478,8 @@ These are not available on the standalone endpoints; use a workflow and session 
 1. POST /v3/id-verification/ -> verify document, keep portrait_image
 2. POST /v3/passive-liveness/ -> verify a real person took the selfie
 3. POST /v3/face-match/ -> compare selfie to the document portrait
-4. POST /v3/aml/ -> screen the extracted name, date of birth and nationality
+4. POST /v3/aml/ -> screen the extracted name, date of birth and nationality; convert nationality
+   from alpha-3 (ESP) to alpha-2 (ES) first, or /v3/aml/ returns 400
 5. All Approved -> verified identity
 ```
 

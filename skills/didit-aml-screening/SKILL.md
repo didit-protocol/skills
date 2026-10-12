@@ -410,10 +410,12 @@ Proof that monitoring ran (per the docs): `GET /v1/session/{sessionId}/aml-scree
 ### Comprehensive KYC + AML
 
 ```
-1. POST /v3/id-verification/ -> read name, date of birth, nationality (alpha-2) and document number
-2. POST /v3/aml/ with all four fields -> more data means fewer False Positives;
+1. POST /v3/id-verification/ -> read name, date of birth, nationality and document number
+2. Convert nationality from ISO alpha-3 (what ID verification returns, e.g. ESP) to alpha-2 (ES):
+   /v3/aml/ returns 400 for an alpha-3 code
+3. POST /v3/aml/ with all four fields -> more data means fewer False Positives;
    an exact document number match sets match_score to 100
-3. Optional: include_ongoing_monitoring=true to keep the profile under monitoring
+4. Optional: include_ongoing_monitoring=true to keep the profile under monitoring
 ```
 
 ### Safe Retries

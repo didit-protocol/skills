@@ -175,7 +175,7 @@ def main():
     dec_p = sub.add_parser("decision", help="Get verification decision")
     dec_p.add_argument("session_id", help="Session UUID")
     dec_p.add_argument("--poll", action="store_true", help="Poll until a terminal status")
-    dec_p.add_argument("--interval", type=int, default=10, help="Poll interval in seconds (default: 10)")
+    dec_p.add_argument("--interval", type=int, default=10, help="Poll interval in seconds, 1 or more (default: 10)")
     dec_p.add_argument("--max-wait", type=int, default=600, help="Max poll time in seconds (default: 600)")
 
     # full
@@ -190,6 +190,8 @@ def main():
     full_p.add_argument("--nfc", action="store_true", help="Enable NFC chip reading (native SDKs only)")
 
     args = parser.parse_args()
+    if args.command == "decision" and args.interval < 1:
+        parser.error("--interval must be 1 second or more")
 
     if args.command == "setup":
         result = setup_kyc_workflow(args.label, args.liveness, args.face_match,
