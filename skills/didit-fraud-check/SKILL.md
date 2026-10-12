@@ -154,7 +154,7 @@ POST https://verification.didit.me/v3/fraud/checks/
 | `database_validation` | A government identifier with its `country`, where Didit has a registry source for it, plus the attributes that source needs | `identity` | Paid, price varies by country ([Database Validation pricing](https://docs.didit.me/getting-started/database-validation-pricing)) |
 | `networks_same_org` | Something to look up in your private network history (identifier or public IP) | `behavioral` | Free |
 | `networks_cross_org` | An email, phone or properly namespaced document identifier; organization participation and entitlement (profile `2026-09-14.1`+) | `fraud_network` | Free, uses the organization's network read budget |
-| `biometric_identity` | `subject.selfie` + a `tax_number` with `country: "BR"` + `context.consent_obtained: true` (profile `2026-09-14.2`) | `identity`, `identity_relationship` | Paid per check at your Database Validation rate |
+| `biometric_identity` | `subject.selfie` + a `tax_number` with `country: "BR"` + `context.consent_obtained: true`; organization entitlement (profile `2026-09-14.2`) | `identity`, `identity_relationship` | Paid per check at your Database Validation rate |
 
 ### Example
 
@@ -209,7 +209,7 @@ const check = await response.json();
 
 ### Response (200 OK)
 
-Abbreviated: `inputs`, `attribute_evidence`, `compound_evidence`, `network`, `enrichment`, `coverage` and `usage` are always present (`enrichment` from `2026-09-14`) and are described in the field reference.
+Abbreviated. A real response lists every module of the profile in `modules` and all five dimensions in `risk`, and also carries `inputs`, `attribute_evidence`, `compound_evidence`, `network`, `coverage`, `usage` (and `enrichment` from `2026-09-14`); see the field reference.
 
 ```json
 {
@@ -244,7 +244,7 @@ Abbreviated: `inputs`, `attribute_evidence`, `compound_evidence`, `network`, `en
 POST https://verification.didit.me/v3/fraud/checks/plan/
 ```
 
-Send the same body you will send to `POST /v3/fraud/checks/`. `subject` is optional for a plan (a plan with no identifiers quotes every module); running a check still needs at least one identifier. Planning creates no check or session, calls no supplier, reads no network history and charges nothing.
+Send the same body you will send to `POST /v3/fraud/checks/`. `subject` is optional for a plan; running a check still needs at least one identifier. Planning creates no check or session, calls no supplier, reads no network history and charges nothing.
 
 Sandbox example (live applications get prices from their own rate card; sandbox prices are `0`):
 
@@ -269,7 +269,7 @@ Sandbox example (live applications get prices from their own rate card; sandbox 
 |---|---|
 | `modules[].available` / `availability_reason` | Whether the supplied inputs can support the module, and why not |
 | `modules[].will_run` / `selection_reason` | Whether your selection will run it, and why not (`not_requested`, `excluded_by_caller`, ...) |
-| `modules[].estimated_price` | Decimal string in `currency`. `null` means unavailable or unpriced, **not free** |
+| `modules[].estimated_price` | Decimal string in `currency`. `null` means unavailable or unpriced, **not free** (e.g. `database_validation` before an identifier's country is known, since its price varies by country) |
 | `estimated_price` | Total of the selected runnable modules; `null` if any of them is unpriced |
 | `can_afford` | Whether your balance or billing arrangement covers the total |
 | `is_sandbox` | `true` for sandbox applications (prices are `0`) |

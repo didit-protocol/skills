@@ -65,7 +65,7 @@ If you don't have a Didit API key, create one in 2 API calls:
 
 See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
-The same verify-email response carries `organization.uuid` and `application.uuid`, the two path IDs below.
+The same verify-email response carries `organization.uuid` and `application.uuid`, the two path IDs every case endpoint needs (see Authentication).
 
 ---
 
@@ -97,7 +97,7 @@ https://verification.didit.me/v3/organization/{organization_id}/application/{app
 | `GET` | `cases/{case_uuid}/events/` | Audit timeline |
 | `GET` | `cases/{case_uuid}/checklist/` | Checklist items |
 | `PATCH` | `cases/{case_uuid}/checklist/{item_uuid}/` | Tick or untick an item |
-| `GET` | `cases/{case_uuid}/aml/` | AML hits for the case subject |
+| `GET` | `cases/{case_uuid}/aml/` | AML screening results of the linked sessions |
 | `GET` | `cases/{case_uuid}/print/` | Full-case PDF (presigned URL) |
 | `POST` | `cases/{case_uuid}/entity-actions/` | Act on the subject (status, tags, note, blocklist) |
 | `POST` | `cases/duplicates/` | Find existing cases for a subject before creating one |
@@ -262,7 +262,7 @@ Every action returns the updated CaseDetail (`200`) unless noted.
 
 | Action | Body | Rules |
 |---|---|---|
-| `assign/` | `{"assignee_user_id": "<uuid>"}` (or `null` to unassign); optional `assignee_email`, `assignee_name` | The assignee must be a member with case access to the application: list them with `GET .../cases/reviewers/` |
+| `assign/` | `{"assignee_user_id": "<uuid>"}` (or `null` to unassign) | The assignee must be a member with case access to the application: list them with `GET .../cases/reviewers/` |
 | `resolve/` | `{"resolution": "FALSE_POSITIVE" or "VALID_THREAT", "note": "..."}` | `400` if a non-optional checklist item is incomplete (lists the labels) or the blueprint requires a note and none is given. On a 4-eyes blueprint it stages instead of closing (see below) |
 | `reopen/` | none | Only from `AWAITING_USER` or `RESOLVED`, else `400`. Clears `resolution`, `resolution_notes`, `resolved_at`, `resolved_by_email` |
 | `request-info/` | none | Only from `OPEN` and with no resolution pending approval, else `400` |
@@ -313,7 +313,7 @@ When the case's blueprint sets `four_eyes_checker_blueprint`, `resolve/` does no
 
 **Checklist:** `GET .../checklist/` lists items copied from the blueprint when the case was created; `PATCH .../checklist/{item_uuid}/` with `{"is_completed": true}`.
 
-**Other reads:** `GET .../events/` (paginated, newest first), `GET .../aml/` (AML hits for the subject, same hit shape as `POST /v3/aml/`), `GET .../print/` (renders a new PDF of the whole case and returns `{"url": "<presigned URL>"}`; download promptly).
+**Other reads:** `GET .../events/` (paginated, newest first), `GET .../aml/` (array of the AML screening results of the sessions and business sessions linked to the case, newest first, each with its `status` and `hits`), `GET .../print/` (renders a new PDF of the whole case and returns `{"url": "<presigned URL>"}`; download promptly).
 
 ## Subject Actions
 
@@ -528,7 +528,7 @@ Report `status`: `DRAFT` (editable), `VALIDATED` (passed validation), `FINALIZED
 ```
 1. GET  .../cases/?status__in=OPEN,AWAITING_USER&ordering=due_at  -> most urgent first
 2. GET  .../cases/{case_uuid}/                                     -> subject, links, checklist
-3. GET  .../cases/{case_uuid}/aml/                                 -> AML hits (screening cases)
+3. GET  .../cases/{case_uuid}/aml/                                 -> AML results of linked sessions
 4. PATCH .../cases/{case_uuid}/checklist/{item_uuid}/  {"is_completed": true}
 5. POST .../cases/{case_uuid}/notes/  {"comment": "Reviewed source of funds."}
 6. POST .../cases/{case_uuid}/resolve/  {"resolution": "FALSE_POSITIVE", "note": "..."}

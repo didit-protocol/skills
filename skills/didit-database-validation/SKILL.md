@@ -113,6 +113,8 @@ POST https://verification.didit.me/v3/database-validation/
 
 Other identifiers used by specific services: `passport_number`, `passport_expiration_date`, `passport_issue_country`, `passport_file_number`, `driver_license_number`, `driver_license_card_number`, `driver_license_state`, `driver_license_version`, `medicare_card_number`, `immi_card_number`, `immi_card_expiry_date`, `citizenship_certificate_number`, `birth_registration_number`, `birth_registration_date`, `birth_registration_state`, `marriage_certificate_number`, `change_of_name_certificate_number`, `first_partner_name`, `last_partner_name`, `voter_id`, `epic_card`, `pan`, `cic`, `identificador_ciudadano`, `ocr`, `voter_number`, `emission_number`, `bvn`, `bank_card_number`, `ssn`, `phone`, `landline`, `email`, `country_of_residence`. The catalog's `required_fields` / `requires_any_fields` say which a service needs.
 
+**Sandbox:** sandbox API keys skip the registry calls and billing and return a fixed `full_match` response (it always includes `services_used` and `match_score: 100`, so do not test the live response shape against it).
+
 ### Example
 
 ```python
