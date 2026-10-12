@@ -29,7 +29,8 @@ import requests
 
 ENDPOINT = "https://verification.didit.me/v3/poa/"
 ALLOWED_EXTENSIONS = {".tiff", ".jpg", ".jpeg", ".png", ".pdf", ".webp"}
-MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+MAX_PDF_BYTES = 50 * 1024 * 1024
+MAX_IMAGE_BYTES = 6 * 1024 * 1024
 ACTIONS = ("DECLINE", "NO_ACTION")
 
 
@@ -64,7 +65,7 @@ def verify_address(document_path: str, fields: dict) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Verify a proof of address document via Didit (POST /v3/poa/)")
-    parser.add_argument("document", help="Path to the document (JPG/JPEG/PNG/TIFF/PDF/WEBP, max 15 MB)")
+    parser.add_argument("document", help="Path to the document (PDF up to 50 MB; JPG/JPEG/PNG/TIFF/WEBP up to 6 MB)")
     parser.add_argument("--password", help="Password of an encrypted PDF (document_password)")
     parser.add_argument("--first-name", help="Expected first name (expected_first_name); use with --last-name")
     parser.add_argument("--last-name", help="Expected last name (expected_last_name); use with --first-name")
@@ -96,8 +97,9 @@ def main():
         sys.exit(1)
     if os.path.splitext(args.document)[1].lower() not in ALLOWED_EXTENSIONS:
         parser.error("document must be .jpg, .jpeg, .png, .tiff, .pdf or .webp")
-    if os.path.getsize(args.document) > MAX_UPLOAD_BYTES:
-        parser.error("document is larger than 15 MB")
+    is_pdf = args.document.lower().endswith(".pdf")
+    if os.path.getsize(args.document) > (MAX_PDF_BYTES if is_pdf else MAX_IMAGE_BYTES):
+        parser.error("document is larger than 50 MB" if is_pdf else "image is larger than 6 MB")
     if bool(args.first_name) != bool(args.last_name):
         print("Note: the name check runs only when both --first-name and --last-name are sent.", file=sys.stderr)
     if args.metadata:

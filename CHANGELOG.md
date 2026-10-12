@@ -61,7 +61,7 @@ failed against the real API, documents the endpoints that were missing, and adds
   KYC + AML recipes here and in didit-id-document-verification convert the alpha-3 nationality that ID verification
   returns to alpha-2 before calling `/v3/aml/`.
 - **didit-proof-of-address (1.2.0 to 1.3.0):** WebP, per-type document age, `expected_*` inputs, the real response
-  shape and warning names.
+  shape and warning names; uploads are limited to 50 MB for a PDF and 6 MB for an image (was 15 MB).
 - **didit-database-validation (1.2.0 to 1.3.0):** `issuing_state` is ISO **alpha-3** again (the 5.0.0 change to
   alpha-2 made every request fail); per-country default services and required fields from the public catalog;
   per-service results and prices.
