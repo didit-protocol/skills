@@ -16,6 +16,7 @@ import hmac
 import json
 import py_compile
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -167,6 +168,42 @@ class ScriptTest(unittest.TestCase):
                 for referenced in sorted(set(re.findall(r"scripts/([a-z0-9_]+\.py)", text))):
                     with self.subTest(skill=skill, referenced=referenced):
                         self.assertTrue((scripts_dir / referenced).is_file(), f"{referenced} is referenced but missing")
+
+
+class BundleTest(unittest.TestCase):
+    """Exercise publishing policies with Git's ignore matcher, without an API key.
+
+    ClawHub reads ignore files from the individual publication folder. The README
+    stages both repository policies there; skill-local policies are applied last.
+    The actual CLI collector is checked separately before human publication.
+    """
+
+    def test_publication_filters_keep_helpers_and_exclude_private_files(self):
+        excluded = {".env", ".env.local", "scripts/__pycache__/helper.pyc",
+                    "scripts/helper.pyc", "tests/test_local.py", "README.md"}
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "--quiet", tmp], check=True, capture_output=True)
+            for skill in SKILLS:
+                folder = SKILLS_DIR / skill
+                policies = [ROOT / ".gitignore", ROOT / ".clawhubignore",
+                            folder / ".gitignore", folder / ".clawhubignore"]
+                (Path(tmp) / ".gitignore").write_text(
+                    "\n".join(p.read_text(encoding="utf-8") for p in policies if p.exists()),
+                    encoding="utf-8",
+                )
+                included = {"SKILL.md"}
+                included.update(p.relative_to(folder).as_posix() for p in folder.rglob("*.py"))
+                included.update(re.findall(r"scripts/[a-z0-9_]+\.py", skill_md(skill)))
+                result = subprocess.run(
+                    ["git", "-c", "core.excludesFile=/dev/null", "check-ignore", "--no-index", "--stdin"],
+                    cwd=tmp, input="\n".join(sorted(included | excluded)) + "\n",
+                    text=True, capture_output=True,
+                )
+                with self.subTest(skill=skill):
+                    self.assertIn(result.returncode, (0, 1), result.stderr)
+                    ignored = set(result.stdout.splitlines())
+                    self.assertEqual(included & ignored, set(), "required bundle files were excluded")
+                    self.assertEqual(excluded - ignored, set(), "private/development files were included")
 
 
 class ContentTest(unittest.TestCase):
