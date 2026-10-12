@@ -145,7 +145,7 @@ POST https://verification.didit.me/v3/fraud/checks/
 
 | Module | Needs | Feeds | Billing |
 |---|---|---|---|
-| `normalization` | Always runs | `inputs[]` | Free |
+| `normalization` | Runs even with `include: []` | `inputs[]` | Free |
 | `email_risk` | An `email` identifier | `contact` | Paid |
 | `phone_risk` | A `phone` identifier | `contact` | Paid |
 | `email_social` | A valid `email` identifier (profile `2026-09-14`+). No OTP is sent | `enrichment` | Paid add-on |
@@ -189,6 +189,7 @@ print(check["recommendation"], check["next_action"])
 ```
 
 ```typescript
+const clientIp = "<the user's public IP>";
 const response = await fetch("https://verification.didit.me/v3/fraud/checks/", {
   method: "POST",
   headers: { "x-api-key": "YOUR_API_KEY", "Content-Type": "application/json" },
@@ -221,7 +222,7 @@ Abbreviated: `inputs`, `attribute_evidence`, `compound_evidence`, `network`, `en
   "created_at": "2026-10-12T09:30:00.123456+00:00",
   "completed_at": "2026-10-12T09:30:02.456789+00:00",
   "modules": [
-    {"module": "networks_cross_org", "status": "skipped", "reason": "not_requested", "latency_ms": 0, "freshness": null, "billable_units": 0}
+    {"module": "biometric_identity", "status": "skipped", "reason": "not_requested", "latency_ms": 0, "freshness": null, "billable_units": 0}
   ],
   "risk": [
     {"dimension": "contact", "score": 12, "band": "low", "availability": "available",
@@ -245,24 +246,24 @@ POST https://verification.didit.me/v3/fraud/checks/plan/
 
 Send the same body you will send to `POST /v3/fraud/checks/`. `subject` is optional for a plan (a plan with no identifiers quotes every module); running a check still needs at least one identifier. Planning creates no check or session, calls no supplier, reads no network history and charges nothing.
 
+Sandbox example (live applications get prices from their own rate card; sandbox prices are `0`):
+
 ```json
 {
   "profile_id": "standard",
   "profile_version": "2026-09-14.1",
   "modules": [
     {"module": "email_risk", "available": true, "availability_reason": null,
-     "will_run": true, "selection_reason": null, "estimated_price": "0.03"},
+     "will_run": true, "selection_reason": null, "estimated_price": "0"},
     {"module": "phone_risk", "available": false, "availability_reason": "missing_required_input",
-     "will_run": false, "selection_reason": "missing_required_input", "estimated_price": "0.04"}
+     "will_run": false, "selection_reason": "missing_required_input", "estimated_price": "0"}
   ],
-  "estimated_price": "0.03",
+  "estimated_price": "0",
   "currency": "USD",
-  "is_sandbox": false,
+  "is_sandbox": true,
   "can_afford": true
 }
 ```
-
-(Prices above are illustrative; real values come from your rate card.)
 
 | Field | Meaning |
 |---|---|
@@ -293,7 +294,7 @@ Returns the stored result (same shape as the run response). No re-run, no charge
 |---|---|---|
 | `approve` | `none` | Proceed |
 | `review` | `manual_review` | Queue for an analyst; read `decision_reasons`, `risk[]` and `modules[]` |
-| `reject` | any | Block or escalate per your policy |
+| `reject` | `none` | Block or escalate per your policy |
 
 `next_action` can also be `step_up` (ask the user for stronger verification) or `resubmit_capture` (ask the user to capture again). Branch on every value.
 
@@ -407,6 +408,7 @@ Server-to-server IP scoring: geolocation, network ownership, VPN/Tor and data-ce
 ```python
 import requests
 
+client_ip = "<the IP address to score>"
 response = requests.post(
     "https://verification.didit.me/v3/ip/risk/",
     headers={"x-api-key": "YOUR_API_KEY", "Content-Type": "application/json"},
@@ -508,7 +510,7 @@ print(result["status"], result["ip"]["country_mismatch"])
 export DIDIT_API_KEY="your_api_key"
 python scripts/run_fraud_check.py plan --email user@example.com --phone +14155552671 \
     --include email_risk,phone_risk --profile-version 2026-09-14.1
-python scripts/run_fraud_check.py run --email user@example.com --ip 198.51.100.7 \
+python scripts/run_fraud_check.py run --email user@example.com --ip "$USER_PUBLIC_IP" \
     --include email_risk,ip_risk,networks_same_org --client-reference signup-001
 python scripts/run_fraud_check.py run --tax-number 12345678909 --country BR \
     --selfie selfie.jpg --consent --include biometric_identity --profile-version 2026-09-14.2
