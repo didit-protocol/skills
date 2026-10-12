@@ -376,7 +376,7 @@ export DIDIT_API_KEY="your_api_key"
 export DIDIT_ORG_ID="your_organization_uuid"
 export DIDIT_APP_ID="your_application_uuid"
 python scripts/list_networks.py list --status active,in_review --risk-band high
-python scripts/list_networks.py list --signal-type device,ip_address --min-size 3 --ordering -last_activity_at
+python scripts/list_networks.py list --signal-type device,ip_address --min-size 3 --ordering=-last_activity_at
 python scripts/list_networks.py get 2b7e1f0c-4d3a-4e5b-9c6d-7e8f9a0b1c2d
 python scripts/list_networks.py members 2b7e1f0c-4d3a-4e5b-9c6d-7e8f9a0b1c2d
 python scripts/list_networks.py lookup --session-id 11111111-2222-4333-8444-555555555555

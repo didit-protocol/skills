@@ -186,7 +186,8 @@ def main():
     assignment.add_argument("--unassigned", action="store_true", help="Only unassigned cases")
     assignment.add_argument("--assigned", action="store_true", help="Only assigned cases")
     list_p.add_argument("--overdue", action="store_true", help="Only overdue open/awaiting-user cases")
-    list_p.add_argument("--ordering", choices=["created_at", "-created_at", "due_at", "-due_at"])
+    list_p.add_argument("--ordering", choices=["created_at", "-created_at", "due_at", "-due_at"],
+                        help="Write descending values with =, e.g. --ordering=-due_at (default: -created_at)")
     list_p.add_argument("--limit", type=int, default=50, help="Page size (default: 50)")
     list_p.add_argument("--offset", type=int, default=0, help="Offset (default: 0)")
 

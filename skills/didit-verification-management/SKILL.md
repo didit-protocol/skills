@@ -778,7 +778,7 @@ Didit `POST`s JSON to every enabled destination subscribed to the event (`User-A
 | `X-Signature` | HMAC-SHA256 (hex) of the exact raw body bytes | When you can read the raw body |
 | `X-Signature-Simple` | HMAC-SHA256 of `"{timestamp}:{session_id}:{status}:{webhook_type}"` (`"{timestamp}::{status}:{webhook_type}"` for events without a `session_id`) | **Deprecated**: covers the envelope only, not `decision`. If you rely on it, re-fetch the record from the API before acting. |
 
-The key is the destination's `secret_shared_key`. During a secret rotation Didit can also send `X-Signature-Previous` and `X-Signature-V2-Previous`, signed with the previous secret, so either secret verifies.
+The key is the destination's `secret_shared_key`.
 
 ```python
 import hashlib
@@ -818,11 +818,11 @@ def verify_webhook(body: bytes, headers: dict, secret: str, now: int | None = No
             shorten_floats(json.loads(body)), sort_keys=True, separators=(",", ":"), ensure_ascii=False
         )
         v2 = hmac.new(key, canonical.encode("utf-8"), hashlib.sha256).hexdigest()
-        candidates += [(h.get("x-signature-v2"), v2), (h.get("x-signature-v2-previous"), v2)]
+        candidates.append((h.get("x-signature-v2"), v2))
     except (ValueError, TypeError):
         pass
     raw = hmac.new(key, body, hashlib.sha256).hexdigest()
-    candidates += [(h.get("x-signature"), raw), (h.get("x-signature-previous"), raw)]
+    candidates.append((h.get("x-signature"), raw))
     return any(sig and hmac.compare_digest(str(sig), expected) for sig, expected in candidates)
 ```
 

@@ -306,7 +306,7 @@ When the case's blueprint sets `four_eyes_checker_blueprint`, `resolve/` does no
 
 - `GET .../notes/` (`limit` default 50, `offset`): pinned notes first, then newest first.
 - `PATCH .../notes/{note_uuid}/` with `{"is_pinned": true}`; `DELETE .../notes/{note_uuid}/` permanently deletes it (`204`).
-- **Upload:** `POST .../notes/presign/` as `multipart/form-data` with `file` (PDF, JPEG, PNG, WebP, plain text or CSV, max 5 MB) returns `201` `{"s3_key", "url", "filename", "file_size"}`. The `s3_key` starts with `case-notes/{case_uuid}/`; a key from another case is rejected with `400`.
+- **Upload:** `POST .../notes/presign/` as `multipart/form-data` with `file` (PDF, JPEG, PNG, WebP, plain text or CSV, max 5 MB) returns `201` `{"s3_key", "url", "filename", "file_size"}`. The `s3_key` starts with `case-notes/{case_uuid}/`; a note whose attachment `s3_key` belongs to another case is rejected with `400`.
 - **Download later:** `GET .../notes/presign/?s3_key=<key>` returns a fresh `{"s3_key", "url", "filename"}` (`404` if the key is not on this case).
 
 **Links:** `GET .../links/` (array), `POST .../links/` with `{"entity_type", "entity_uuid"}` (`201`; `400` if it belongs to a different subject), `DELETE .../links/{link_uuid}/` (`204`).

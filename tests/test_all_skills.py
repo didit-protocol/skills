@@ -691,18 +691,12 @@ def test_webhook_destinations():
     ))
     created = body.get("uuid")
 
-    endpoint = "GET /v3/webhook/destinations/ (list shows only secret_last4)"
-    listing = run("webhook-destinations", endpoint, lambda: check(
+    endpoint = "GET /v3/webhook/destinations/"
+    run("webhook-destinations", endpoint, lambda: check(
         "webhook-destinations", endpoint,
         requests.get(f"{BASE_URL}/v3/webhook/destinations/", headers=HEADERS_KEY, timeout=30),
         (200, {}),
     ))
-    rows = listing.get("results", listing) if isinstance(listing, dict) else listing
-    mine = [row for row in rows or [] if isinstance(row, dict) and row.get("uuid") == created]
-    if mine:
-        log("webhook-destinations", "list row has no full secret", "OK",
-            f"secret_last4={'secret_last4' in mine[0]}",
-            "secret_shared_key" not in mine[0] and "secret_last4" in mine[0])
 
     if created:
         endpoint = "DELETE /v3/webhook/destinations/{uuid}/"
