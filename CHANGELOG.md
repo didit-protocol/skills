@@ -36,15 +36,15 @@ failed against the real API, documents the endpoints that were missing, and adds
 - **didit-verification-management (5.0.0 to 5.1.0):** working webhook signature verifier (`X-Signature-V2` signs the
   canonical JSON with no timestamp prefix; `X-Signature-Simple` is deprecated); the real webhook event list;
   destinations use `secret_shared_key` and need `subscribed_events`; questionnaire element types (19, `checkbox` and
-  `date` do not exist); paginated workflow, organization and review lists; workflow ordering rules and defaults;
-  session delete, batch delete jobs, update-status rules, step and AML hit review, KYB data and parties,
-  resubmission preview, share (`for_application_id` required), PDF trailing slash; imports need `workflow_id`;
-  scoped API keys; AML monitoring, biometric templates, KYB shareholders and UBO. Scripts: `create_session.py` uses
-  `limit`/`offset` and JSON metadata, `manage_workflows.py` reads paginated lists, `setup_account.py` handles
-  re-registration, 2FA and code resend.
+  `date` do not exist; repeatable groups and branching are built in the Console); paginated workflow, organization
+  and review lists; workflow ordering rules and defaults; session delete, batch delete jobs, update-status rules,
+  step and AML hit review, KYB data and parties, resubmission preview, share (`for_application_id` required), PDF
+  trailing slash; imports need `workflow_id`; scoped API keys; AML monitoring, biometric templates, KYB shareholders
+  and UBO. Scripts: `create_session.py` uses `limit`/`offset` and JSON metadata, `manage_workflows.py` reads
+  paginated lists, `setup_account.py` handles re-registration, 2FA and code resend.
 - **didit-kyc-onboarding (1.1.0 to 1.2.0):** reads `issuing_state` and `expiration_date`; polling stops on every final
   status (`Expired`, `Kyc Expired`, `Abandoned` included); `mrz` is an object and warnings sit on each feature;
-  node ids are read from the decision.
+  node ids are read from the decision; `run_kyc.py decision --poll` rejects an `--interval` below 1 second.
 - **didit-id-document-verification (1.2.0 to 1.3.0):** 14,000+ document types, PDF input and 10 MB per side,
   `Approved` or `Declined` only, the per-request action options, corrected response keys and warning tables;
   digital ID wallet verifications.
@@ -57,7 +57,9 @@ failed against the real API, documents the endpoints that were missing, and adds
   non-existent `undeliverable_email_action`; expired codes return `200` "Expired or Not Found"; phone channels
   (RCS, Viber, Zalo), resend rule and send statuses; email and phone risk endpoints.
 - **didit-aml-screening (1.2.0 to 1.3.0):** nationality is ISO alpha-2 only; approve and review thresholds, adverse
-  media, ongoing monitoring (off by default) and `Idempotency-Key`; a consistent scoring example; hit review.
+  media, ongoing monitoring (off by default) and `Idempotency-Key`; a consistent scoring example; hit review. The
+  KYC + AML recipes here and in didit-id-document-verification convert the alpha-3 nationality that ID verification
+  returns to alpha-2 before calling `/v3/aml/`.
 - **didit-proof-of-address (1.2.0 to 1.3.0):** WebP, per-type document age, `expected_*` inputs, the real response
   shape and warning names.
 - **didit-database-validation (1.2.0 to 1.3.0):** `issuing_state` is ISO **alpha-3** again (the 5.0.0 change to
@@ -66,6 +68,7 @@ failed against the real API, documents the endpoints that were missing, and adds
 - **didit-transaction-monitoring (1.0.0 to 1.1.0):** a reused `transaction_id` is rejected (`400`/`409`);
   `entity_type` is `individual`; `travel_rule_details.status` is required (the script's Travel Rule example failed);
   Travel Rule statuses and settings, 16 wallet-screening chains, the wallet-screening PDF and the Rules API.
+  `submit_transaction.py` takes `--counterparty-entity-type` (`individual` or `company`).
 
 ### Tests
 - New `tests/test_skill_structure.py` (offline, no key): frontmatter and naming, README table and tree, scripts
