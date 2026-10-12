@@ -46,7 +46,7 @@ def _post(path: str, payload: dict, ok_statuses: tuple) -> dict:
 
 def register(email: str, password: str) -> dict:
     """201 for a new account; 200 when the email is registered but not verified yet (a new code is sent)."""
-    return _post("/programmatic/register/", {"email": email, "password": password}, (200, 201))
+    return _post("/programmatic/register/", {"email": email, "password": password, "signup_path": "cli"}, (200, 201))
 
 
 def verify_email(email: str, code: str) -> dict:
