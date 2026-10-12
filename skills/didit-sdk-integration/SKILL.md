@@ -320,7 +320,7 @@ DiditSdk.startVerification(token = sessionToken, configuration = Configuration(c
 }
 ```
 
-- `DiditSdk.startVerification(token: String, configuration: Configuration? = null, onResult: (VerificationResult) -> Unit)`. Without `DiditSdk.initialize(context)` first it returns `Failed(VerificationError.NotInitialized, null)`.
+- `DiditSdk.startVerification(token: String, configuration: Configuration? = null, onResult: (VerificationResult) -> Unit)`. Without `DiditSdk.initialize(context)` first, `onResult` receives `Failed(VerificationError.NotInitialized, null)`.
 - Imports: `me.didit.sdk.DiditSdk`, `me.didit.sdk.DiditSdkState`, `me.didit.sdk.VerificationResult`, `me.didit.sdk.Configuration`.
 
 #### React Native (`@didit-protocol/sdk-react-native` 4.9.1)
@@ -428,11 +428,11 @@ Result shapes: Web `{ type: "completed" | "cancelled" | "failed", session?: { se
 | Android (`VerificationError`) | `SessionExpired`, `RetryBlocked`, `NetworkError`, `CameraAccessDenied`, `NotInitialized`, `ApiError(statusCode, errorMessage)`, `Unknown(message)` |
 | React Native, Flutter (`VerificationErrorType`) | `sessionExpired`, `networkError`, `cameraAccessDenied`, `notInitialized`, `apiError`, `retryBlocked`, `unknown` |
 
-`sessionExpired`: create a new session. `retryBlocked`: the session reached its retry limit.
+`sessionExpired`: create a new session. `retryBlocked`: the user reached the maximum number of verification attempts.
 
 ### Step 4: Confirm on your backend
 
-Subscribe to the `status.updated` webhook (see **didit-verification-management** for destinations and signature checks) or call `GET /v3/session/{session_id}/decision/` with the API key. Treat `Approved` from the decision as the source of truth; `In Review` waits for a reviewer; `Declined`, `Expired` and `Abandoned` need a new session.
+Subscribe to the `status.updated` webhook (see **didit-verification-management** for destinations and signature checks) or call `GET /v3/session/{session_id}/decision/` with the API key. Treat the decision `status` as the source of truth: grant access only on `Approved`; `In Review` waits for a reviewer; for `Expired` create a new session.
 
 ### Starting from a workflow id (no backend session)
 
@@ -567,7 +567,7 @@ if (result.actionRequired?.type === "verification_session" && result.actionRequi
 }
 ```
 
-`sessionToken` and `url` are optional fields in every SDK: check them before use. `actionRequired` returns to `null` once resolved, and your backend receives `transaction.status.updated` (see **didit-transaction-monitoring**).
+`sessionToken` is optional in every SDK (and `url` on mobile): check before use. `actionRequired` returns to `null` once resolved, and your backend receives `transaction.status.updated` (see **didit-transaction-monitoring**).
 
 ---
 

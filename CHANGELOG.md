@@ -4,6 +4,77 @@ All notable changes to the Didit Agent Skills collection will be documented in t
 
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0] - 2026-10-12
+
+Every skill re-checked against the Didit backend, the public OpenAPI spec and the docs. Fixes requests that
+failed against the real API, documents the endpoints that were missing, and adds seven skills.
+
+### Added
+- **didit-event-monitoring (1.0.0):** account and device events (`/v3/events/`, batch, subject timelines, delete),
+  device tokens (`POST /v3/events/sdk-token/`) and the device lane (`POST /v1/events/` with `X-Monitoring-Token`),
+  and rules on events (`scope.record_types`). Includes `scripts/send_event.py`.
+- **didit-fraud-check (1.0.0):** Fraud Check (`/v3/fraud/checks/`, `plan/`, get), profiles, modules, risk
+  dimensions and recommendations, plus the IP Risk API. Includes `scripts/run_fraud_check.py`.
+- **didit-case-management (1.0.0):** cases (create, assign, transfer, escalate, resolve, 4-eyes approval, notes,
+  links, checklist, bulk, statistics), blueprints and presets, report templates and regulatory reports.
+  Includes `scripts/manage_cases.py`.
+- **didit-fraud-networks (1.0.0):** fraud networks (list, detail, graph, members, signals, timeline, map, report)
+  and network lookups for sessions, users, businesses and transactions. Includes `scripts/list_networks.py`.
+- **didit-sdk-integration (1.0.0):** redirect, iframe, WebView, Web SDK, iOS, Android, React Native and Flutter
+  integration, result handling, `submitTransaction` on every SDK, and device events over HTTP. Includes
+  `scripts/mint_sdk_tokens.py`.
+- **didit-mcp-server (1.0.0):** connecting AI clients to the hosted Didit MCP server (`https://mcp.didit.me/mcp`),
+  sign-in, headless use, file inputs and confirmation rules.
+- **didit-document-ai (1.0.0):** Document AI extraction (`POST /v3/document-ai/`) with custom fields, name matching
+  and tamper checks. Includes `scripts/extract_document.py`.
+
+### Changed
+- **All skills:** the API key is read from `application.api_key` in the verify-email response; the console path is
+  **Developers > API keys**; a wrong key returns `403` (only an expired named key returns `401`); `429` and its
+  limits are documented; list prices are stated with the 1 November 2026 pricing change; placeholder emails and
+  real company names were removed; no em dashes.
+- **didit-verification-management (5.0.0 to 5.1.0):** working webhook signature verifier (`X-Signature-V2` signs the
+  canonical JSON with no timestamp prefix; `X-Signature-Simple` is deprecated); the real webhook event list;
+  destinations use `secret_shared_key` and need `subscribed_events`; questionnaire element types (19, `checkbox` and
+  `date` do not exist); paginated workflow, organization and review lists; workflow ordering rules and defaults;
+  session delete, batch delete jobs, update-status rules, step and AML hit review, KYB data and parties,
+  resubmission preview, share (`for_application_id` required), PDF trailing slash; imports need `workflow_id`;
+  scoped API keys; AML monitoring, biometric templates, KYB shareholders and UBO. Scripts: `create_session.py` uses
+  `limit`/`offset` and JSON metadata, `manage_workflows.py` reads paginated lists, `setup_account.py` handles
+  re-registration, 2FA and code resend.
+- **didit-kyc-onboarding (1.1.0 to 1.2.0):** reads `issuing_state` and `expiration_date`; polling stops on every final
+  status (`Expired`, `Kyc Expired`, `Abandoned` included); `mrz` is an object and warnings sit on each feature;
+  node ids are read from the decision.
+- **didit-id-document-verification (1.2.0 to 1.3.0):** 14,000+ document types, PDF input and 10 MB per side,
+  `Approved` or `Declined` only, the per-request action options, corrected response keys and warning tables;
+  digital ID wallet verifications.
+- **didit-liveness-detection (1.2.0 to 1.3.0), didit-face-match (1.4.0 to 1.5.0), didit-face-search (1.2.0 to 1.3.0),
+  didit-biometric-age-estimation (1.1.0 to 1.2.0):** decimal thresholds and their exact comparison, `Approved` or
+  `Declined` only, the warnings each endpoint really raises, face search `search_type` and match fields, age
+  estimation's `age_estimation` response key and threshold inputs. Fixed `search_faces.py` (similarity) and
+  `estimate_age.py` (age key, threshold sent to the API).
+- **didit-email-verification (1.2.0 to 1.3.0), didit-phone-verification (1.3.0 to 1.4.0):** removed the
+  non-existent `undeliverable_email_action`; expired codes return `200` "Expired or Not Found"; phone channels
+  (RCS, Viber, Zalo), resend rule and send statuses; email and phone risk endpoints.
+- **didit-aml-screening (1.2.0 to 1.3.0):** nationality is ISO alpha-2 only; approve and review thresholds, adverse
+  media, ongoing monitoring (off by default) and `Idempotency-Key`; a consistent scoring example; hit review.
+- **didit-proof-of-address (1.2.0 to 1.3.0):** WebP, per-type document age, `expected_*` inputs, the real response
+  shape and warning names.
+- **didit-database-validation (1.2.0 to 1.3.0):** `issuing_state` is ISO **alpha-3** again (the 5.0.0 change to
+  alpha-2 made every request fail); per-country default services and required fields from the public catalog;
+  per-service results and prices.
+- **didit-transaction-monitoring (1.0.0 to 1.1.0):** a reused `transaction_id` is rejected (`400`/`409`);
+  `entity_type` is `individual`; `travel_rule_details.status` is required (the script's Travel Rule example failed);
+  Travel Rule statuses and settings, 16 wallet-screening chains, the wallet-screening PDF and the Rules API.
+
+### Tests
+- New `tests/test_skill_structure.py` (offline, no key): frontmatter and naming, README table and tree, scripts
+  compile and are referenced, JSON and Python examples parse, API paths keep their trailing slash, no supplier
+  names or em dashes, and the webhook verifier accepts signatures produced by Didit's signing code.
+- `tests/test_all_skills.py` now checks each response's status code and JSON fields instead of accepting any
+  `400`, covers the new endpoints, runs the case and network checks when `DIDIT_ORG_ID` and `DIDIT_APP_ID` are
+  set, and no longer prints part of the API key.
+
 ## [5.0.0] - 2026-07-31
 
 Accuracy sync with the audited Didit OpenAPI spec. Corrects API contracts that would
