@@ -1,11 +1,14 @@
 ---
 name: didit-liveness-detection
 description: >
-  Detects liveness from a single selfie image via the Didit standalone API. Use when
-  checking if a person is physically present, detecting spoofing or presentation attacks,
-  implementing anti-spoofing measures, or performing passive liveness verification.
-  Returns liveness score, face quality, and luminance metrics. 99.9% accuracy.
-version: 1.2.0
+  Runs Didit's standalone passive liveness check on a single selfie image
+  (POST /v3/passive-liveness/). Use when checking that a person is physically present,
+  detecting spoofing or presentation attacks (printed photos, screen replays, masks,
+  deepfakes), adding anti-spoofing to a selfie step, or screening a selfie against the
+  face blocklist and earlier approved faces. Returns a 0-100 liveness score, an
+  Approved/Declined status against a configurable decline threshold, face quality and
+  luminance, and blocklist and duplicate-face warnings.
+version: 1.3.0
 metadata:
   openclaw:
     requires:
@@ -20,19 +23,27 @@ metadata:
 
 ## Overview
 
-Verifies that a user is physically present by analyzing a single captured image — no explicit movement or interaction required.
+Verifies that a user is physically present by analyzing a single captured image. No video, movement or user interaction is required.
 
 **Key constraints:**
-- Supported formats: **JPEG, PNG, WebP, TIFF**
-- Maximum file size: **5MB**
-- Image must contain **exactly one clearly visible face**
-- Original real-time photo only (no screenshots or printed photos)
+- Allowed file extensions: **tiff, jpg, jpeg, png, webp** (no PDF)
+- Maximum file size: **5 MB** (images are compressed to about 0.5 MB before processing, so higher resolutions do not improve accuracy)
+- One clearly visible face. With several faces the largest one is scored and `MULTIPLE_FACES_DETECTED` is added
+- Original real-time capture (no screenshots, prints or photos of screens)
+
+**Pricing:** $0.05 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
 
 **Accuracy:** 99.9% liveness detection accuracy, <0.1% false acceptance rate (FAR).
 
-**Capabilities:** Liveness scoring, face quality assessment, luminance analysis, age/gender estimation, spoof detection (screen captures, printed copies, masks, deepfakes), duplicate face detection across sessions, blocklist matching.
+**Decision:** `status` is `Declined` when any `error` warning fires (no face, score at or below the threshold, presentation attack, blocklist hit) and `Approved` otherwise. There is no `In Review` on this endpoint. Only the score threshold is configurable.
 
-**Liveness methods:** This standalone endpoint uses `PASSIVE` method (single-frame CNN). Workflow mode also supports `ACTIVE_3D` (action + flash, highest security) and `FLASHING` (3D flash, high security).
+**Blocklist and duplicate screening:** runs on **every** call, also with `save_api_request=false`. The face is compared with your application's face search index (your face blocklist and allowlist, faces from approved sessions, faces uploaded to User profiles and retained biometric templates). Earlier faces with the same `vendor_data` are skipped for the duplicate check, so re-verifying the same user does not raise `DUPLICATED_FACE`. A blocklisted face is still caught when it carries the same `vendor_data`. A match on your face allowlist suppresses the duplicate warnings.
+
+**Saving and enrollment (`save_api_request`, default `true`):** the call is saved as an API session (Business Console, `GET /v3/session/{request_id}/decision/`, `status.updated` webhook), the image and face crop are stored, and the face is **enrolled into your face search index** so later Face Search calls and duplicate checks can match it. With `false` nothing is stored, the face is not enrolled and `request_id` cannot be looked up.
+
+**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed.
+
+**Liveness methods:** this endpoint always uses `PASSIVE` (single-frame CNN). Hosted workflows can also use `ACTIVE_3D` (3D Action & Flash, highest security) and `FLASHING` (3D Flash, high security) through the `face_liveness_method` workflow setting.
 
 **API Reference:** https://docs.didit.me/standalone-apis/passive-liveness
 **Feature Guide:** https://docs.didit.me/core-technology/liveness/overview
@@ -41,15 +52,15 @@ Verifies that a user is physically present by analyzing a single captured image 
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+Every request needs the `x-api-key` header. Use your application's API key from the [Didit Business Console](https://business.didit.me) under **Developers > API keys**, or create an account and key programmatically (see Getting Started). Named keys with custom access need **Sessions** write to run standalone checks; a key limited to some workflows or to approved sessions cannot run them.
 
 ## Getting Started (No Account Yet?)
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
-2. **Check email** for a 6-character OTP code
-3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character verification code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
 **To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
 
@@ -68,80 +79,101 @@ POST https://verification.didit.me/v3/passive-liveness/
 | Header | Value | Required |
 |---|---|---|
 | `x-api-key` | Your API key | **Yes** |
-| `Content-Type` | `multipart/form-data` | **Yes** |
+| `Content-Type` | `multipart/form-data` (set by your HTTP client) | **Yes** |
 
 ### Request Parameters (multipart/form-data)
 
 | Parameter | Type | Required | Default | Constraints | Description |
 |---|---|---|---|---|---|
-| `user_image` | file | **Yes** | — | JPEG/PNG/WebP/TIFF, max 5MB | User's face image |
-| `face_liveness_score_decline_threshold` | integer | No | — | 0-100 | Scores below this = Declined |
-| `rotate_image` | boolean | No | — | — | Try rotations to find upright face |
-| `save_api_request` | boolean | No | `true` | — | Save in Business Console |
-| `vendor_data` | string | No | — | — | Your identifier for session tracking |
+| `user_image` | file | **Yes** | - | tiff/jpg/jpeg/png/webp, max 5 MB | Front-facing face image (selfie) |
+| `face_liveness_score_decline_threshold` | float | No | `30` | 0-100 | A score **at or below** this value raises `LOW_LIVENESS_SCORE` and declines. Raise it for a stricter anti-spoofing posture |
+| `rotate_image` | boolean | No | `false` | - | Try 90-degree rotations and use the orientation with the best face detection. Adds latency |
+| `save_api_request` | boolean | No | `true` | - | Save as an API session and enroll the face (see Overview) |
+| `vendor_data` | string | No | - | - | Your user identifier. Stored, echoed back, and used to skip the same user's earlier faces in the duplicate check |
+| `metadata` | JSON object | No | - | JSON-encoded string in multipart | Stored with the session (when saved) and echoed back |
 
 ### Example
 
 ```python
+import json
+
 import requests
 
-response = requests.post(
-    "https://verification.didit.me/v3/passive-liveness/",
-    headers={"x-api-key": "YOUR_API_KEY"},
-    files={"user_image": ("selfie.jpg", open("selfie.jpg", "rb"), "image/jpeg")},
-    data={"face_liveness_score_decline_threshold": "80"},
-)
+with open("selfie.jpg", "rb") as f:
+    response = requests.post(
+        "https://verification.didit.me/v3/passive-liveness/",
+        headers={"x-api-key": "YOUR_API_KEY"},
+        files={"user_image": ("selfie.jpg", f, "image/jpeg")},
+        data={
+            "face_liveness_score_decline_threshold": "50",
+            "vendor_data": "user-123",
+            "metadata": json.dumps({"flow": "withdrawal"}),
+        },
+        timeout=60,
+    )
+response.raise_for_status()
+liveness = response.json()["liveness"]
+print(liveness["status"], liveness["score"], [w["risk"] for w in liveness["warnings"]])
 ```
 
 ```typescript
 const formData = new FormData();
 formData.append("user_image", selfieFile);
-formData.append("face_liveness_score_decline_threshold", "80");
+formData.append("face_liveness_score_decline_threshold", "50");
+formData.append("vendor_data", "user-123");
+formData.append("metadata", JSON.stringify({ flow: "withdrawal" }));
 
 const response = await fetch("https://verification.didit.me/v3/passive-liveness/", {
   method: "POST",
   headers: { "x-api-key": "YOUR_API_KEY" },
   body: formData,
 });
+const { liveness } = await response.json();
 ```
 
 ### Response (200 OK)
 
 ```json
 {
-  "request_id": "a1b2c3d4-...",
+  "request_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
   "liveness": {
     "status": "Approved",
     "method": "PASSIVE",
-    "score": 95,
+    "score": 95.0,
     "user_image": {
       "entities": [
-        {"age": 22.16, "bbox": [156, 234, 679, 898], "confidence": 0.717, "gender": "male"}
+        {"bbox": [661, 728, 1688, 2188], "confidence": 0.732973, "age": 26.91, "gender": "male"}
       ],
       "best_angle": 0
     },
     "warnings": [],
-    "face_quality": 85.0,
-    "face_luminance": 50.0
+    "face_quality": 84.21,
+    "face_luminance": 50.33
   },
-  "created_at": "2025-05-01T13:11:07.977806Z"
+  "vendor_data": "user-123",
+  "metadata": {"flow": "withdrawal"},
+  "created_at": "2026-06-12T01:04:42.763237+00:00"
 }
 ```
+
+A spoofed or blocklisted face still returns HTTP `200`: always read `liveness.status` and `liveness.warnings`.
 
 ### Status Values & Handling
 
 | Status | Meaning | Action |
 |---|---|---|
-| `"Approved"` | User is physically present | Proceed with your flow |
-| `"Declined"` | Liveness check failed | Check `warnings`. May be a spoof or poor image quality |
+| `"Approved"` | No `error` warning fired | Proceed. Still check `warnings` for `DUPLICATED_FACE` / `POSSIBLE_DUPLICATED_FACE` / `MULTIPLE_FACES_DETECTED` |
+| `"Declined"` | At least one `error` warning fired | Read `warnings[].risk`: retake for capture problems, block or review for attacks and blocklist hits |
 
 ### Error Responses
 
 | Code | Meaning | Action |
 |---|---|---|
-| `400` | Invalid request | Check file format, size, parameters |
-| `401` | Invalid API key | Verify `x-api-key` header |
-| `403` | Insufficient credits | Top up at business.didit.me |
+| `400` | Invalid request | Read the field errors in the response body |
+| `400` | `{"error": "Invalid user image format."}`: allowed extension but the file cannot be decoded | Re-encode the image (JPEG or PNG) and retry |
+| `401` | The API key has expired | Rotate it or create a new key in **Developers > API keys** |
+| `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
+| `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 
 ---
 
@@ -149,41 +181,36 @@ const response = await fetch("https://verification.didit.me/v3/passive-liveness/
 
 | Field | Type | Description |
 |---|---|---|
-| `status` | string | `"Approved"` or `"Declined"` |
-| `method` | string | Always `"PASSIVE"` for this endpoint |
-| `score` | integer | 0-100 liveness confidence (higher = more likely real). `null` if no face |
-| `face_quality` | float | 0-100 face image quality score. `null` if no face |
-| `face_luminance` | float | Face luminance value. `null` if no face |
-| `entities[].age` | float | Estimated age |
-| `entities[].bbox` | array | Face bounding box `[x1, y1, x2, y2]` |
-| `entities[].confidence` | float | Face detection confidence (0-1) |
-| `entities[].gender` | string | `"male"` or `"female"` |
-| `warnings` | array | `{risk, log_type, short_description, long_description}` |
+| `request_id` | uuid | Session id when `save_api_request=true` (use with `GET /v3/session/{request_id}/decision/`); otherwise a one-off correlation id |
+| `liveness.status` | string | `"Approved"` or `"Declined"` |
+| `liveness.method` | string | Always `"PASSIVE"` |
+| `liveness.score` | float or null | 0-100 (two decimals), higher means more likely a live person. `null` when the model returned no confidence; a `null` score counts as 0 against the threshold |
+| `liveness.user_image.entities[]` | array | One entry per detected face: `bbox` `[x_min, y_min, x_max, y_max]`, `confidence` (0-1), `age`, `gender`. Age and gender are informational and do not affect the decision |
+| `liveness.user_image.best_angle` | integer or null | Rotation (degrees) that gave the best detection; non-zero only when `rotate_image=true` corrected it |
+| `liveness.warnings[]` | array | `{risk, feature, additional_data, log_type, short_description, long_description}`. `feature` is always `LIVENESS` |
+| `liveness.face_quality` | float or null | Capture quality of the face, 0-100. `null` when no reliable value |
+| `liveness.face_luminance` | float or null | Brightness of the face, 0-100. `null` when unavailable |
+| `vendor_data` | string or null | Echo of what you sent |
+| `metadata` | object or null | Echo of what you sent |
+| `created_at` | string | ISO 8601 UTC time of the response |
 
 ---
 
 ## Warning Tags
 
-### Auto-Decline (always)
+| Tag | Severity | Declines | When it fires |
+|---|---|---|---|
+| `NO_FACE_DETECTED` | `error` | Yes | The liveness model found no face |
+| `LOW_LIVENESS_SCORE` | `error` | Yes | `score` at or below `face_liveness_score_decline_threshold`. Not raised together with `NO_FACE_DETECTED` |
+| `LIVENESS_FACE_ATTACK` | `error` | Yes | Presentation attack detected (print, screen replay, mask, deepfake) |
+| `FACE_IN_BLOCKLIST` | `error` | Yes | Strong match with a face on your face blocklist. `additional_data` includes `blocklisted_session_id`, `blocklisted_session_number`, `api_service` |
+| `POSSIBLE_FACE_IN_BLOCKLIST` | `error` | Yes | Weaker match with a blocklisted face. This endpoint declines it (workflows send it to review) |
+| `MULTIPLE_FACES_DETECTED` | `warning` | No | More than one face; the largest one was scored |
+| `DUPLICATED_FACE` | `information` | No | Strong match with a face from another approved session (or an imported face or retained template). `additional_data` includes `duplicated_session_id`, `duplicated_session_number`, `api_service` |
+| `POSSIBLE_DUPLICATED_FACE` | `information` | No | Weaker match of the same kind |
 
-| Tag | Description |
-|---|---|
-| `NO_FACE_DETECTED` | No face detected in image |
-| `LIVENESS_FACE_ATTACK` | Potential spoofing attempt (printed photo, screen, mask) |
-| `FACE_IN_BLOCKLIST` | Face matches a blocklisted entry |
-| `POSSIBLE_FACE_IN_BLOCKLIST` | Possible blocklist match detected |
-
-### Configurable (Decline / Review / Approve)
-
-| Tag | Description | Notes |
-|---|---|---|
-| `LOW_LIVENESS_SCORE` | Score below threshold | Configurable review + decline thresholds |
-| `DUPLICATED_FACE` | Matches another approved session | — |
-| `POSSIBLE_DUPLICATED_FACE` | May match another user | Configurable similarity threshold |
-| `MULTIPLE_FACES_DETECTED` | Multiple faces (largest used for scoring) | Passive only |
-| `LOW_FACE_QUALITY` | Image quality below threshold | Passive only |
-| `LOW_FACE_LUMINANCE` | Image too dark | Passive only |
-| `HIGH_FACE_LUMINANCE` | Image too bright/overexposed | Passive only |
+- `LOW_FACE_QUALITY`, `LOW_FACE_LUMINANCE` and `HIGH_FACE_LUMINANCE` are **never** raised by this endpoint (they are workflow warnings). Apply your own rule to `face_quality` / `face_luminance` if you need one.
+- Base decisions on `status` and `warnings[].risk`. The severities above are this endpoint's rules; with the default `save_api_request=true` the `log_type` echoed on each warning follows the final `status` (`error` when Declined, `information` when Approved).
 
 ---
 
@@ -192,22 +219,26 @@ const response = await fetch("https://verification.didit.me/v3/passive-liveness/
 ### Basic Liveness Check
 
 ```
-1. Capture user selfie
-2. POST /v3/passive-liveness/ → {"user_image": selfie}
-3. If "Approved" → user is real, proceed
-   If "Declined" → check warnings:
-     - NO_FACE_DETECTED → ask user to retake with face clearly visible
-     - LOW_FACE_QUALITY → ask for better lighting/positioning
-     - LIVENESS_FACE_ATTACK → flag as potential fraud
+1. Capture the user's selfie
+2. POST /v3/passive-liveness/ with user_image and vendor_data=<your user id>
+3. "Approved" -> the user is live, proceed
+   "Declined" -> check warnings[].risk:
+     NO_FACE_DETECTED / LOW_LIVENESS_SCORE -> ask for a retake: one well-lit, centered face
+     LIVENESS_FACE_ATTACK                  -> suspected spoof, do not approve
+     FACE_IN_BLOCKLIST / POSSIBLE_FACE_IN_BLOCKLIST -> block or send to manual review
+4. "Approved" with DUPLICATED_FACE -> this face already passed under another vendor_data:
+   look up additional_data.duplicated_session_id before creating a new account
 ```
 
 ### Liveness + Face Match (combined)
 
 ```
-1. POST /v3/passive-liveness/ → verify user is real
-2. If Approved → POST /v3/face-match/ → compare selfie to ID photo
-3. Both Approved → identity verified
+1. POST /v3/passive-liveness/ -> verify the selfie is live
+2. If Approved -> POST /v3/face-match/ with user_image=selfie, ref_image=ID portrait
+3. Both Approved -> the live person matches the document photo
 ```
+
+Need a ranked list of every similar face rather than a blocklist/duplicate verdict? Use the **didit-face-search** skill, and run it before saving the same selfie here (a saved liveness face is itself searchable).
 
 ---
 
@@ -217,5 +248,6 @@ const response = await fetch("https://verification.didit.me/v3/passive-liveness/
 export DIDIT_API_KEY="your_api_key"
 
 python scripts/check_liveness.py selfie.jpg
-python scripts/check_liveness.py selfie.jpg --threshold 80
+python scripts/check_liveness.py selfie.jpg --threshold 50 --vendor-data user-123
+python scripts/check_liveness.py selfie.jpg --rotate --no-save --metadata '{"flow": "withdrawal"}'
 ```
