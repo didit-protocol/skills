@@ -26,6 +26,7 @@ SKILLS_DIR = ROOT / "skills"
 SKILLS = sorted(p.name for p in SKILLS_DIR.iterdir() if p.is_dir())
 README = (ROOT / "README.md").read_text(encoding="utf-8")
 
+EM_DASH, EN_DASH = chr(0x2014), chr(0x2013)
 NAME_RE = re.compile(r"^didit-[a-z0-9]+(-[a-z0-9]+)*$")
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[^\n]*\n(.*?)^```", re.S | re.M)
@@ -146,8 +147,8 @@ class SkillFormatTest(unittest.TestCase):
 
     def test_readme_counts_match(self):
         count = len(SKILLS)
-        self.assertRegex(README, rf"\b{count} production-ready skills\b")
-        self.assertRegex(README, rf"← {count} skills")
+        self.assertTrue(re.search(rf"\b{count} production-ready skills\b", README), f"README intro must say {count} skills")
+        self.assertTrue(re.search(rf"← {count} skills", README), f"README tree must say {count} skills")
 
 
 class ScriptTest(unittest.TestCase):
@@ -174,8 +175,8 @@ class ContentTest(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for number, line in enumerate(text.splitlines(), 1):
                 with self.subTest(file=str(path.relative_to(ROOT)), line=number):
-                    self.assertNotIn("—", line, "em dash")
-                    self.assertNotIn("–", line, "en dash")
+                    self.assertNotIn(EM_DASH, line, "em dash")
+                    self.assertNotIn(EN_DASH, line, "en dash")
 
     def test_no_supplier_names_or_personal_emails(self):
         for path in public_files():

@@ -479,7 +479,7 @@ try {
       category: "finance",
       details: { direction: "out", amount: "250.00", currency: "EUR" },
       subject: { fullName: "Jane Doe" },
-      counterparty: { fullName: "Ana Diaz", paymentMethod: { type: "bank_account", accountId: "ES9121000418450200051332" } },
+      counterparty: { fullName: "Ana Diaz", paymentMethod: { type: "bank_account", accountId: "acct-0001" } },
       customProperties: { order_id: "ORD-7891" },
     },
     autoLaunchAction: true, // default; only wallet_ownership is auto-launched
@@ -495,7 +495,7 @@ try {
 
 `submitTransaction(options: { transactionToken, transaction, baseUrl?, autoLaunchAction?, onActionCompleted? }): Promise<SubmitTransactionResult>`. The web payload uses `category`, `details` and `customProperties`; the SDK maps them to the wire names `type`, `info` and `props`. The Web SDK has no `getTransaction`: re-read with `GET /v1/transactions/{transaction_id}/` and the same `X-Transaction-Token` header.
 
-**Mobile (iOS, Android, React Native, Flutter 4.1.0+):** the payload uses the wire names directly (`txnId`, `type`, `info`, `subject`, `counterparty`, `props`, `travelRule`, `includeCryptoScreening`).
+**Mobile (iOS and Android 4.1.0+, and the React Native and Flutter releases that pin them):** the payload uses the wire names directly (`txnId`, `type`, `info`, `subject`, `counterparty`, `props`, `travelRule`, `includeCryptoScreening`).
 
 | Platform | Signature | Errors |
 |---|---|---|

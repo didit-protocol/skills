@@ -29,7 +29,7 @@ Scores every transaction in real time against a rule engine (conditions, velocit
 
 **Key facts:**
 - `POST /v3/transactions/` is synchronous: screening, Travel Rule routing and rules all run inside the call, so the `201` response already carries the verdict. A transaction is created `APPROVED`; rules may move it to `IN_REVIEW`, `DECLINED` or `AWAITING_USER`.
-- `transaction_id` is unique per application. Reusing it is rejected (`400`, or `409` when two requests race); the existing transaction is never returned. Retry only with the same id after checking whether the first call succeeded.
+- `transaction_id` is unique per application. Reusing it is rejected (`400` with `{"transaction_id": "A transaction with this transaction_id already exists."}`, or `409` when two requests race); the existing transaction is never returned. After a timeout, treat that `400` as "already created" and find the record in `GET /v3/transactions/` instead of resubmitting.
 - `GET /v3/transactions/{uuid}/` takes Didit's `uuid` from the create response, not your `transaction_id`.
 - Sandbox applications store transactions but skip rules, crypto screening, webhooks and billing (they stay `APPROVED`).
 - Non-monetary activity (logins, gameplay, bonuses, chargebacks) goes to the events API: see the **didit-event-monitoring** skill.

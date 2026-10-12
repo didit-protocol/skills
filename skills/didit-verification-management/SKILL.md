@@ -188,7 +188,7 @@ A workflow is the ordered list of checks a session runs. Each version has a `uui
 | `features` | array | - | **Required**, at least 1. Items `{"feature": "<UPPERCASE>", "config": {...}, "label": "optional"}` in execution order |
 | `workflow_label` | string | `ID Verification` | Max 50 chars; always set it |
 | `status` | string | published | Omit to publish; `"draft"` to save without publishing |
-| `is_default` | boolean | - | Default workflow for new sessions (the first workflow of an application becomes the default) |
+| `is_default` | boolean | - | Default workflow for new sessions |
 | `is_white_label_enabled` | boolean | `false` | Apply white-label branding |
 | `is_desktop_allowed` | boolean | `false` | Allow the flow on desktop browsers |
 | `max_retry_attempts` | integer | `3` | 0-10 retries after a decline (`0` blocks after the first decline) |
@@ -203,7 +203,6 @@ A workflow is the ordered list of checks a session runs. Each version has a `uui
 |---|---|
 | Full KYC (ID + selfie) | `OCR`, `LIVENESS`, `FACE_MATCH`, optionally `NFC`, `AML`, `IP_ANALYSIS` |
 | Age gating | `AGE_ESTIMATION` (runs liveness itself; `config.enable_id_verification_fallback` sends borderline ages to ID verification) |
-| Biometric re-authentication | `LIVENESS`, `FACE_MATCH` (needs `portrait_image` or a stored face for the `vendor_data` at session creation) |
 | Proof of address | `PROOF_OF_ADDRESS` |
 | Questionnaire | `QUESTIONNAIRE` with `config.questionnaire_uuid` |
 | Custom documents | `DOCUMENT_AI` (see the `didit-document-ai` skill) |
@@ -300,9 +299,9 @@ POST /v3/session/
 | `callback_method` | string | No | `initiator` (default), `completer` or `both` |
 | `metadata` | JSON | No | Any JSON (an object is recommended); echoed in the decision and webhooks |
 | `language` | string | No | UI language: ISO 639-1 code or `pt-BR`, `zh-CN`, `zh-TW`, `cnr`; defaults to browser detection |
-| `contact_details` | object | No | `email`, `phone` (E.164), `send_notification_emails` (needs `email`), `email_lang`: pre-fill the email/phone steps and send status emails |
+| `contact_details` | object | No | `email`, `phone` (E.164), `send_notification_emails`, `email_lang`: pre-fill the email/phone steps and send status emails |
 | `expected_details` | object | No | Values to compare with what the user submits (mismatches become warnings), see below |
-| `portrait_image` | base64 | Conditional | Reference face, max 2 MB, JPEG/PNG/WebP/TIFF. Required for biometric authentication or when `FACE_MATCH` runs before `OCR`, unless the `vendor_data` user already has a stored face (`400` otherwise). |
+| `portrait_image` | base64 | Conditional | Reference face, max 2 MB, JPEG/PNG/WebP/TIFF. Required for biometric-authentication workflows and graph workflows where face match runs before ID verification, unless the `vendor_data` user already has a stored face (`400` otherwise). |
 | `multi_account_segment` | string | No | Max 64 chars. Duplicate-face checks only compare sessions with the same segment; blocklists ignore it. |
 | `sandbox_scenario` | string | No | Sandbox applications only (`400` on live): scenario slug from [sandbox testing](https://docs.didit.me/integration/sandbox-testing) |
 
@@ -502,7 +501,7 @@ GET  /v3/session/imports/{importId}/errors/     # per-row errors (row_number, ex
 
 ## Lists (Block / Allow / Custom)
 
-A **blocklist** match declines future verifications or screenings; **allowlists** and **custom** lists feed workflow conditions and transaction rules. Lists are documented in the docs pages linked above.
+A **blocklist** match declines future verifications or screenings; **allowlists** and **custom** lists feed workflow conditions and rules. Lists are documented in the docs pages linked above.
 
 - `list_type`: `blocklist` (one system list per entry type, created automatically; can't be created, renamed or deleted), `allowlist`, `custom`.
 - `entry_type`: `face`, `document`, `phone`, `email`, `ip_address`, `device_fingerprint`, `wallet_address`, `bank_account`, `user`, `business`, `country`, `key`.
@@ -557,7 +556,7 @@ Custom forms run by the `QUESTIONNAIRE` workflow feature.
 | `default_language` | No | Default `en`; must be in `languages` |
 | `description` | No | Shown to users |
 | `is_active` | No | Default `true` |
-| `status` | No | Omit to publish; `draft` to save without publishing (a published questionnaire can't go back to draft) |
+| `status` | No | Omit to publish; `draft` to save without publishing |
 
 | Element field | Description |
 |---|---|
@@ -615,7 +614,7 @@ POST /v3/businesses/aml-monitoring/
 GET  /v3/aml-monitoring/jobs/{job_id}/
 ```
 
-Body: `is_enabled` (required), `estimate_only` (default `false`: return the cost estimate without changing anything), `vendor_data_list` and/or `didit_internal_id_list` (up to 1000 identifiers in total). Up to 20 profiles run inline (`200` with the finished job); more return `202` and run in the background. Job: `job_id`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), `is_enabled`, `target_type`, `total`, `processed`, `outcomes`, `results[]`, `error`, `created_at`, `completed_at`. Not enough credits: `403` with the `estimate`. AML monitoring is listed at $0.07 per profile per year.
+Body: `is_enabled` (required), `estimate_only` (default `false`: return the cost estimate without changing anything), `vendor_data_list` and/or `didit_internal_id_list` (up to 1000 identifiers in total). Up to 20 profiles run inline (`200` with the finished job); more return `202` and run in the background. Job: `job_id`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), `is_enabled`, `target_type`, `total`, `processed`, `outcomes`, `results[]`, `error`, `created_at`, `completed_at`. Not enough credits: `403` with the `estimate`. AML Monitoring is listed at $0.07 a year on the pricing page.
 
 ### Biometric Templates
 
@@ -858,7 +857,7 @@ def didit_webhook():
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 | `503` | Session or user deletion: a storage dependency is unavailable | Repeat the same request |
 
-Account-setup endpoints (`apx.didit.me/auth/v2`) use Bearer tokens: `401` for a missing, malformed or expired token, `403` when you are not an owner or admin of the organization, `429` with `Retry-After`.
+Account-setup endpoints (`apx.didit.me/auth/v2`) use Bearer tokens: `401` for a malformed or expired token, `403` without a token or when you are not an owner or admin of the organization, `429` with `Retry-After`.
 
 ---
 

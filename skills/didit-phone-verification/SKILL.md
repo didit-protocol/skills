@@ -169,7 +169,7 @@ const data = await response.json(); // { request_id, status, reason, vendor_data
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 | `502` | Phone provider temporarily unavailable: `{"detail": "...", "code": "phone_provider_unavailable"}` | Retry with a short backoff. Nothing billed, no attempt used |
 
-Phone-specific cases: `403` with `{"detail": "To protect against abuse, phone verification is disabled until your first top-up."}` until the organization's first top-up, and `403` with `error` when the balance cannot cover the destination's send price. A `429` for too many attempts on the same number (4 an hour) carries no `Retry-After` header: wait, or use a different number.
+Phone-specific cases: `403` with a `detail` saying phone verification is disabled until your organization's first top-up (sandbox applications can still test it for free), and `403` with `error` when the balance cannot cover the destination's send price. A `429` for too many attempts on the same number (4 an hour) carries no `Retry-After` header: wait, or use a different number.
 
 ---
 

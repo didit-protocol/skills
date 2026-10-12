@@ -447,13 +447,12 @@ def test_sessions():
         (201, {"comment": None}),
     ))
 
-    endpoint = "PATCH /v3/session/{id}/update-status/ (Declined)"
+    endpoint = "PATCH /v3/session/{id}/update-status/ (Not Started cannot be updated)"
     run("sessions", endpoint, lambda: check(
         "sessions", endpoint,
         requests.patch(f"{BASE_URL}/v3/session/{session_id}/update-status/", headers=HEADERS_JSON,
                        json={"new_status": "Declined", "comment": "Test suite cleanup"}, timeout=30),
-        (200, {"session_id": None}),
-        (400, {}),
+        (400, {"detail": None}),
     ))
 
     skip("sessions", "DELETE /v3/session/{id}/delete/", "kept so the session stays visible in the console")
