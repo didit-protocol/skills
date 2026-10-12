@@ -29,7 +29,7 @@ Verifies an address document (image or PDF) in one call. The document is classif
 
 **Key constraints:**
 - Formats: **JPG, JPEG, PNG, TIFF, PDF, WEBP**. Multi-page PDFs are supported. Encrypted PDFs need `document_password`.
-- Maximum upload size: **15 MB** (larger files return `400`)
+- Maximum upload size: **50 MB** for a PDF, **6 MB** for an image (larger files return `400`)
 - Latency: typically **5-15 s**, multi-page PDFs up to **~30 s**. Use a client timeout of **at least 45 s** and do not retry before the call completes.
 - Maximum document age, by type (defaults): **3 months** for utility bills and bank statements, **12 months** for government-issued and other documents. A month counts as 30 days. Change it per request with `poa_document_age_months` (1-120, or -1 for no age check). A printed expiry date that has passed also expires the document.
 - Capture guidance: full color, all corners and all pages visible, no digital editing.
@@ -88,7 +88,7 @@ POST https://verification.didit.me/v3/poa/
 
 | Parameter | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `document` | file | **Yes** | - | The PoA document: `tiff`, `jpg`, `jpeg`, `png`, `pdf` or `webp`, max 15 MB |
+| `document` | file | **Yes** | - | The PoA document: `tiff`, `jpg`, `jpeg`, `png`, `pdf` or `webp`. PDF max 50 MB, image max 6 MB |
 | `document_password` | string | No | - | Password of an encrypted PDF. Missing or wrong password returns `400` |
 | `expected_address` | string | No | - | Address to check. It is geocoded and compared with the document address; a mismatch, or an expected address that cannot be verified, adds `ADDRESS_MISMATCH_WITH_PROVIDED` |
 | `expected_country` | string | No | - | ISO 3166-1 alpha-2 or alpha-3 code (`ES` or `ESP`). A different document country adds `POA_COUNTRY_MISMATCH_WITH_PROVIDED` |
@@ -239,7 +239,7 @@ This endpoint never returns `In Review` or `Not Finished`. Always read `poa.stat
 | `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 
-`400` causes on this endpoint: no `document`, an extension outside the allowed list, a file over 15 MB, an encrypted PDF without (or with a wrong) `document_password`, an unknown code in `poa_languages_allowed`, a bad `poa_document_age_months` pair, or a document the extraction cannot process (`{"error": ["Error extracting POA information"]}`). The credit check runs before any processing; a not-enough-credits `403` body is `{"error": "You don't have enough credits to perform this request. ..."}`.
+`400` causes on this endpoint: no `document`, an extension outside the allowed list, a PDF over 50 MB or an image over 6 MB, an encrypted PDF without (or with a wrong) `document_password`, an unknown code in `poa_languages_allowed`, a bad `poa_document_age_months` pair, or a document the extraction cannot process (`{"error": ["Error extracting POA information"]}`). The credit check runs before any processing; a not-enough-credits `403` body is `{"error": "You don't have enough credits to perform this request. ..."}`.
 
 ---
 

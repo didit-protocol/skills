@@ -361,7 +361,7 @@ Requirements: Flutter 3.3+, Dart 3.11+, iOS 13+ (NFC 15+), Android API 23+.
 flutter pub add didit_sdk
 ```
 
-iOS: select the native variant in `ios/Podfile` (`$DiditSdkIosVariant = 'all'`, `'core'`, `'autodetection'` or `'nfc'`; `all` and `nfc` need `platform :ios, '15.0'`) with the podspec pinned to tag `4.9.1`, then add the Info.plist keys listed above. Android: NFC builds need `pickFirsts += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"` in `packaging.resources`; `diditSdkAndroidNfcEnabled=false` in `android/gradle.properties` drops NFC. Full snippets: https://docs.didit.me/integration/native-sdks/flutter-sdk
+iOS: select the native variant in `ios/Podfile` (`$DiditSdkIosVariant = 'all'`, `'core'`, `'autodetection'` or `'nfc'`; `all` and `nfc` need `platform :ios, '15.0'`) with the podspec pinned to tag `4.9.1`, then add the Info.plist keys listed above. Android: select the native variant with `diditSdkAndroidVariant` in `android/gradle.properties` (`all` by default, `core`, `autodetection` or `nfc`; `core` and `autodetection` drop NFC), or depend on `didit_sdk_core` / `didit_sdk_autodetection` / `didit_sdk_nfc` instead of `didit_sdk` to pin the variant on both platforms (then import from that package, for example `package:didit_sdk_core/sdk_flutter.dart`). `all` and `nfc` builds need `pickFirsts += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"` in `packaging.resources`. Full snippets: https://docs.didit.me/integration/native-sdks/flutter-sdk
 
 ```dart
 import 'package:didit_sdk/sdk_flutter.dart';
