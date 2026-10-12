@@ -33,10 +33,12 @@
 | [**didit-fraud-check**](skills/didit-fraud-check/) | 1.0.0 | One call that scores a person's email, phone, IP, documents and links to other users, with a recommendation. Also IP risk. |
 | [**didit-case-management**](skills/didit-case-management/) | 1.0.0 | Review cases: create, assign, resolve, 4-eyes approval, notes, blueprints, and regulatory reports (SAR, STR and others). |
 | [**didit-fraud-networks**](skills/didit-fraud-networks/) | 1.0.0 | Fraud networks: clusters of users and businesses that share devices, IPs, faces, documents, phones, emails or addresses. |
-| [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.0.0 | Embeds verification in web and mobile apps (redirect, iframe, Web, iOS, Android, React Native, Flutter) and submits transactions and device events from the client. |
+| [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.1.0 | Three-product integration prompt for Identity verification, Transaction monitoring and end-user Authentication, with release checks; web/native verification, transactions and device events. |
 | [**didit-mcp-server**](skills/didit-mcp-server/) | 1.0.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, Cursor, VS Code, Windsurf, Zed). |
 
 > **Naming convention:** Domain-term names that match how users naturally ask: `face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`. Lowercase kebab-case, `didit-` namespaced. Every skill that uses an API key includes a **Getting Started** section for account creation and credits.
+
+For any of the seven product combinations, start with the [three-product integration prompt](skills/didit-sdk-integration/SKILL.md#three-product-integration-prompt). It keeps credentials and decisions separate and links the person through server-owned `vendor_data`. Authentication SDKs, JWT/JWKS, automatic auth events and Authentication step-ups are release-dependent. Dedicated Authentication, electronic-signature and biometric-consent skills await merged, documented API contracts; they are not part of the 20-skill catalog yet.
 
 ---
 
@@ -82,7 +84,7 @@ Copy the skills you need from `skills/` into your agent's skill directory.
 
 ### Option 3: Manual
 
-Copy any `skills/<name>/SKILL.md` into your agent's skill directory. Each skill is self-contained.
+Copy the entire `skills/<name>/` folder, including `SKILL.md` and `scripts/`, into your agent's skill directory. The helpers referenced by a skill must travel with it.
 
 ---
 
@@ -177,7 +179,7 @@ To let an AI assistant work in your Didit account as you (no API key), connect t
 
 ## Testing
 
-Offline checks (format, README, scripts, code examples, webhook signatures). No key needed:
+Offline checks (format, README, scripts, publication filters, code examples, webhook signatures). Python and Git are required; no key is needed:
 
 ```bash
 python3 tests/test_skill_structure.py
@@ -255,6 +257,28 @@ metadata:
 2. Update or add a skill in `skills/`
 3. Run `python3 tests/test_skill_structure.py`, and `python3 tests/test_all_skills.py` with a sandbox key
 4. Open a PR
+
+---
+
+## ClawHub publication handoff
+
+Publication is a human step. The seven SK1 additions below still need ClawHub publication; this repository change prepares their bundles and does not publish them.
+
+| Skill | Prepared version | Required helper |
+|---|---|---|
+| `didit-case-management` | 1.0.0 | `scripts/manage_cases.py` |
+| `didit-document-ai` | 1.0.0 | `scripts/extract_document.py` |
+| `didit-event-monitoring` | 1.0.0 | `scripts/send_event.py` |
+| `didit-fraud-check` | 1.0.0 | `scripts/run_fraud_check.py` |
+| `didit-fraud-networks` | 1.0.0 | `scripts/list_networks.py` |
+| `didit-mcp-server` | 1.0.0 | None |
+| `didit-sdk-integration` | 1.1.0 | `scripts/mint_sdk_tokens.py` |
+
+Before publishing, check the registry's existing version for each skill and choose an unused version if necessary. Previously published skills affected by the script exclusion also need corrected bundles.
+
+Stage each complete skill folder in a clean temporary directory. Include the repository `.gitignore` and `.clawhubignore` at that folder's root, appending any skill-local rules to the matching policy file. ClawHub reads these files from the publication folder; it does not inherit the repository's filters when publishing a nested skill directly. Keep `scripts/` included and exclude credentials, caches and development files. See the [ClawHub skill format](https://github.com/openclaw/clawhub/blob/main/docs/skill-format.md).
+
+Run the offline checks above, inspect the staged file list and confirm every referenced helper is present. Publish each staged skill folder individually, using its name and reviewed version, only when the human publisher is ready. After publication, install into an empty directory and verify `SKILL.md`, the helper files and their `--help` commands before announcing availability.
 
 ---
 
