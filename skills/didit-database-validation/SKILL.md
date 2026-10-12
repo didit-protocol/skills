@@ -24,7 +24,7 @@ metadata:
 
 ## Overview
 
-Verifies personal data against the authoritative source for a country (civil registry, tax authority, electoral roll or biometric registry) and returns a per-field comparison plus the registry record. Prevents synthetic identities and catches mistyped or borrowed ID numbers.
+Verifies personal data against the authoritative source for a country (civil registry, tax authority, electoral roll or biometric registry) and returns a per-field comparison, a per-service outcome code and the registry record. Use it to catch synthetic identities and ID numbers that do not belong to the person.
 
 **Pricing:** per service, from $0.05 (Dominican Republic `dom_cedula`) to $7.00 per query; most Latin American national ID services are $0.20 (billed once per service the registry answered, including no-match and not-found answers; `400` rejections and services the source never answered are free; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
 
@@ -282,7 +282,7 @@ The credit check covers the sum of the selected services' prices and runs before
 | `DATABASE_VALIDATION_NO_MATCH` | `match_type` is `no_match`, or a service gave a definitive negative (e.g. `DOCUMENT_NOT_FOUND`, `DECEASED`) without field comparisons | `no_match_action` (default `DECLINE`) |
 | `DATABASE_VALIDATION_PARTIAL_MATCH` | `match_type` is `partial_match` | `partial_match_action` (default `NO_ACTION`: `information`, status stays `Approved`) |
 | `DATABASE_VALIDATION_DOCUMENT_SUPERSEDED` | A service returned `DOCUMENT_SUPERSEDED`: the person matched but a newer document edition exists (`match_type` can still be `full_match`) | Follows `no_match_action` |
-| `COULD_NOT_PERFORM_DATABASE_VALIDATION` | The services answered but confirmed nothing (inconclusive or unavailable source). Missing or invalid fields never get here: they return `400` | Always `In Review` (`log_type: warning`) |
+| `COULD_NOT_PERFORM_DATABASE_VALIDATION` | The services ran but confirmed nothing: an inconclusive answer, an unavailable or failing source, or a registry that could not use the data sent. `additional_data` names the services. Missing or invalid fields never get here: they return `400` | Always `In Review` (`log_type: warning`) |
 | `DATABASE_VALIDATION_NOT_APPLICABLE` | Workflow sessions only (the document has no identifier the services need) | Not produced by this endpoint |
 
 `log_type` mirrors the action: `DECLINE` gives `error`, `NO_ACTION` gives `information`. The automatic re-run after missing data is filled in exists only in workflow sessions, not on this endpoint.

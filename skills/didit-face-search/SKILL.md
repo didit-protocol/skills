@@ -251,7 +251,7 @@ const { face_search } = await response.json();
 | `POSSIBLE_DUPLICATED_FACE` | `information` | No | Weaker match of the same kind. Not raised when `POSSIBLE_FACE_IN_BLOCKLIST` is |
 
 - There is no `NO_FACE_DETECTED` warning: an image without a face returns HTTP `400`.
-- Base decisions on `status`, `warnings[].risk` and `matches[]`. With the default `save_api_request=true` the `log_type` echoed on each warning follows the final `status` (`error` when Declined, `information` when Approved).
+- Base decisions on `status`, `warnings[].risk` and `matches[]`; treat the `log_type` echoed on each warning as informational.
 - Manage the face blocklist and allowlists with the Lists API (see **didit-verification-management**).
 
 ---

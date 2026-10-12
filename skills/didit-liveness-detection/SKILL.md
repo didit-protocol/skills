@@ -210,7 +210,7 @@ A spoofed or blocklisted face still returns HTTP `200`: always read `liveness.st
 | `POSSIBLE_DUPLICATED_FACE` | `information` | No | Weaker match of the same kind |
 
 - `LOW_FACE_QUALITY`, `LOW_FACE_LUMINANCE` and `HIGH_FACE_LUMINANCE` are **never** raised by this endpoint (they are workflow warnings). Apply your own rule to `face_quality` / `face_luminance` if you need one.
-- Base decisions on `status` and `warnings[].risk`. The severities above are this endpoint's rules; with the default `save_api_request=true` the `log_type` echoed on each warning follows the final `status` (`error` when Declined, `information` when Approved).
+- Base decisions on `status` and `warnings[].risk`. The severities above are this endpoint's rules; treat the `log_type` echoed on each warning as informational.
 
 ---
 

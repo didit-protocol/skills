@@ -362,7 +362,7 @@ Other wallets have start endpoints but are **Coming soon**: they fail closed wit
 | `return_url` | redirect wallets | **Yes** | HTTPS URL the browser returns to, with `request_id` and `result` appended. Its host must be registered first (below) |
 | `device` | redirect wallets | No | `same_device` (default) or `cross_device` (e.g. a QR code scanned with the phone) |
 | `country` | all | Yes for Smart-ID and Mobile-ID | ISO 3166-1 alpha-3; defaults to the only country of single-country wallets |
-| `personal_code` | Smart-ID, Mobile-ID | **Yes** | The user's national personal identification code (digits, 6 to 20 characters). Never collect the PIN |
+| `personal_code` | Smart-ID, Mobile-ID | **Yes** | The user's national personal identification code (digits and hyphens, 6 to 20 characters). Never collect the PIN |
 | `phone_number` | Mobile-ID | **Yes** | E.164 number registered with Mobile-ID in that country |
 | `vendor_data` | all | No | Your reference, up to 2,000 UTF-8 bytes |
 | `metadata` | all | No | JSON object returned with the result and webhook |
