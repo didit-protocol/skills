@@ -28,7 +28,7 @@ metadata:
 A **case** is a compliance investigation anchored to exactly one subject: one user or one business. Sessions, business sessions and transactions of that same subject can be linked to it. Your team (or your integration) works the case from `OPEN` to `RESOLVED` with a full audit trail, and can file a Financial Intelligence Unit (FIU) report from it.
 
 **Key facts:**
-- Lifecycle has three statuses: `OPEN`, `AWAITING_USER`, `RESOLVED`. Resolution is `FALSE_POSITIVE` or `VALID_THREAT`. Priority is `LOW`, `MEDIUM` (default) or `HIGH`.
+- Lifecycle has three statuses: `OPEN`, `AWAITING_USER`, `RESOLVED`. Resolution is `FALSE_POSITIVE`, `VALID_THREAT`, `INCONCLUSIVE`, `REQUIREMENTS_NOT_MET` or `REQUIREMENTS_SATISFIED`; only `VALID_THREAT` feeds the shared fraud index. Priority is `LOW`, `MEDIUM` (default) or `HIGH`.
 - One subject per case. Linking a session, business session or transaction that belongs to another user or business returns `400`.
 - A **blueprint** (called a review policy in the console) decides assignment, escalation, transfer, 4-eyes approval, a required resolution note, the checklist and which sections the case page shows.
 - Cases are created by four sources: `MANUAL` (console or API), `AML_SCREENING` (ongoing-monitoring hits), `TRANSACTION_RULE` (a rule with the **Create case** effect) and `WORKFLOW_BUILDER` (a **Create case** node). API-created cases are always `MANUAL`.
@@ -263,7 +263,7 @@ Every action returns the updated CaseDetail (`200`) unless noted.
 | Action | Body | Rules |
 |---|---|---|
 | `assign/` | `{"assignee_user_id": "<uuid>"}` (or `null` to unassign) | The assignee must be a member with case access to the application: list them with `GET .../cases/reviewers/` |
-| `resolve/` | `{"resolution": "FALSE_POSITIVE" or "VALID_THREAT", "note": "..."}` | `400` if a non-optional checklist item is incomplete (lists the labels) or the blueprint requires a note and none is given. On a 4-eyes blueprint it stages instead of closing (see below) |
+| `resolve/` | `{"resolution": "<resolution>", "note": "..."}` (any value from [Status Values](#status-values)) | `400` if a non-optional checklist item is incomplete (lists the labels) or the blueprint requires a note and none is given. On a 4-eyes blueprint it stages instead of closing (see below) |
 | `reopen/` | none | Only from `AWAITING_USER` or `RESOLVED`, else `400`. Clears `resolution`, `resolution_notes`, `resolved_at`, `resolved_by_email` |
 | `request-info/` | none | Only from `OPEN` and with no resolution pending approval, else `400` |
 | `escalate/` | none | `400` unless the blueprint has `escalation_enabled` and an active `escalation_blueprint` |
@@ -372,8 +372,11 @@ Response: `series` (`[{date, created, reviewed}]`), `tables` (`officer`, `bluepr
 
 | `resolution` | Meaning |
 |---|---|
-| `FALSE_POSITIVE` | Activity was legitimate |
-| `VALID_THREAT` | Confirmed suspicious or fraudulent activity |
+| `FALSE_POSITIVE` | No concern found: activity was legitimate |
+| `VALID_THREAT` | Concern confirmed: suspicious or fraudulent activity. The only value that feeds the shared fraud index and counts toward `threat_rate` |
+| `INCONCLUSIVE` | The evidence does not support either verdict |
+| `REQUIREMENTS_NOT_MET` | The subject did not meet the review's requirements (not a fraud verdict) |
+| `REQUIREMENTS_SATISFIED` | The subject met the review's requirements |
 
 | `source` | Created by |
 |---|---|

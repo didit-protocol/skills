@@ -12,7 +12,8 @@ Usage:
                                           --business-session UUID | --transaction UUID)
                                           [--priority LOW|MEDIUM|HIGH] [--blueprint UUID] [--due-at ISO]
                                           [--tag TAG ...] [--assigned-to UUID]
-    python scripts/manage_cases.py resolve <case_uuid> --resolution FALSE_POSITIVE|VALID_THREAT [--note TEXT]
+    python scripts/manage_cases.py resolve <case_uuid> --resolution FALSE_POSITIVE|VALID_THREAT|INCONCLUSIVE|
+                                           REQUIREMENTS_NOT_MET|REQUIREMENTS_SATISFIED [--note TEXT]
     python scripts/manage_cases.py note <case_uuid> --comment TEXT [--internal] [--tag TAG ...]
     python scripts/manage_cases.py stats [--date-from YYYY-MM-DD --date-to YYYY-MM-DD]
 
@@ -39,6 +40,9 @@ import sys
 import requests
 
 API_ROOT = "https://verification.didit.me/v3/organization"
+
+# Only VALID_THREAT feeds the shared fraud index.
+RESOLUTIONS = ["FALSE_POSITIVE", "VALID_THREAT", "INCONCLUSIVE", "REQUIREMENTS_NOT_MET", "REQUIREMENTS_SATISFIED"]
 
 
 def get_api_key() -> str:
@@ -210,7 +214,7 @@ def main():
 
     resolve_p = sub.add_parser("resolve", help="Resolve a case (stages it on 4-eyes blueprints)")
     resolve_p.add_argument("case_uuid", help="Case UUID")
-    resolve_p.add_argument("--resolution", required=True, choices=["FALSE_POSITIVE", "VALID_THREAT"])
+    resolve_p.add_argument("--resolution", required=True, choices=RESOLUTIONS)
     resolve_p.add_argument("--note", help="Resolution note (required when the blueprint demands one)")
 
     note_p = sub.add_parser("note", help="Add a plain-text note to a case")
