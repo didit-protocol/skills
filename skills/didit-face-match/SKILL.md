@@ -1,12 +1,13 @@
 ---
 name: didit-face-match
 description: >
-  Integrate Didit Face Match standalone API to compare two facial images.
-  Use when the user wants to compare faces, verify face identity, implement biometric
-  comparison, facial recognition, or selfie-to-document matching using Didit.
-  Returns a similarity score (0-100) with configurable decline threshold.
-  Supports image rotation and multi-face detection.
-version: 1.4.0
+  Compares two face images 1:1 with Didit's standalone Face Match API (POST /v3/face-match/).
+  Use when checking that a selfie matches an ID document portrait or a previously enrolled
+  photo, verifying that two photos show the same person, or adding selfie-to-document
+  biometric comparison. Returns a 0-100 similarity score and an Approved/Declined status
+  against a configurable decline threshold (default 30), with optional image rotation.
+  Does not enroll faces or run blocklist or duplicate checks.
+version: 1.5.0
 metadata:
   openclaw:
     requires:
@@ -21,15 +22,25 @@ metadata:
 
 ## Overview
 
-Compares two facial images to determine if they belong to the same person. Returns a similarity score (0-100).
+Compares two facial images to determine whether they show the same person. Returns a similarity score (0-100) and an `Approved` / `Declined` status.
 
 **Key constraints:**
-- Supported formats: **JPEG, PNG, WebP, TIFF**
-- Maximum file size: **5MB** per image
-- If multiple faces in an image, the **largest face** is used for comparison
+- Allowed file extensions: **tiff, jpg, jpeg, png, webp** (no PDF)
+- Maximum file size: **5 MB** per image (images are compressed to about 0.5 MB before processing)
 - Both `user_image` and `ref_image` are **required**
+- Submit one clear, front-facing, well-lit face per image for best results
 
-**Capabilities:** Similarity scoring, age estimation, gender detection, face bounding boxes, configurable decline threshold, optional image rotation for non-upright faces.
+**Pricing:** $0.05 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+
+**Decision:** `Approved` only when the score is **strictly above** `face_match_score_decline_threshold` (default `30`). A score at or below it returns `Declined` with `LOW_FACE_MATCH_SIMILARITY`. If no face pair can be scored, the call still returns HTTP `200` with `Declined` and `NO_REFERENCE_IMAGE`. There is no `In Review` on this endpoint; only the threshold is configurable.
+
+**Face search index:** this endpoint **never** enrolls faces and never runs blocklist or duplicate screening. Use `POST /v3/passive-liveness/` (**didit-liveness-detection**) or `POST /v3/face-search/` (**didit-face-search**) for those.
+
+**Saving (`save_api_request`, default `true`):** the call is saved as an API session (Business Console, `GET /v3/session/{request_id}/decision/`, `status.updated` webhook) and both images are stored as the session's face-match source and target images. With `false` nothing is stored and `request_id` cannot be looked up.
+
+**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed.
+
+**Capabilities:** similarity scoring, configurable decline threshold, face bounding boxes with model-estimated age and gender per face (informational), optional rotation for non-upright faces.
 
 **API Reference:** https://docs.didit.me/standalone-apis/face-match
 **Feature Guide:** https://docs.didit.me/core-technology/face-match/overview
@@ -38,15 +49,15 @@ Compares two facial images to determine if they belong to the same person. Retur
 
 ## Authentication
 
-All requests require `x-api-key` header. Get your key from [Didit Business Console](https://business.didit.me) → API & Webhooks, or via programmatic registration (see below).
+Every request needs the `x-api-key` header. Use your application's API key from the [Didit Business Console](https://business.didit.me) under **Developers > API keys**, or create an account and key programmatically (see Getting Started). Named keys with custom access need **Sessions** write to run standalone checks; a key limited to some workflows or to approved sessions cannot run them.
 
 ## Getting Started (No Account Yet?)
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@gmail.com", "password": "MyStr0ng!Pass"}`
-2. **Check email** for a 6-character OTP code
-3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@gmail.com", "code": "A3K9F2"}` → response includes `api_key`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+2. **Check email** for a 6-character verification code
+3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
 **To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
 
@@ -65,33 +76,39 @@ POST https://verification.didit.me/v3/face-match/
 | Header | Value | Required |
 |---|---|---|
 | `x-api-key` | Your API key | **Yes** |
-| `Content-Type` | `multipart/form-data` | **Yes** |
+| `Content-Type` | `multipart/form-data` (set by your HTTP client) | **Yes** |
 
 ### Request Parameters (multipart/form-data)
 
 | Parameter | Type | Required | Default | Constraints | Description |
 |---|---|---|---|---|---|
-| `user_image` | file | **Yes** | — | JPEG/PNG/WebP/TIFF, max 5MB | User's face image to verify |
-| `ref_image` | file | **Yes** | — | Same as above | Reference image to compare against |
-| `face_match_score_decline_threshold` | integer | No | `30` | 0-100 | Scores below this = Declined |
-| `rotate_image` | boolean | No | `false` | — | Try 0/90/180/270 degree rotations to find upright face |
-| `save_api_request` | boolean | No | `true` | — | Save in Business Console Manual Checks |
-| `vendor_data` | string | No | — | — | Your identifier for session tracking |
+| `user_image` | file | **Yes** | - | tiff/jpg/jpeg/png/webp, max 5 MB | Face to verify (e.g. a selfie) |
+| `ref_image` | file | **Yes** | - | Same as above | Reference face (e.g. an ID document portrait or an enrolled photo) |
+| `face_match_score_decline_threshold` | float | No | `30` | 0-100 | A score **at or below** this value declines with `LOW_FACE_MATCH_SIMILARITY`; strictly above approves |
+| `rotate_image` | boolean | No | `false` | - | Try both images at 0/90/180/270 degrees and use the orientation with the best face detection. Adds latency |
+| `save_api_request` | boolean | No | `true` | - | Save as an API session and store both images (see Overview) |
+| `vendor_data` | string | No | - | - | Your user identifier, stored and echoed back |
+| `metadata` | JSON object | No | - | JSON-encoded string in multipart | Stored with the session (when saved) and echoed back |
 
 ### Example
 
 ```python
 import requests
 
-response = requests.post(
-    "https://verification.didit.me/v3/face-match/",
-    headers={"x-api-key": "YOUR_API_KEY"},
-    files={
-        "user_image": ("selfie.jpg", open("selfie.jpg", "rb"), "image/jpeg"),
-        "ref_image": ("id_photo.jpg", open("id_photo.jpg", "rb"), "image/jpeg"),
-    },
-    data={"face_match_score_decline_threshold": "50"},
-)
+with open("selfie.jpg", "rb") as selfie, open("id_photo.jpg", "rb") as portrait:
+    response = requests.post(
+        "https://verification.didit.me/v3/face-match/",
+        headers={"x-api-key": "YOUR_API_KEY"},
+        files={
+            "user_image": ("selfie.jpg", selfie, "image/jpeg"),
+            "ref_image": ("id_photo.jpg", portrait, "image/jpeg"),
+        },
+        data={"face_match_score_decline_threshold": "50", "vendor_data": "user-123"},
+        timeout=60,
+    )
+response.raise_for_status()
+face_match = response.json()["face_match"]
+print(face_match["status"], face_match["score"])
 ```
 
 ```typescript
@@ -99,37 +116,41 @@ const formData = new FormData();
 formData.append("user_image", selfieFile);
 formData.append("ref_image", referenceFile);
 formData.append("face_match_score_decline_threshold", "50");
+formData.append("vendor_data", "user-123");
 
 const response = await fetch("https://verification.didit.me/v3/face-match/", {
   method: "POST",
   headers: { "x-api-key": "YOUR_API_KEY" },
   body: formData,
 });
+const { face_match } = await response.json();
 ```
 
 ### Response (200 OK)
 
 ```json
 {
-  "request_id": "a1b2c3d4-...",
+  "request_id": "f9f5a777-8002-44c6-baaf-128bcfd6e226",
   "face_match": {
     "status": "Approved",
-    "score": 80,
+    "score": 99.41,
     "user_image": {
       "entities": [
-        {"age": 27.63, "bbox": [40, 40, 100, 100], "confidence": 0.717, "gender": "male"}
+        {"bbox": [661, 728, 1688, 2188], "confidence": 0.732973, "age": 26.91, "gender": "male"}
       ],
       "best_angle": 0
     },
     "ref_image": {
       "entities": [
-        {"age": 22.16, "bbox": [156, 234, 679, 898], "confidence": 0.717, "gender": "male"}
+        {"bbox": [653, 745, 1691, 2185], "confidence": 0.722082, "age": 27.0, "gender": "male"}
       ],
       "best_angle": 0
     },
     "warnings": []
   },
-  "created_at": "2025-05-01T13:11:07.977806Z"
+  "vendor_data": "user-123",
+  "metadata": null,
+  "created_at": "2026-06-12T01:04:42.763237+00:00"
 }
 ```
 
@@ -137,17 +158,17 @@ const response = await fetch("https://verification.didit.me/v3/face-match/", {
 
 | Status | Meaning | Action |
 |---|---|---|
-| `"Approved"` | Score >= threshold | Faces match — proceed |
-| `"Declined"` | Score < threshold or no face | Check `warnings` for details. May need better image |
-| `"In Review"` | Needs manual review | Wait for review or retrieve via session API |
+| `"Approved"` | Score strictly above the threshold | Faces match, proceed |
+| `"Declined"` | Score at or below the threshold (`LOW_FACE_MATCH_SIMILARITY`), or no face pair could be scored (`NO_REFERENCE_IMAGE`) | Check `warnings`. For `NO_REFERENCE_IMAGE` ask for clearer images (try `rotate_image=true` for sideways captures) |
 
 ### Error Responses
 
 | Code | Meaning | Action |
 |---|---|---|
-| `400` | Invalid request | Check file format, size, parameters |
-| `401` | Invalid API key | Verify `x-api-key` header |
-| `403` | Insufficient credits | Top up at business.didit.me |
+| `400` | Invalid request (missing image, file over 5 MB, unsupported extension, threshold outside 0-100) | Read the field errors in the response body |
+| `401` | The API key has expired | Rotate it or create a new key in **Developers > API keys** |
+| `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
+| `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 
 ---
 
@@ -155,38 +176,53 @@ const response = await fetch("https://verification.didit.me/v3/face-match/", {
 
 | Field | Type | Description |
 |---|---|---|
-| `status` | string | `"Approved"`, `"Declined"`, `"In Review"` |
-| `score` | integer | 0-100 similarity score (higher = more similar). `null` if no face found |
-| `entities[].age` | float | Estimated age |
-| `entities[].bbox` | array | Face bounding box `[x1, y1, x2, y2]` |
-| `entities[].confidence` | float | Face detection confidence (0-1) |
-| `entities[].gender` | string | `"male"` or `"female"` |
-| `best_angle` | integer | Best rotation angle for the face |
-| `warnings` | array | `{risk, log_type, short_description, long_description}` |
+| `request_id` | uuid | Session id when `save_api_request=true` (use with `GET /v3/session/{request_id}/decision/`); otherwise a one-off correlation id |
+| `face_match.status` | string | `"Approved"` or `"Declined"` |
+| `face_match.score` | float or null | 0-100 similarity (higher = more similar). Rounded to 2 decimals when saved; raw float with `save_api_request=false`. When no face pair could be scored it is `null` (saved) or `0` (not saved), always with `NO_REFERENCE_IMAGE` |
+| `face_match.user_image.entities[]` | array | One entry per detected face: `bbox` `[x_min, y_min, x_max, y_max]`, `confidence` (0-1), `age`, `gender`. Age and gender are informational and do not affect the decision |
+| `face_match.user_image.best_angle` | integer | Rotation (0, 90, 180, 270) that gave the best detection; non-zero only when `rotate_image=true` corrected it |
+| `face_match.ref_image` | object | Same shape as `user_image`, for the reference image |
+| `face_match.warnings[]` | array | `{risk, feature, additional_data, log_type, short_description, long_description}`. `feature` is always `FACEMATCH`, `additional_data` is always `null` |
+| `vendor_data` | string or null | Echo of what you sent |
+| `metadata` | object or null | Echo of what you sent |
+| `created_at` | string | ISO 8601 UTC time of the response |
 
 ---
 
 ## Warning Tags
 
-| Tag | Description | Auto-Decline |
-|---|---|---|
-| `NO_REFERENCE_IMAGE` | Reference or face image missing | Yes |
-| `NO_FACE_DETECTED` | No face detected in one or both images | Yes |
-| `LOW_FACE_MATCH_SIMILARITY` | Score below threshold — potential identity mismatch | Configurable |
+| Tag | Severity | Declines | When it fires |
+|---|---|---|---|
+| `NO_REFERENCE_IMAGE` | `error` | Yes | No face pair could be scored (for example, no usable face in one of the images) |
+| `LOW_FACE_MATCH_SIMILARITY` | `error` | Yes | Score at or below `face_match_score_decline_threshold` |
 
-> **Security best practice:** Only store the status and score. Minimize biometric image data on your servers. Image URLs (in workflow mode) expire after 4 hours.
+`NO_FACE_DETECTED` is never raised by this endpoint: a missing face surfaces as `NO_REFERENCE_IMAGE`.
+
+> **Security best practice:** store only `status`, `score` and `request_id`. With `save_api_request=true` the stored images are available from the session decision as time-limited URLs (4 hours by default), so you do not need to keep biometric images on your servers.
 
 ---
 
-## Score Interpretation
+## Choosing a Threshold
 
-| Score Range | Interpretation | Action |
-|---|---|---|
-| 90-100 | Very high confidence — same person | Auto-approve |
-| 70-89 | High confidence — likely same person | Approve (default threshold 30) |
-| 50-69 | Moderate — possible match | Consider manual review |
-| 30-49 | Low — likely different people | Declined at default threshold |
-| 0-29 | Very low — different people | Declined |
+- The default `30` is permissive. Raise it (for example `50` to `60`) for stricter verification; values outside 0-100 return `400`.
+- The comparison is "strictly above approves": with threshold `50`, a score of `50.0` declines.
+- The standalone endpoint has only a decline threshold. Hosted workflows (`FACE_MATCH` feature) add a separate `face_match_score_review_threshold` that sends scores between the two thresholds to `In Review`.
+- Log `score` alongside your own outcomes and tune the threshold to your false-match tolerance.
+
+---
+
+## Common Workflows
+
+### Selfie vs ID Document
+
+```
+1. POST /v3/passive-liveness/ with the selfie -> confirm it is live (didit-liveness-detection)
+2. POST /v3/id-verification/ with the document -> extract and check it (didit-id-document-verification)
+3. POST /v3/face-match/ with user_image=selfie, ref_image=document portrait
+4. All Approved -> the live person matches the document
+```
+
+For a hosted flow that does all three in one session, use a workflow with `OCR`, `LIVENESS` and `FACE_MATCH` (see the **didit-kyc-onboarding** skill).
 
 ---
 
@@ -196,5 +232,6 @@ const response = await fetch("https://verification.didit.me/v3/face-match/", {
 export DIDIT_API_KEY="your_api_key"
 
 python scripts/match_faces.py selfie.jpg id_photo.jpg
-python scripts/match_faces.py selfie.jpg id_photo.jpg --threshold 50 --rotate
+python scripts/match_faces.py selfie.jpg id_photo.jpg --threshold 50 --rotate --vendor-data user-123
+python scripts/match_faces.py selfie.jpg id_photo.jpg --no-save --metadata '{"flow": "login"}'
 ```
