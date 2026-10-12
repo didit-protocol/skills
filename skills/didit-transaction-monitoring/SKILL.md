@@ -387,7 +387,8 @@ Send `direction: "inbound"`, `currency_kind: "crypto"`, the hash in `payment_ref
 export DIDIT_API_KEY="your_api_key"
 
 python scripts/submit_transaction.py --txn-id tx-0001 --amount 1500.50 --currency EUR \
-    --vendor-data user-42 --subject-name "John Doe" --counterparty-name "Acme Energy"
+    --vendor-data user-42 --subject-name "John Doe" --counterparty-name "Acme Energy" \
+    --counterparty-entity-type company
 
 # Outbound crypto withdrawal with wallet screening
 python scripts/submit_transaction.py --txn-id wd-0001 --amount 0.25 --currency ETH --chain ETH \
