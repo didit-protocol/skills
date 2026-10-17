@@ -938,12 +938,19 @@ App B: POST /v3/session/import-shared/ {"share_token", "trust_review": true, "wo
 
 ```bash
 pip install requests
-python scripts/setup_account.py register you@yourdomain.com 'MyStr0ng!Pass'
+read -rs DIDIT_PASSWORD && export DIDIT_PASSWORD   # optional: otherwise each command prompts
+python scripts/setup_account.py register you@yourdomain.com
 # (check email for the 6-character code)
 python scripts/setup_account.py verify you@yourdomain.com A3K9F2      # prints org uuid, app uuid, api_key
-python scripts/setup_account.py resend-otp you@yourdomain.com 'MyStr0ng!Pass'
-python scripts/setup_account.py login you@yourdomain.com 'MyStr0ng!Pass'
+python scripts/setup_account.py resend-otp you@yourdomain.com
+python scripts/setup_account.py login you@yourdomain.com
 ```
+
+The password comes from the `DIDIT_PASSWORD` environment variable or a no-echo prompt. Never put it on the
+command line: other local users can read it in the process list, and it stays in shell history and agent logs.
+A positional password still works for older callers, but the script prints a warning.
+When an agent runs these commands without a terminal, the script cannot prompt: ask the user to export
+`DIDIT_PASSWORD` in the agent's environment instead of pasting the password into the conversation.
 
 ### manage_workflows.py: workflow CRUD
 

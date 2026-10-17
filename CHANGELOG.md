@@ -9,6 +9,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhere
 ### Fixed
 - ClawHub bundles keep `scripts/`, so the helpers referenced by skills are included. Credential,
   cache and development exclusions remain in place. Manual installation now copies complete folders.
+- **didit-verification-management:** `setup_account.py` reads the password from `DIDIT_PASSWORD` or a
+  no-echo prompt instead of a command-line argument, which exposed it in the process list, shell history
+  and agent logs (CWE-214). A positional password still works but prints a warning.
 
 ### Changed
 - **didit-sdk-integration (1.0.0 to 1.1.0):** adds a three-product prompt for all seven combinations of
