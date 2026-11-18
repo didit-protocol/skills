@@ -1,8 +1,8 @@
 ---
 name: didit-fraud-check
 description: >
-  Use when writing backend or API-key integration code for the Didit Fraud Check API and the IP
-  Risk API. Use when the user wants to run one server-side fraud or identity risk check over an
+  Use when writing backend or API-key integration code for the Didit Fraud Check API, which
+  combines email, phone, IP, ID number and selfie risk in one request, and the IP Risk API. Use when the user wants to run one server-side fraud or identity risk check over an
   email, phone, government ID number, tax number, IP address or selfie; quote a check's price
   before running it with the plan endpoint; combine email risk, phone risk, IP risk, social
   enrichment, database validation, private network history and the global fraud network in one
@@ -10,7 +10,8 @@ description: >
   dimensions and an approve/review/reject recommendation; bind a selfie to a Brazilian CPF;
   retrieve a stored check by check_id; make idempotent retries with client_reference; or
   risk-score a single IP address (geolocation, VPN/Tor, data center, claimed-country mismatch)
-  using Didit.
+  using Didit. To send or check a one-time code, use didit-email-verification or
+  didit-phone-verification.
 version: 1.1.0
 metadata:
   openclaw:
@@ -53,11 +54,11 @@ Every request needs the `x-api-key` header. Use your application's API key from 
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "<your-password>"}`
 2. **Check email** for a 6-character verification code
 3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
-**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link. Before calling it, confirm the amount with the person: the checkout link charges them that amount.
 
 See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 

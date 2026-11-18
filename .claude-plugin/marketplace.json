@@ -24,6 +24,9 @@
         "kyc",
         "kyb",
         "aml",
+        "transaction-monitoring",
+        "fraud",
+        "compliance",
         "mcp"
       ]
     },
@@ -42,7 +45,9 @@
         "transaction-monitoring",
         "aml",
         "fraud",
+        "compliance",
         "cases",
+        "wallet-screening",
         "mcp"
       ]
     },
@@ -62,6 +67,8 @@
         "kyc",
         "kyb",
         "blocklist",
+        "team",
+        "compliance",
         "mcp"
       ]
     },
@@ -81,6 +88,8 @@
         "sign-in",
         "passkeys",
         "oauth",
+        "pkce",
+        "jwt",
         "mcp"
       ]
     },

@@ -1,6 +1,6 @@
 ---
 name: didit-tm-start
-description: Starts transaction monitoring work in their Didit account, picks the application and sets the rules every monitoring action follows. Use when the user begins monitoring work with Didit, asks "which apps are monitored", "is this sandbox or live", "what can you do for transaction monitoring", cannot find a Didit tool, or hits a permission or read-only error.
+description: Starts transaction monitoring work in their Didit account, picks the application and sets the rules every monitoring action follows. Use when the user begins monitoring work with Didit, asks "which apps are monitored", "is this sandbox or live", "what can you do for transaction monitoring", cannot find a Didit transaction monitoring tool (transactions, rules, wallet screening, alerts or Travel Rule), or hits a permission or read-only error.
 ---
 
 # Didit transaction monitoring: start here

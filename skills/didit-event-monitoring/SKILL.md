@@ -54,11 +54,11 @@ The device lane (`/v1/events/`) takes no API key: it uses the `X-Monitoring-Toke
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "<your-password>"}`
 2. **Check email** for a 6-character verification code
 3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
-**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link. Before calling it, confirm the amount with the person: the checkout link charges them that amount.
 
 See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
@@ -284,7 +284,7 @@ Use the server lane for payments, disputes, ledger-derived events and whenever n
 - `GET /v3/events/subjects/{vendor_data}/?entity_type=company`: one subject's timeline with the same filters. `vendor_data` is unique only within an entity type; omitting `entity_type` returns the `individual` timeline.
 - `GET /v3/events/{event_uuid}/`: adds `payload`, `custom_values`, `device_context`, `ip_enrichment`, `subject_profile` (cached email/phone risk signals), `tags`, `field_sources`, and `rule_runs[]` with each run's evidence (`matched_payload`) and the source of each matched field (`server`, `sdk`, `customer`).
 - `GET /v3/events/enrichment-metrics/`: `events_ingested`, `enrichment_lookups`, `enrichment_cache_hits`, `enrichment_provider_calls`, `enrichment_skipped_low_value`, `unique_ips_seen`, `cache_hit_rate`, `unique_ip_ratio`, `provider_calls_per_1k_events`, `period_days`. IP enrichment runs once per unique IP, never per event.
-- `DELETE /v3/events/{event_uuid}/delete/`: deletes the event (`204`); it is no longer returned by any read. Irreversible. Unknown uuid: `404`.
+- `DELETE /v3/events/{event_uuid}/delete/`: deletes the event (`204`); it is no longer returned by any read. Irreversible, so confirm with the person which event you will delete before running it. Unknown uuid: `404`.
 
 ## Status Values
 

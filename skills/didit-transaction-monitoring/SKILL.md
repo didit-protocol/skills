@@ -53,11 +53,11 @@ Two exceptions: `GET /v3/travel-rule/widget/{token}/` takes no key (the token is
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "<your-password>"}`
 2. **Check email** for a 6-character verification code
 3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
-**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link. Before calling it, confirm the amount with the person: the checkout link charges them that amount.
 
 See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
@@ -320,7 +320,7 @@ Same rules as **Transactions > Rules** in the console. Create in `TEST`, back-te
 
 - `GET /v3/transactions/rules/` filters: `source` (`PRESET`/`CUSTOM`), `category`, `mode`, `bundle`, `search`, `ordering`, `limit`, `offset`.
 - `PATCH .../rules/{rule_uuid}/`: custom rules accept every field; presets accept only `mode` (other fields -> `400`).
-- `DELETE .../rules/{rule_uuid}/`: deletes a custom rule (`204`); a preset returns `400` (uninstall it instead).
+- `DELETE .../rules/{rule_uuid}/`: deletes a custom rule (`204`; confirm with the person which rule you will delete before running it); a preset returns `400` (uninstall it instead).
 - `POST .../rules/backtest/` with `conditions`, `aggregation`, `evaluation_mode` (default `ALL`), `scope`, `period_days` (default 90) -> `{evaluated, matched, affected_entities, period_days}`. Back-test the exact config you will activate.
 - `GET .../rules/library/` (`bundle`, `category`, `search`) lists 150+ presets with `is_installed`. `POST .../rules/install/` with `{"library_keys": [...]}` or `{"bundle": "travel_rule_eu_tfr"}` -> `{installed_library_keys, installed_count}`; `DELETE` with the same body -> `{uninstalled_count}`. Neither key -> `400`.
 

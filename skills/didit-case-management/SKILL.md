@@ -59,11 +59,11 @@ The key only acts on its own application: `{application_id}` must be the applica
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "<your-password>"}`
 2. **Check email** for a 6-character verification code
 3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
-**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link. Before calling it, confirm the amount with the person: the checkout link charges them that amount.
 
 See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
@@ -256,7 +256,7 @@ const caseDetail = await response.json();
 
 - `GET .../cases/{case_uuid}/`: full case (CaseDetail), with the newest 50 notes, newest 100 events, all links and checklist items.
 - `PATCH .../cases/{case_uuid}/`: any of `title`, `priority`, `due_at` (nullable), `tags`. Logs `PRIORITY_CHANGED`, `DUE_DATE_CHANGED`, `TAG_ADDED`, `TAG_REMOVED`.
-- `DELETE .../cases/{case_uuid}/`: deletes the case, returns `204`. There is no undelete.
+- `DELETE .../cases/{case_uuid}/`: deletes the case, returns `204`. There is no undelete. Before running it, confirm with the person that you will delete this case (irreversible).
 
 ## Case Actions
 

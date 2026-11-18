@@ -138,7 +138,7 @@ No console needed: agents can register themselves.
 # 1. Register
 curl -X POST https://apx.didit.me/auth/v2/programmatic/register/ \
   -H "Content-Type: application/json" \
-  -d '{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}'
+  -d '{"email": "you@yourdomain.com", "password": "<your-password>"}'
 
 # 2. Check your email for the 6-character code, then verify
 curl -X POST https://apx.didit.me/auth/v2/programmatic/verify-email/ \
@@ -290,7 +290,7 @@ Each `SKILL.md` follows the **three-tier information architecture**:
 name: didit-verification-management
 description: >
   Full Didit identity verification platform management...
-version: 5.1.0
+version: 5.2.0
 metadata:
   openclaw:
     requires:
