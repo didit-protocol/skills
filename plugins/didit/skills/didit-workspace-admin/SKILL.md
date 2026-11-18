@@ -13,6 +13,12 @@ Every change in this skill is confirmed with the person first: show what will ch
 
 - `didit_org_list_members` lists members. `didit_org_list_roles` lists roles with their ids.
 - `didit_org_invite_member`: `emails` (1 to 5), `role` (a role id from `didit_org_list_roles`) and `app_ids` (the applications they may access, from `didit_context_get`). The invitees receive an email.
+
+  ```json didit_org_invite_member
+  {"emails": ["name@example.com"], "role": "<role_id from didit_org_list_roles>", "app_ids": ["<application_id>"]}
+  ```
+
+  `emails` is a list even for one person, `role` is the role's id (match the role the person named against `didit_org_list_roles`), and `app_ids` lists application ids. All three are required. When the person did not say which applications, list them from `didit_context_get` and ask which ones; never pick for them. With only one application, name it in the confirmation.
 - `didit_org_update_member`: `member_id`, `role` and `accessible_applications`.
 - `didit_org_remove_member`: `member_id` is the `uuid` of the member's row in `didit_org_list_members`, not the user id or email. It cannot be undone; the person must be invited again to come back.
 
@@ -40,7 +46,12 @@ Show each URL masked (the host, then `...` and the last 4 characters), never in 
 ## 5. Questionnaires
 
 - `didit_questionnaire_list` lists the application's questionnaires.
-- `didit_questionnaire_create`: `title` and `form_elements`, an ordered list of questions, each with an uppercase `element_type`, a `title`, `is_required` and, for choice questions, `choices`. `status: "draft"` keeps it unpublished.
+- `didit_questionnaire_create`: `title` and `form_elements`, an ordered list of questions, each with an uppercase `element_type`, a `title`, `is_required` and, for choice questions, `choices`. `status: "draft"` keeps it unpublished. A per-question hint goes in `placeholder`. Each choice is `{ value, label }`.
+
+  ```json didit_questionnaire_create
+  {"title": "Source of funds", "status": "draft", "form_elements": [{"element_type": "SINGLE_CHOICE", "title": "Main source of funds", "is_required": true, "choices": [{"value": "salary", "label": "Salary"}, {"value": "savings", "label": "Savings"}]}, {"element_type": "LONG_TEXT", "title": "Anything else we should know?", "is_required": false, "placeholder": "Optional"}]}
+  ```
+
 - `didit_questionnaire_update`: `questionnaire_id` plus the fields to change. Sending `form_elements` replaces the whole question list, so include every question to keep, in order. Show the full new list before calling it.
 
 ## What good output looks like

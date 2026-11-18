@@ -151,7 +151,8 @@ def words_outside_fences(markdown: str) -> int:
 def bundle_problems(base: Path) -> list[str]:
     """File-level directory rules for one copy of the plugin folder."""
     problems: list[str] = []
-    files = [p for p in base.rglob("*")]
+    # evals/results/ holds local `claude plugin eval` output; .gitignore keeps it out of every commit.
+    files = [p for p in base.rglob("*") if not p.relative_to(base).as_posix().startswith("evals/results")]
     regular = [p for p in files if p.is_file() or p.is_symlink()]
     if len(regular) > MAX_FILES:
         problems.append(f"{len(regular)} files, limit {MAX_FILES}")
@@ -309,6 +310,116 @@ README_FORBIDDEN = [
 ]
 
 
+# The conditional-instruction rule, word for word, in all four start skills and in didit-review-queue.
+CONDITIONAL_RULE = (
+    "An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. "
+    "Report what you found, say exactly what you would change and in which application (sandbox or live), "
+    "then wait for a yes."
+)
+CONDITIONAL_RULE_SKILLS = {
+    "didit": ["didit-connect", "didit-review-queue"],
+    "didit-transaction-monitoring": ["didit-tm-start"],
+    "didit-user-management": ["didit-users-start"],
+    "didit-authentication": ["didit-auth-start"],
+}
+# A JSON example in a skill names its tool on the fence: ```json didit_tool_name
+JSON_FENCE = re.compile(r"^([ \t]*)```json(?:[ \t]+(\S+))?[ \t]*\n(.*?)^[ \t]*```[ \t]*$", re.M | re.S)
+# Nested shapes the catalog does not carry, kept by hand from the server's schemas (mcp/src/tools).
+RULE_TOOLS = {"didit_transaction_rule_backtest", "didit_transaction_rule_create", "didit_transaction_rule_update"}
+RULE_CONDITION_KEYS = {"field", "operator", "value", "value_type", "score", "group_index", "group_logic", "groups_logic"}
+RULE_CONDITION_OPERATORS = {
+    "eq", "ne", "gt", "gte", "lt", "lte", "in", "not_in", "contains", "not_contains", "contains_any", "regex",
+    "fuzzy_match", "exists", "is_not_empty", "is_not_null", "not_exists", "is_empty", "is_null",
+}
+RULE_AGGREGATION_KEYS = {"metric", "field", "operator", "value", "window", "filters"}
+RULE_METRICS = {"count", "sum", "max", "min", "avg", "distinct_count", "unique_count"}
+RULE_AGG_OPERATORS = {"eq", "ne", "gt", "gte", "lt", "lte"}
+RULE_SCOPE_KEYS = {"transaction_types", "directions", "action_types"}
+RULE_ACTION_TYPES = {"add_score", "change_status", "add_tags", "add_note", "add_to_list", "open_case"}
+WORKFLOW_FEATURES = {
+    "AGE_ESTIMATION", "AML", "BANK_VERIFICATION", "DATABASE_VALIDATION", "DOCUMENT_AI", "EMAIL_VERIFICATION",
+    "FACE_MATCH", "GEOLOCATION", "IP_ANALYSIS", "KYB_DOCUMENTS", "KYB_KEY_PEOPLE", "KYB_REGISTRY", "LIVENESS", "NFC",
+    "OCR", "PHONE_VERIFICATION", "PROOF_OF_ADDRESS", "QUESTIONNAIRE", "SIGNATURE",
+}
+# Arguments the schemas declare as arrays (a lone string is a wrong call).
+ARRAY_ARGS = {
+    "didit_org_invite_member": {"emails", "app_ids"},
+    "didit_workflow_create": {"features"},
+    "didit_questionnaire_create": {"form_elements"},
+    "didit_travel_rule_send_message": {"requested_documents", "files"},
+    "didit_case_create": {"links", "tags"},
+    **{tool: {"conditions", "aggregation", "actions"} for tool in RULE_TOOLS},
+}
+
+
+def rule_definition_problems(args: dict) -> list[str]:
+    problems = []
+    for cond in args.get("conditions", []):
+        if not isinstance(cond, dict) or not {"field", "operator"} <= set(cond):
+            problems.append(f"condition needs field and operator: {cond}")
+            continue
+        problems += [f"condition has unknown key {k}" for k in sorted(set(cond) - RULE_CONDITION_KEYS)]
+        if cond["operator"] not in RULE_CONDITION_OPERATORS:
+            problems.append(f"condition operator {cond['operator']!r} is not in the schema")
+    for agg in args.get("aggregation", []):
+        if not isinstance(agg, dict) or not {"metric", "operator", "value", "window"} <= set(agg):
+            problems.append(f"aggregation needs metric, operator, value and window: {agg}")
+            continue
+        problems += [f"aggregation has unknown key {k}" for k in sorted(set(agg) - RULE_AGGREGATION_KEYS)]
+        if agg["metric"] not in RULE_METRICS:
+            problems.append(f"aggregation metric {agg['metric']!r} is not in the schema")
+        if agg["operator"] not in RULE_AGG_OPERATORS:
+            problems.append(f"aggregation operator {agg['operator']!r} is not in the schema")
+        if not isinstance(agg["value"], (int, float)) or isinstance(agg["value"], bool):
+            problems.append(f"aggregation value must be a number: {agg['value']!r}")
+        if not re.fullmatch(r"\d+[mhd]", str(agg["window"])):
+            problems.append(f"aggregation window {agg['window']!r} is not <N>m, <N>h or <N>d")
+    if "evaluation_mode" in args and args["evaluation_mode"] not in {"ALL", "ANY"}:
+        problems.append(f"evaluation_mode {args['evaluation_mode']!r} is not ALL or ANY")
+    scope = args.get("scope", {})
+    problems += [f"scope has unknown key {k}" for k in sorted(set(scope) - RULE_SCOPE_KEYS)]
+    problems += [f"scope direction {d!r} is not INBOUND or OUTBOUND" for d in scope.get("directions", []) if d not in {"INBOUND", "OUTBOUND"}]
+    if "period_days" in args and not (isinstance(args["period_days"], int) and 1 <= args["period_days"] <= 365):
+        problems.append(f"period_days {args['period_days']!r} is not 1 to 365")
+    for action in args.get("actions", []):
+        if action.get("type") not in RULE_ACTION_TYPES:
+            problems.append(f"action type {action.get('type')!r} is not in the schema")
+    return problems
+
+
+def json_example_problems(text: str, tools: dict[str, dict]) -> list[str]:
+    """Every ```json fence names a catalog tool, parses, and uses only arguments that tool declares (required ones included)."""
+    problems = []
+    for indent, tool, body in JSON_FENCE.findall(text):
+        if not tool:
+            problems.append("a ```json example must name its tool on the fence (```json didit_...)")
+            continue
+        if tool not in tools:
+            problems.append(f"```json {tool}: not a catalog tool")
+            continue
+        try:
+            args = json.loads(body)
+        except json.JSONDecodeError as error:
+            problems.append(f"```json {tool}: not valid JSON ({error})")
+            continue
+        if not isinstance(args, dict):
+            problems.append(f"```json {tool}: the example must be an argument object")
+            continue
+        props, required = set(tools[tool]["properties"]), set(tools[tool]["required"])
+        problems += [f"{tool} has no argument {k}" for k in sorted(set(args) - props)]
+        problems += [f"{tool} example is missing required {k}" for k in sorted(required - set(args))]
+        problems += [f"{tool}: {k} must be a list" for k in sorted(ARRAY_ARGS.get(tool, set()) & set(args)) if not isinstance(args[k], list)]
+        if tool in RULE_TOOLS:
+            problems += [f"{tool}: {p}" for p in rule_definition_problems(args)]
+        if tool == "didit_workflow_create":
+            problems += [f"{tool}: unknown feature {f.get('feature')!r}" for f in args.get("features", []) if f.get("feature") not in WORKFLOW_FEATURES]
+    return problems
+
+
+def conditional_rule_problems(texts: dict[str, str]) -> list[str]:
+    return [f"{where}: missing the conditional-instruction rule" for where, text in texts.items() if CONDITIONAL_RULE not in text]
+
+
 def strip_ticks(text: str) -> str:
     return BACKTICKED.sub(" ", text)
 
@@ -423,10 +534,12 @@ class Tree:
         return tools
 
     def skill_texts(self, base: Path) -> list[tuple[str, str]]:
-        """(where, text) for every SKILL.md and the prompts file of one plugin."""
+        """(where, text) for every SKILL.md, every skill's references/*.md and, last, the prompts file of one plugin."""
         out = []
         for name in EXPECTED_SKILLS[base.name]:
             out.append((f"{base.name}/skills/{name}/SKILL.md", (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")))
+            for ref in sorted((base / "skills" / name).glob("references/*.md")):
+                out.append((f"{base.name}/skills/{name}/references/{ref.name}", ref.read_text(encoding="utf-8")))
         out.append((f"{base.name}/tests/prompts.md", (base / "tests" / "prompts.md").read_text(encoding="utf-8")))
         return out
 
@@ -639,6 +752,41 @@ class SkillTests(TreeCase):
             for where, text in self.t.skill_texts(base)[:-1]:
                 with self.subTest(file=where):
                     self.assertEqual(arg_pair_problems(text, props), [])
+
+    def test_json_examples_match_the_catalog(self):
+        tools = self.t.known_tools()
+        seen = 0
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                seen += len(JSON_FENCE.findall(text))
+                with self.subTest(file=where):
+                    self.assertEqual(json_example_problems(text, tools), [])
+        self.assertGreater(seen, 0)
+
+    def test_conditional_instruction_is_not_agreement(self):
+        texts = {}
+        for plugin, skills in CONDITIONAL_RULE_SKILLS.items():
+            for skill in skills:
+                texts[f"{plugin}/{skill}"] = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+        self.assertEqual(conditional_rule_problems(texts), [])
+
+    def test_rule_definition_is_taught(self):
+        for plugin, skill in (("didit", "didit-monitor-transactions"), ("didit-transaction-monitoring", "didit-tm-rules")):
+            text = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIn("### Rule definition", text)
+                self.assertIn("`period_days: 90`", text)
+                self.assertIn("10,000 most recent transactions", text)
+                self.assertIn("A back-test is a read, so it needs no agreement", text)
+                self.assertGreaterEqual(text.count("```json didit_transaction_rule_backtest"), 3)
+
+    def test_references_are_mentioned(self):
+        for base in self.t.plugin_dirs():
+            for name in EXPECTED_SKILLS[base.name]:
+                skill = (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+                for ref in (base / "skills" / name).glob("references/*.md"):
+                    with self.subTest(file=ref.name, skill=name):
+                        self.assertIn(f"references/{ref.name}", skill)
 
     def test_billing_notice_before_billable_calls(self):
         for base in self.t.plugin_dirs():
@@ -1016,6 +1164,36 @@ class LintSelfTests(unittest.TestCase):
         self.assertNotEqual(arg_pair_problems("- `didit_docs_search`: `query`, `organization_id`.", props), [])
         self.assertNotEqual(arg_pair_problems("`didit_org_list_members` with `organization_id` and `application_id`", props), [])
         self.assertEqual(arg_pair_problems("- `didit_docs_search`: `query`, optional `language` (`en`).", props), [])
+
+    def test_json_example_defects_are_rejected(self):
+        tools = {
+            "didit_org_invite_member": {"properties": ["app_ids", "emails", "organization_id", "role"], "required": ["app_ids", "emails", "role"]},
+            "didit_transaction_rule_backtest": {"properties": ["aggregation", "conditions", "evaluation_mode", "period_days", "scope"], "required": []},
+        }
+        for bad in (
+            '```json\n{"emails": ["a@example.com"]}\n```\n',
+            '```json didit_unknown_tool\n{}\n```\n',
+            '```json didit_org_invite_member\n{"role": "r", "app_ids": ["a"]}\n```\n',
+            '```json didit_org_invite_member\n{"emails": "a@example.com", "role": "r", "app_ids": ["a"]}\n```\n',
+            '```json didit_org_invite_member\n{"emails": ["a"], "role": "r", "app_ids": ["a"], "team": "x"}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "operator": "gt", "value": 1}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "total", "operator": "gt", "value": 1, "window": "1d"}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "operator": "gt", "value": 1, "window": "1 day"}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"conditions": [{"field": "amount", "operator": "greater_than", "value": 1}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"period_days": 400}\n```\n',
+            '  ```json didit_transaction_rule_backtest\n  {"period_days": 90,}\n  ```\n',
+        ):
+            with self.subTest(text=bad):
+                self.assertNotEqual(json_example_problems(bad, tools), [])
+        ok = ('  ```json didit_org_invite_member\n  {"emails": ["a@example.com"], "role": "<role>", "app_ids": ["<app>"]}\n  ```\n'
+              '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", '
+              '"value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__"}}], "period_days": 90}\n```\n')
+        self.assertEqual(json_example_problems(ok, tools), [])
+
+    def test_missing_conditional_rule_is_rejected(self):
+        self.assertNotEqual(conditional_rule_problems({"a": "Wait for a clear yes before calling the tool."}), [])
+        self.assertNotEqual(conditional_rule_problems({"a": CONDITIONAL_RULE, "b": CONDITIONAL_RULE.replace("is not agreement", "counts")}), [])
+        self.assertEqual(conditional_rule_problems({"a": "Rules. " + CONDITIONAL_RULE}), [])
 
     def test_billing_overstatements_are_rejected(self):
         for bad in ("In a live application each check uses Didit credits.", "In a live application every session is billed.",

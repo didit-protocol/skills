@@ -30,7 +30,12 @@ Both calls are writes. In a live application this can use your Didit credits. Sa
 When the business itself should submit details and documents, use a KYB workflow and a session. The tools are the ones described in didit-verify-people:
 
 1. `didit_workflow_search` to find an existing KYB workflow.
-2. If none exists, `didit_workflow_create` with KYB features only, for example `[{"feature":"KYB_REGISTRY"},{"feature":"KYB_DOCUMENTS"},{"feature":"KYB_KEY_PEOPLE"}]`. Do not mix in person-only features such as `OCR` or `LIVENESS`. To verify the people behind the company, create a separate KYC workflow and link it from the `KYB_KEY_PEOPLE` step. Check config keys with `didit_workflow_get_feature_config_schema` first. Confirm the workflow with the person before creating it.
+2. If none exists, `didit_workflow_create` with KYB features only, for example `[{"feature":"KYB_REGISTRY"},{"feature":"KYB_DOCUMENTS"},{"feature":"KYB_KEY_PEOPLE"}]`. Do not mix in person-only features such as `OCR` or `LIVENESS`. To verify the people behind the company, create a separate KYC workflow and link it from the `KYB_KEY_PEOPLE` step. Check config keys with `didit_workflow_get_feature_config_schema` first. Confirm the workflow with the person before creating it. A complete call, kept as a draft:
+
+   ```json didit_workflow_create
+   {"workflow_label": "Company KYB", "status": "draft", "features": [{"feature": "KYB_REGISTRY"}, {"feature": "KYB_DOCUMENTS"}, {"feature": "KYB_KEY_PEOPLE"}]}
+   ```
+
 3. `didit_session_create` with the KYB `workflow_id` and the business's id as `vendor_data`. Give the person the returned `url` to send to the business.
 4. Read the result with `didit_session_get_decision` and the reason with `didit_session_explain_decision`. Summarize the registry match, the documents received, the key people found and any warning.
 

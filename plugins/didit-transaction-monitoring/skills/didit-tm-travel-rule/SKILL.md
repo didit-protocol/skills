@@ -40,7 +40,15 @@ Mask contact emails when you list them: first letter and the domain.
 ## 5. Messages with the counterparty
 
 - `didit_travel_rule_list_messages`: `transaction_id`. Messages and document requests on a transfer, oldest first. A document request is open while `fulfilled_at` is empty. Attachment download links expire: do not paste them as lasting links.
-- `didit_travel_rule_send_message`: `transaction_id`, `kind` (`MESSAGE` or `DOCUMENT_REQUEST`), `body`, `requested_documents`, `reply_to`, `files`. Only transfers with another Didit customer or over email carry messages; network rails refuse them. To answer a document request, `reply_to` its id with files attached. The counterparty receives it at once and it cannot be recalled: show the person the exact message and wait for a clear yes before sending.
+- `didit_travel_rule_send_message`: `transaction_id`, `kind` (`MESSAGE` or `DOCUMENT_REQUEST`), `body`, `requested_documents`, `reply_to`, `files`. Only transfers with another Didit customer or over email carry messages; network rails refuse them. To answer a document request, `reply_to` its id with files attached. The counterparty receives it at once and it cannot be recalled: show the person the exact message and wait for a clear yes before sending. A document request, then the reply that fulfils one (`files` holds up to 5 images or PDFs, each with `base64` on the hosted server or `path` on a local one, and a `filename`; only real file bytes the person attached, never pasted text):
+
+  ```json didit_travel_rule_send_message
+  {"transaction_id": "<transaction_id>", "kind": "DOCUMENT_REQUEST", "body": "Please send the beneficiary's proof of address.", "requested_documents": ["Proof of address"]}
+  ```
+
+  ```json didit_travel_rule_send_message
+  {"transaction_id": "<transaction_id>", "reply_to": "<message_id>", "body": "Attached.", "files": [{"base64": "<file content>", "filename": "proof-of-address.pdf"}]}
+  ```
 
 ## 6. Act on a transfer
 

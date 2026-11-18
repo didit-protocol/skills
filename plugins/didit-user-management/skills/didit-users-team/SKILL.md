@@ -19,6 +19,12 @@ Follow the rules of didit-users-start first: call `didit_context_get` and pick t
 - `didit_org_list_members` lists members. Each row has a `uuid` (what remove and update take) and a `user_id` (what case assignment takes).
 - `didit_org_list_roles` lists the roles with their ids.
 - `didit_org_invite_member`: `emails` (1 to 5), `role` (a role id from `didit_org_list_roles`) and `app_ids` (application ids from `didit_context_get` or `didit_org_list_applications`). Repeat the emails, role name and applications and wait for the person to confirm before inviting.
+
+  ```json didit_org_invite_member
+  {"emails": ["name@example.com"], "role": "<role_id from didit_org_list_roles>", "app_ids": ["<application_id>"]}
+  ```
+
+  `emails` is a list even for one person, `role` is the role's id (match the role the person named against `didit_org_list_roles`), and `app_ids` lists application ids. All three are required. When the person did not say which applications, list them from `didit_context_get` and ask which ones; never pick for them. With only one application, name it in the confirmation.
 - `didit_org_update_member`: `member_id`, `role` and `accessible_applications` (the full list after the change). State the old and new role and applications and wait for a yes.
 - `didit_org_remove_member`: `member_id`, the member row's `uuid` (not `user_id`, not the email). It cannot be undone; the person would need a new invitation. Name the member and wait for the person to confirm.
 

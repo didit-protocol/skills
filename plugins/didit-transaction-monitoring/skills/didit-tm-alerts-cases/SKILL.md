@@ -40,11 +40,19 @@ These send account data to an address outside Didit or stop deliveries. Show the
 - Optional: `priority` (`LOW`, `MEDIUM` default, `HIGH`), `assigned_to` (a member's `user_id` from `didit_org_list_members`), `due_at`, `tags`, `blueprint`, `review_duplicates`.
 - With `review_duplicates: true`, a `409 case_duplicate_review_required` means a case about the same subject is already open. Show it. Send `separate_incident_reason` only if the person still wants a separate case.
 
+```json didit_case_create
+{"title": "Daily outbound total above threshold", "subject": {"type": "user", "uuid": "<didit_internal_id>"}, "links": [{"entity_type": "transaction", "entity_uuid": "<transaction_id>"}], "priority": "HIGH", "review_duplicates": true}
+```
+
 Confirm the title, subject or links, priority and assignee before creating it.
 
 ## 5. Work a case
 
-`didit_case_manage` takes `case_id`, `action` (`assign`, `resolve`, `reopen`, `escalate`, `comment`, `update`) and `data` (for example the assignee or the comment).
+`didit_case_manage` takes `case_id`, `action` (`assign`, `resolve`, `reopen`, `escalate`, `comment`, `update`) and `data` (for example the assignee or the comment). A comment, after the person agreed to its text:
+
+```json didit_case_manage
+{"case_id": "<case_id>", "action": "comment", "data": {"comment": "Customer sent proof of source of funds."}}
+```
 
 - Describe the exact action and payload and wait for the person to confirm before each call.
 - Filing a SAR is a regulatory action: it needs `confirm: true`, sent only after the person confirmed that exact filing in this conversation.

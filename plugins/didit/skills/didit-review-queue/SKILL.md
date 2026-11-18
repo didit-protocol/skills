@@ -42,6 +42,8 @@ Summarize: what triggered the review, what the evidence shows, and what a review
 
 Before calling it, confirm the session, the new status and any email recipient with the person. Call it only after they agree to that exact change.
 
+An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. Report what you found, say exactly what you would change and in which application (sandbox or live), then wait for a yes. For example, "if it was only a blurry photo, approve her": explain the decline from `didit_session_explain_decision`, then propose the approval (or a resubmission of the document step) and stop. Call `didit_session_update_status` only after the person answers yes in a later message.
+
 ## 5. Work cases
 
 - `didit_case_search` lists cases across applications (`status`, `search`, `last_n_days`, `limit`).

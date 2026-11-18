@@ -18,6 +18,13 @@ A workflow defines the steps a person goes through.
    - `workflow_label`: a name of at most 50 characters.
    - `status: "draft"` keeps it unpublished; omit it to publish.
    - A workflow verifies a person or a business, never both. For a company use didit-verify-businesses.
+
+   A complete call, kept as a draft:
+
+   ```json didit_workflow_create
+   {"workflow_label": "ID and selfie with AML", "status": "draft", "features": [{"feature": "OCR"}, {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}}, {"feature": "FACE_MATCH"}, {"feature": "AML"}]}
+   ```
+
 4. Before setting a `config` key you have not used before, call `didit_workflow_get_feature_config_schema` with `feature` (for example `LIVENESS` or `AML`). It lists every accepted key. A key outside it is dropped silently.
 
 Describe the workflow you are about to create and wait for the person to agree before calling `didit_workflow_create`.

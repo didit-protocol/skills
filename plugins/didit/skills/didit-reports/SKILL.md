@@ -29,7 +29,12 @@ To add credit, `didit_org_top_up` is listed on the hosted server: `amount_in_dol
 ## 3. Exports
 
 1. `didit_report_list` shows existing reports, newest first (`status`, `report_type`, `q`, `limit`, `offset`). Check here before starting a new one.
-2. `didit_report_export` starts an export job. `kind` is `sessions`, `transactions`, `businesses`, `vendor-users` or `vendor-businesses`, and `data` holds filters and `columns`. For `sessions`, `vendor-users` and `vendor-businesses` an unknown column is refused and the error lists the allowed ones: retry from that list instead of guessing. For `transactions` and `businesses` nothing checks the columns and an unknown one just comes out blank, so take column names from `didit_docs_search` and never guess them.
+2. `didit_report_export` starts an export job. `kind` is `sessions`, `transactions`, `businesses`, `vendor-users` or `vendor-businesses`, and `data` holds filters and `columns`. For `sessions`, `vendor-users` and `vendor-businesses` an unknown column is refused and the error lists the allowed ones: retry from that list instead of guessing. For `transactions` and `businesses` nothing checks the columns and an unknown one just comes out blank, so take column names from `didit_docs_search` and never guess them. The schema declares no filter keys for `data`: look them up with `didit_docs_search` too, or export without filters. A sessions export with known-good columns:
+
+   ```json didit_report_export
+   {"kind": "sessions", "data": {"columns": ["session_number", "vendor_data", "session_status", "workflow_type", "created_at"]}}
+   ```
+
 3. `didit_report_get` with `report_id` shows its status (`PENDING`, `PROCESSING`, `READY`, `FAILED`).
 4. When it is `READY`, `didit_report_get_download_url` with `report_id` returns a signed link. Give the person the link; do not try to download or paste the file.
 

@@ -27,8 +27,42 @@ This records a real transaction in the application. In a live application this c
 ## 3. Rules
 
 - `didit_transaction_rule_list` shows the rules of one application. Filter by `source` (`PRESET` or `CUSTOM`), `mode` (`ACTIVE`, `TEST`, `DISABLED`), `category` or `search`.
-- `didit_transaction_rule_backtest` dry-runs a rule definition (`conditions`, `aggregation`, `evaluation_mode`, `scope`, `period_days` from 1 to 365, default 90) against at most the 10,000 most recent transactions of the application. It writes nothing. The window is rolling days back from today, not a calendar period: for "last quarter" use `period_days: 90` and say it is the last 90 days, and mention the 10,000 cap when the application has more.
+- `didit_transaction_rule_backtest` dry-runs a rule definition against at most the 10,000 most recent transactions of the application. It writes nothing and takes no `rule_uuid`.
+- A back-test is a read, so it needs no agreement: when the person asks how often a rule would fire, build the definition below and run it at once. Use the application they named; if they named none and the context shows several, ask which one, once. Never ask them for field names.
 - `didit_transaction_rule_create` saves a custom rule. Required: `title` (unique in the application), `category`, `mode` and `actions`. Include every outcome the person asked for (review, decline, approve, score, case) in `actions`; pass an empty list only for a monitor-only rule.
+
+### Rule definition
+
+The same fields go to `didit_transaction_rule_backtest`, `didit_transaction_rule_create` and `didit_transaction_rule_update`. All are optional on a back-test.
+
+- `conditions`: a list of checks on the transaction being evaluated. Each has `field`, `operator` and usually `value`.
+  - `field` examples: `amount`, `currency`, `direction`, `action_type`, `score`, `transaction_type`, `subject_country`, `counterparty_country`, `subject_vendor_data`, `subject_payment_method_type`, `travel_rule_status`, `tags`, `subject_days_since_previous_transaction`, or `custom_values.<key>` for a key sent in `custom_properties`.
+  - `operator`: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `contains`, `not_contains`, `contains_any` (a list of strings), `regex`, `fuzzy_match` (needs `score` 0 to 100), and the presence checks `exists`, `is_not_empty`, `is_not_null`, `not_exists`, `is_empty`, `is_null` (no `value`).
+  - Optional `value_type`: `list` (the value is a List UUID), `field` (the value is another field path) or `relative_date`. Leave it out for a literal value.
+- `evaluation_mode`: `ALL` (default) or `ANY`, how flat conditions combine. Setting `group_index` on any condition switches to grouped evaluation (`group_logic` and `groups_logic`, each `AND` or `OR`).
+- `aggregation`: a list of velocity checks over past transactions; every entry must match. Each needs `metric` (`count`, `sum`, `max`, `min`, `avg`, `distinct_count`, `unique_count`), `operator` (`eq`, `ne`, `gt`, `gte`, `lt`, `lte`), `value` (a number) and `window` (`<N>m` minutes, not months, `<N>h` hours or `<N>d` days). Optional `field` (default `amount`, ignored for `count`) and `filters`: `{"subject_vendor_data": "__current__"}` counts only the same customer's transactions.
+- `scope`: `transaction_types`, `directions` (`INBOUND`, `OUTBOUND`) and `action_types`, each a list. Left out, nothing is restricted.
+- `period_days` (back-test only): 1 to 365, default 90. "Last quarter" is `period_days: 90`; say it is the last 90 days, not a calendar quarter, and that at most the 10,000 most recent transactions are replayed.
+
+Amounts are compared as stored on each transaction. When the person gives a threshold with no currency, say which reading you used (for example "10,000 in the transaction's own currency, every currency counted") and run the back-test: it changes nothing. Add a `currency` condition when they name one.
+
+Total sent by one customer in a day above 10,000:
+
+```json didit_transaction_rule_backtest
+{"scope": {"directions": ["OUTBOUND"]}, "aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", "value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__"}}], "period_days": 90}
+```
+
+More than 5 transactions by one customer within an hour:
+
+```json didit_transaction_rule_backtest
+{"aggregation": [{"metric": "count", "operator": "gt", "value": 5, "window": "1h", "filters": {"subject_vendor_data": "__current__"}}], "period_days": 30}
+```
+
+One transaction above 5,000 in EUR:
+
+```json didit_transaction_rule_backtest
+{"conditions": [{"field": "amount", "operator": "gt", "value": 5000}, {"field": "currency", "operator": "eq", "value": "EUR"}], "evaluation_mode": "ALL", "period_days": 90}
+```
 
 Recommended order:
 
