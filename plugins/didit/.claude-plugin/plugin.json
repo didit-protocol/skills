@@ -1,7 +1,7 @@
 {
   "name": "didit",
   "displayName": "Didit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Run identity checks from chat: verify people and businesses, review sessions and cases, screen names and wallets, monitor transactions and read reports in your Didit account.",
   "author": {
     "name": "Didit",

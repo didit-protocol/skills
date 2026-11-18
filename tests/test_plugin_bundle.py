@@ -721,7 +721,7 @@ class ManifestTests(TreeCase):
                     self.assertEqual(claude[key], codex[key], key)
                     self.assertEqual(claude[key], cursor[key], key)
                 self.assertEqual(claude["name"], base.name)
-                self.assertEqual(claude["version"], "1.0.0")
+                self.assertEqual(claude["version"], "1.1.0")
                 self.assertTrue(claude.get("displayName"))
                 self.assertLessEqual(len(claude["description"]), 200)
                 self.assertEqual(claude["license"], "MIT")
@@ -754,7 +754,7 @@ class ManifestTests(TreeCase):
             with self.subTest(plugin=name):
                 entry = entries[name]
                 self.assertEqual(entry["source"], f"./plugins/{name}")
-                self.assertEqual(entry["version"], "1.0.0")
+                self.assertEqual(entry["version"], "1.1.0")
                 manifest = load_json(self.t.plugins / name / ".claude-plugin" / "plugin.json")
                 self.assertEqual(entry["description"], manifest["description"])
                 self.assertTrue(entry.get("category"))
