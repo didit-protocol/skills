@@ -18,7 +18,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 7. For how a feature works, call `didit_docs_search` and cite the link it returns.
 8. This plugin's tools create no verification session and run no standalone check. Never state a price: link https://didit.me/pricing. To see the credit balance, use `didit_org_get_balance`.
 9. A newly issued API key is returned once. Where you can write files in the person's project, write it straight to the project's secret store or `.env` and do not print it; otherwise show it once. Never repeat it later and never keep it in notes or memory.
-10. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing-detail (`didit_billing_*`), compliance and audit-log tools are not available; the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for the missing ones.
+10. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing-detail (plan, payment methods, receipts), compliance and audit-log tools are not available; the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for the missing ones.
 
 ## Which skill handles what
 

@@ -267,7 +267,7 @@ LOCAL_ONLY = re.compile(r"local (?:\(stdio\) )?server only", re.I)
 # The rule for an application API key connection, word for word, in all four start skills.
 API_KEY_RULE = (
     "If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: "
-    "member, role, API key, billing-detail (`didit_billing_*`), compliance and audit-log tools are not available; "
+    "member, role, API key, billing-detail (plan, payment methods, receipts), compliance and audit-log tools are not available; "
     "the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for "
     "the missing ones."
 )
