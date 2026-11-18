@@ -8,9 +8,9 @@ description: >
   connecting with an application API key; running the local stdio server or self-hosting the
   HTTP server, with device-code login; toolsets and
   read-only mode; and having an agent act in the Didit Business Console: workflows, sessions,
-  standalone checks, users, transactions and rules, lists, cases, webhooks, reports and billing.
+  standalone checks, users, transactions and rules, Travel Rule, lists, cases, webhooks, reports and billing.
   Covers scopes, roles, confirmations and file inputs.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -33,7 +33,7 @@ The Didit MCP server lets an MCP client call the Didit platform through tools. I
 - Two ways to connect:
   - **Log in with Didit** (OAuth 2.1 with PKCE, the default and recommended path): the server acts as the signed-in person, across every organization and application they belong to, with their console role permissions.
   - **Application API key** (headless agents and CI with no person present): the connection is that one application, with the key's own access. See Connect with an API key.
-- Tool results are processed, not raw endpoint JSON. A successful call returns compact JSON text plus `structuredContent` (an object as is; an array or a scalar wrapped as `{"value": ...}`). Redaction is per handler. The following handlers redact these fields: on applications `api_key`, `client_secret` and `secret` (replaced by `*_set` and a masked `*_preview`); on API key lists `api_key`, `key`, `secret`, `token` and `value` (the same); on webhook destinations the signing secret (`secret_shared_key`, `signing_secret`, `secret`, replaced by `secret_set`). Other handlers trim or redact further fields (for example provider credentials in import responses), so treat any credential-looking value in a result as sensitive. Webhook destination URLs (path and query included) and alert destinations from `didit_alert_list` (for Slack, the posting URL in `value`) are returned as stored, so mask them before showing them to anyone (host plus the last 4 characters, for example `hooks.slack.com/...a1B2`). On the hosted server `didit_org_create_api_key` also returns the new key's secret once, on purpose; a local server also returns credentials from `didit_org_reveal_application_api_key` (the raw key) and `didit_account_verify_email` (the new applications' API keys and an access token). Large payloads (for example workflow feature configs) are summarized. A failed call returns no `structuredContent`: an error raised by a tool handler is sanitized text with a code and a message, plus field, hint and allowed values when there are any, while a refusal by the server itself (for example a write on a read-only connection) is plain text with no code.
+- Tool results are processed, not raw endpoint JSON. A successful call returns compact JSON text plus `structuredContent` (an object as is; an array or a scalar wrapped as `{"value": ...}`). Redaction is per handler. The following handlers redact these fields: on applications `api_key`, `client_secret` and `secret` (replaced by `*_set` and a masked `*_preview`); on API key lists `api_key`, `key`, `secret`, `token` and `value` (the same); on webhook destinations the signing secret (`secret_shared_key`, `signing_secret`, `secret`, replaced by `secret_set`). Other handlers trim or redact further fields (for example provider credentials in import responses), so treat any credential-looking value in a result as sensitive. Webhook destination URLs (path and query included) and alert destinations from `didit_alert_list` (for Slack, the posting URL in `value`) are returned as stored, so mask them before showing them to anyone (host plus the last 4 characters, for example `hooks.slack.com/...a1B2`). On the hosted server `didit_org_create_api_key` also returns the new key's secret once, on purpose. A local server also returns an application's raw key from `didit_org_reveal_application_api_key` (local server only; on the hosted server a new key is created with `didit_org_create_api_key`) and credentials from `didit_account_verify_email` (the new applications' API keys and an access token). Large payloads (for example workflow feature configs) are summarized. A failed call returns no `structuredContent`: an error raised by a tool handler is sanitized text with a code and a message, plus field, hint and allowed values when there are any, while a refusal by the server itself (for example a write on a read-only connection) is plain text with no code.
 - Open source (MIT): https://github.com/didit-protocol/mcp, published on npm as `@didit-protocol/mcp-server` (binary `didit-mcp-server`).
 
 **When to use the REST skills instead:** a backend integration that runs with an application API key in your own code (creating sessions for your users, receiving webhooks, submitting transactions) calls the REST API directly; see **didit-verification-management**, **didit-sdk-integration** and the standalone API skills.
@@ -63,7 +63,7 @@ The server advertises three scopes. Which resources each one covers is taken fro
 | `didit:management` | Workflows, questionnaires, lists, webhooks, integrations, members, roles, API keys, audit logs, the organization, applications, subscription and users |
 | `didit:staff` | Didit staff accounts only: the authorization server grants it to no one else. The local server's device login asks for it along with the other two, and a customer account simply does not receive it. A client you configure yourself should request only the first two |
 
-- Access is limited by both the approved scopes and the person's console role in each organization; the Didit backend checks the role on every call. The tools reference lists the role permission each tool needs.
+- Access is limited by both the approved scopes and the person's console role in each organization; the Didit backend checks the role on every call. The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. The tools reference lists the role permission each tool needs.
 - Per the tools reference, `didit_session_create` needs a role with `create:sessions` or `write:sessions`. The server declares no local pre-check for it and leaves that check to the backend.
 - Disconnect an app in the console under **Settings > Authentication > Connected apps**, or revoke its refresh token yourself (RFC 7009), which stops it from getting new access tokens. The hosted server remembers an accepted access token for up to 60 seconds (default `MCP_INTROSPECTION_CACHE_TTL_MS`), so a revoked access token can keep reaching the server for that long; each Didit API call a tool makes re-checks the token at the API.
 
@@ -99,7 +99,7 @@ Do not write `--header "x-api-key: $DIDIT_API_KEY"` on a command line: the shell
 - **One application.** The connection acts on the key's application; no ids to pass. `didit_context_get` reports `connection.type: "api_key"` and the app's `mode` when it is available. A call that names another organization or application is refused.
 - **The key's own access.** The key is forwarded to the Didit API as on a direct call; a restricted key reaches only what it was given. Give an agent a restricted key with an expiry.
 - **Sandbox first.** Build and test with the sandbox application's key.
-- **Not for person-only tools.** Members, roles and API key management, plan, cards, receipts and billing details, the audit log, `didit_workflow_build_graph`, and PDF or e-signature download links are neither listed nor run on an API key connection.
+- **Not for person-only tools.** Members, roles and API key management, plan, cards, receipts and billing details, compliance, the audit log, `didit_workflow_build_graph`, and PDF or e-signature download links are neither listed nor run on an API key connection. On the hosted server as of 2026-11-18 an API key connection lists 178 tools (81 read, 66 write, 31 destructive), 27 with `?toolsets=core` and 81 with `read_only=true`: the 206 a signed-in person sees minus 28 person-only tools (members and roles 5, API key list and create 2, billing 6, compliance 9, the audit log, the session PDF, the three e-signature file tools and `didit_workflow_build_graph`).
 - A key limited to specific IP addresses is refused (the API would see the server's address). A revoked key stops working once the server's cached check expires (up to 60 seconds by default). A rotated key is different: its old secret keeps working until the rotation's grace period ends, because the key's `expires_at` is the earlier of its own expiry and that grace period.
 
 ## Getting Started (No Account Yet?)
@@ -161,7 +161,7 @@ The guide and the server README use `mcp-remote@latest`. This skill pins `mcp-re
 
 ## Toolsets and Read-Only Mode
 
-By default a connection lists every tool. In the default `shadow` permission mode that includes tools the person's role will be refused when called (the backend answers `403`); only `enforce` mode hides them, and only when the token carries role permissions the server can evaluate. Tool definitions are sent to the model on every request, so a shorter list saves tokens. Name toolsets on the server URL:
+By default a connection lists every tool. On the hosted server (as of 2026-11-18) the list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. Tool definitions are sent to the model on every request, so a shorter list saves tokens. Name toolsets on the server URL:
 
 ```
 https://mcp.didit.me/mcp?toolsets=core
@@ -188,9 +188,11 @@ https://mcp.didit.me/mcp?toolsets=core,transactions,cases&read_only=true
 | `docs` | Search the Didit documentation |
 | `all` | Every tool (the default) |
 
+The hosted-only groups (Travel Rule, Compliance, Marketplace and Networks; see Tools) are listed on a full connection and are reachable by name or through the discovery tools on a shorter one.
+
 - A toolset decides what is **listed**, not what may run: a tool outside the selection still runs when called by name, with the same permission checks.
 - When the listed selection leaves out tools the connection could use, it also gets the discovery tools: `didit_tool_search` (find a tool or list a toolset), `didit_tool_describe` (its full schema), `didit_tool_call_read` and, unless the connection is read-only, `didit_tool_call_write` (run it). Calls through them are checked exactly like direct calls.
-- `read_only=true` lists only tools that read and refuses every call that would change data, whatever the client remembers. In v5.1.67 a signed-in person with every toolset sees 77 tools in read-only mode.
+- `read_only=true` lists only tools that read and refuses every call that would change data, whatever the client remembers. On the hosted server (v5.1.67, as of 2026-11-18) a signed-in person with every toolset sees 97 tools in read-only mode.
 - Clients that cannot edit the URL send the `X-MCP-Toolsets` and `X-MCP-Readonly` headers. The local server takes `--toolsets=core,workflows` and `--read-only`, or `DIDIT_TOOLSETS` and `DIDIT_READ_ONLY`. An unknown toolset is ignored, not an error.
 - `didit_docs_search` searches the live documentation at docs.didit.me; use it for "how does Didit work" questions instead of answering from memory.
 
@@ -261,7 +263,7 @@ Clone https://github.com/didit-protocol/mcp at a release tag, `npm install && np
 
 Tool names start with `didit_`. Annotations mark each tool read-only, write or destructive (`readOnlyHint`, `destructiveHint`). Whether a client asks before running a destructive tool depends on the client and its settings; the server does not prompt. Get the human's approval yourself (see Confirmations).
 
-**Coverage in v5.1.67:** a signed-in person on the hosted server with every toolset sees 167 tools: 77 read, 62 write and 28 destructive (fewer only when the server runs with `MCP_PERMISSION_MODE=enforce` and can evaluate the person's role permissions from the token). The local stdio server adds 9 more: the 7 account sign-in tools (`didit_account_register`, `_verify_email`, `_resend_otp`, `_login`, `_verify_2fa`, `_device_login_start`, `_device_login_poll`), `didit_org_top_up` and `didit_org_reveal_application_api_key`. With `?toolsets=core` the list is 29 tools.
+**Coverage (v5.1.67):** 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. The hosted server adds Travel Rule (23 tools), Compliance (9), Marketplace (3), Networks (3) and `didit_transaction_sdk_token`, and every tool the two share takes the same arguments. A local stdio server of the open-source build also offers the 7 account sign-in tools (`didit_account_register`, `_verify_email`, `_resend_otp`, `_login`, `_verify_2fa`, `_device_login_start`, `_device_login_poll`). `didit_org_top_up` and `didit_org_reveal_application_api_key` are local server only; on the hosted server a new key is created with `didit_org_create_api_key`, and credit is added in the Didit console. With `?toolsets=core` the list is 29 tools (27 on an API key connection); with `read_only=true`, 97 (81).
 
 | Group | Main tools |
 |---|---|
@@ -269,7 +271,7 @@ Tool names start with `didit_`. Annotations mark each tool read-only, write or d
 | Sessions, imports and signatures | `didit_session_create` (returns `session_id`, `url`, `session_token`), `_simulate` (finish a sandbox session with a chosen outcome), `_list`, `_get_decision`, `_explain_decision`, `_update_status`, `_update_data`, `_update_poa_data`, `_add_review`, `_list_reviews`, `_generate_pdf`, `_share`, `_import_shared`, `_get_location_evidence`, `_webhooks`, `_webhook_resend`, `_delete`, `_batch_delete`; imports: `_create_import`, `_get_import`, `_get_import_errors`, `_get_import_template`, `_manage_import`, `_list_import_providers`, `_check_import_provider`; e-signatures: `_get_signature_evidence`, `_get_signed_document`, `_get_signature_field_image`, `_validate_signatures` (re-checks the signed documents and saves the result in each signer's validation) |
 | Workflows and questionnaires | `didit_workflow_list`, `_get`, `_create`, `_update`, `_delete`, `_get_graph`, `_edit_graph`, `_set_graph`, `_validate_graph`, `_build_graph`, `_get_branch_fields`, `_get_field_definitions`, `_get_feature_config_schema`, `_get_id_verification_methods_catalog`, `_get_kyb_registry_catalog`, `_create_draft`, `_publish`; `didit_questionnaire_list`, `_get`, `_create`, `_append_choices`, `_update`, `_delete` |
 | Vendors | `didit_vendor_user_list`, `_get`, `_create`, `_update`, `_update_status`, `_delete`, and the same set for `didit_vendor_business_*` |
-| Transactions, rules and wallet screening | `didit_transaction_list`, `_get`, `_create`, `_screen_wallet`, `didit_transaction_rule_list`, `_get`, `_create`, `_update`, `_delete`, `_backtest`, `_library_list`, `_install`, `_uninstall` |
+| Transactions, rules and wallet screening | `didit_transaction_list`, `_get`, `_create`, `_screen_wallet`, `_sdk_token` (hosted: a short-lived token scoped to one end user for client-side submission), `didit_transaction_rule_list`, `_get`, `_create`, `_update`, `_delete`, `_backtest`, `_library_list`, `_install`, `_uninstall` |
 | Cases | `didit_case_list`, `_get`, `_create`, `_statistics`, `_manage` |
 | Investigator | `didit_investigator_queue_list`, `_report_get`, `_record_get`, `_add_note`, `_question_list`, `_question_get`, `_backtest_start`, `_backtest_get`, `_performance_get`, `_dashboard_get`, `_activity_list`; decisions (`_accept`, `_batch_accept`, `_override`, `_question_answer`, `_question_dismiss`, `_rereview`) need `confirm: true` |
 | Lists | `didit_lists_list`, `_get`, `_create`, `_update`, `_delete`, `_entries_list`, `_entry_create`, `_entry_upload_face`, `_entry_delete`, `didit_blocklist_get`, `_add`, `_remove`, `didit_allowlist_add` |
@@ -277,16 +279,20 @@ Tool names start with `didit_`. Annotations mark each tool read-only, write or d
 | Reports and audit log | `didit_report_list`, `_get`, `_get_download_url`, `_export`, `didit_audit_log_list` |
 | Account and organization | `didit_org_list`, `_list_applications`, `_get_application` (API key masked), `_list_members`, `_invite_member`, `_update_member`, `_remove_member`, `_list_roles`, `_list_api_keys` (values redacted), `_create_api_key` (one scoped key per connected app and application; the secret is returned once) |
 | Billing | `didit_org_get_balance`, `didit_billing_get_plan`, `_quote_plan`, `_list_payment_methods`, `_list_receipts`, `_get_details`, `_update_details` |
+| Travel Rule (hosted) | `didit_travel_rule_get_settings`, `_update_settings`, `_search_vasps`, `_get_vasp`, `_list_counterparty_contacts`, `_add_counterparty_contact`, `_delete_counterparty_contact`, `_list_wallet_addresses`, `_add_wallet_address`, `_update_wallet_address`, `_delete_wallet_address`, `_confirm_ownership`, `_list_messages`, `_send_message`, `_transfer_action`, `_set_counterparty_vasp`, `_list_networks`, `_request_network`, `_get_network_questionnaire`, `_update_network_questionnaire`, `_submit_network_questionnaire`, `_get_sandbox_scenarios`, `_trigger_test_inbound` |
+| Compliance (hosted) | `didit_compliance_requirements`, `_profile_get`, `_profile_set`, `_interview_next`, `_generate_workflow`, `_check_workflow`, `_analyze_documents`, `_document_analysis_get`, `_document_analysis_save_drafts` |
+| Marketplace (hosted) | `didit_marketplace_list_catalog`, `_list_connections`, `_request_integration` |
+| Networks (hosted) | `didit_network_list`, `_get`, `_membership_get` |
 | Branding | `didit_branding_get`, `didit_branding_update` |
 | Standalone verification | `didit_verify_id`, `_poa`, `_database`, `_kyb_search`, `_kyb_select`, `_passive_liveness`, `_face_match`, `_face_search`, `_age`, `_aml`, `_email_send`, `_email_check`, `_phone_send`, `_phone_check`, `_account_check` |
 
 See https://docs.didit.me/integration/mcp/tools for the per-tool table with each tool's type, scope and role permission (a dash where the backend has no per-role check).
 
-### Top-ups and secrets: hosted vs local
+### Top-ups and raw keys
 
-- On the hosted `/mcp` endpoint no tool charges a card. When credit is needed, `didit_org_get_balance` and the billing tools return console links (`next_steps.top_up_url` opens the top-up dialog with the amount filled in) and the person pays in the console.
-- `didit_org_top_up` is offered by the local stdio server and by the separate, unlisted `https://mcp.didit.me/mcp/payments` endpoint; it is not in the `/mcp` catalog, and a call to it there is refused with the console link. Charging a saved card also needs a person to turn on agent top-ups in the console (off by default).
-- `didit_org_reveal_application_api_key` (the raw key of an application) is local stdio only. On the hosted server, `didit_org_create_api_key` creates a new scoped key instead.
+- `didit_org_top_up` and `didit_org_reveal_application_api_key` are local server only; on the hosted server a new key is created with `didit_org_create_api_key`, and credit is added in the Didit console.
+- `didit_org_get_balance` and the billing tools return console links (`next_steps.top_up_url` opens the top-up dialog with the amount filled in): give the person that link to add credit.
+- On a local server only, `didit_org_top_up` (a checkout link) and `didit_org_reveal_application_api_key` (an application's raw, live key, both ids required) each need `confirm: true`, sent only after the person agreed to that exact action; the revealed key is a credential: show it once, never store it, log it or repeat it.
 
 ### Scope resolution
 
@@ -310,7 +316,7 @@ The server refuses these calls without `confirm: true` (a real boolean):
 - `didit_session_batch_delete` (several sessions): `session_numbers` (a non-empty list) or `delete_all: true`, plus `confirm: true`, always.
 - `didit_vendor_user_delete` and `didit_vendor_business_delete`: only with `delete_all: true`. An explicit id list is deleted without `confirm`.
 - `didit_case_manage` when it files a SAR: action `resolve` with `data.status: "SAR_FILED"` and `confirm: true`.
-- `didit_org_create_api_key`, the Investigator decision tools, and on the local server `didit_org_reveal_application_api_key` and `didit_org_top_up`.
+- `didit_org_create_api_key` and the Investigator decision tools; on a local server only, also `didit_org_reveal_application_api_key` and `didit_org_top_up`.
 
 **Whatever the server enforces, an agent must ask the human and get explicit approval for that exact action before any delete, decision or credential call, and before passing `confirm: true`.** Deletion is permanent.
 
@@ -327,7 +333,7 @@ Tools that take files (ID, proof of address, liveness, face match, face search, 
 
 ### Responses
 
-A successful call returns compact JSON text (the channel the model reads) and the same result as `structuredContent`: an object as is, an array or a scalar wrapped as `{"value": ...}`. Results are shaped by the server, not passed through raw: API keys and webhook signing secrets are redacted (copy the signing secret from **Webhooks** in the console). On the hosted server the one deliberate exception is `didit_org_create_api_key`, which returns the new secret once; a local server also returns credentials from `didit_org_reveal_application_api_key` and `didit_account_verify_email`. Large workflow configs are summarized. A failed call has no `structuredContent`. An error from a tool handler is sanitized text: a code and a message, plus field, hint and allowed values when present, without backend secrets or local paths. A refusal by the server itself (a write on a read-only connection, a tool this connection cannot call) is plain text without a code. Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final result. `didit_session_create` returns a `url` the end user must complete; the decision arrives later by webhook or `didit_session_get_decision`. Decision keys are plural arrays (`id_verifications[]`, `liveness_checks[]`, `face_matches[]`, `aml_screenings[]`, ...), one entry per workflow node.
+A successful call returns compact JSON text (the channel the model reads) and the same result as `structuredContent`: an object as is, an array or a scalar wrapped as `{"value": ...}`. Results are shaped by the server, not passed through raw: API keys and webhook signing secrets are redacted (copy the signing secret from **Webhooks** in the console). The deliberate exception is `didit_org_create_api_key`, which returns the new secret once; a local server also returns credentials from `didit_org_reveal_application_api_key` (an application's raw key, local server only) and `didit_account_verify_email`. Large workflow configs are summarized. A failed call has no `structuredContent`. An error from a tool handler is sanitized text: a code and a message, plus field, hint and allowed values when present, without backend secrets or local paths. A refusal by the server itself (a write on a read-only connection, a tool this connection cannot call) is plain text without a code. Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final result. `didit_session_create` returns a `url` the end user must complete; the decision arrives later by webhook or `didit_session_get_decision`. Decision keys are plural arrays (`id_verifications[]`, `liveness_checks[]`, `face_matches[]`, `aml_screenings[]`, ...), one entry per workflow node.
 
 ---
 

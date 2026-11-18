@@ -44,6 +44,7 @@ EXPECTED_SKILLS = {
         "didit-tm-wallet-screening",
         "didit-tm-alerts-cases",
         "didit-tm-investigator",
+        "didit-tm-travel-rule",
     ],
     "didit-user-management": [
         "didit-users-start",
@@ -89,8 +90,9 @@ SOLICIT = re.compile(
 EM_DASH = chr(0x2014)
 TOOL_TOKEN = re.compile(r"\bdidit_[a-z0-9_]+\b")
 DISCOVERY = {"didit_tool_search", "didit_tool_describe", "didit_tool_call_read", "didit_tool_call_write"}
-# Tokens that look like tool names but are not: a record field and the Flutter Authentication package.
-NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth"}
+# Tokens that look like tool names but are not: record fields (a Travel Rule settings field included)
+# and the Flutter Authentication package.
+NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth", "didit_network"}
 
 
 def load_json(path: Path):
@@ -149,7 +151,8 @@ def words_outside_fences(markdown: str) -> int:
 def bundle_problems(base: Path) -> list[str]:
     """File-level directory rules for one copy of the plugin folder."""
     problems: list[str] = []
-    files = [p for p in base.rglob("*")]
+    # evals/results/ holds local `claude plugin eval` output; .gitignore keeps it out of every commit.
+    files = [p for p in base.rglob("*") if not p.relative_to(base).as_posix().startswith("evals/results")]
     regular = [p for p in files if p.is_file() or p.is_symlink()]
     if len(regular) > MAX_FILES:
         problems.append(f"{len(regular)} files, limit {MAX_FILES}")
@@ -258,6 +261,27 @@ BLANKET_RULES = [
     (re.compile(r"\b(deletions?|deleting|deletes|overwrit\w+|irreversible|credentials?)\b[^\n.]{0,60}\b(take|takes|need|needs|require|requires)\s+`confirm", re.I),
      "attaches `confirm` to a class of actions"),
 ]
+# Tools the hosted server does not list to customers (HOSTED_APP_EXCLUDED_TOOLS); a local stdio server has them.
+LOCAL_ONLY_TOOLS = ("didit_org_reveal_application_api_key", "didit_org_top_up")
+LOCAL_ONLY = re.compile(r"local (?:\(stdio\) )?server only", re.I)
+# The rule for an application API key connection, word for word, in all four start skills.
+API_KEY_RULE = (
+    "If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: "
+    "member, role, API key, billing-detail (plan, payment methods, receipts), compliance and audit-log tools are not available; "
+    "the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for "
+    "the missing ones."
+)
+# Measured live with Reader, Developer and Compliance Officer accounts: the context lists no applications for them.
+ZERO_APPS_RULE = "If `didit_context_get` shows an organization with zero applications, do not conclude there are none."
+ROLE_REFUSAL_RULE = "refused with `forbidden` (sometimes `missing_scope`)"
+RECONNECT_RULE = "After a role change the person must reconnect Didit"
+# Recipes whose person-only tools need a note in the same section.
+PERSON_ONLY_SKILLS = {
+    "didit": ["didit-workspace-admin", "didit-reports"],
+    "didit-user-management": ["didit-users-team"],
+}
+PERSON_SIGN_IN_NOTE = "Needs a person sign-in"
+ROLE_SENTENCE = "The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error."
 CONFIRM_TICK = re.compile(r"`confirm(: true)?`")
 ARG_LINE_COLON = re.compile(r"^\s*(?:-|\d+\.)\s+`(didit_[a-z0-9_]+)`:\s*(.*)$")
 ARG_LINE_WITH = re.compile(r"`(didit_[a-z0-9_]+)`\s+(?:with|takes|needs)\s+((?:`[^`]+`(?:\s*(?:,|and/or|and|or)\s*)?)+)")
@@ -303,6 +327,187 @@ README_FORBIDDEN = [
     (re.compile(r"\bno binaries\b", re.I), "say 'no executable binaries': the icon is a binary file"),
     (re.compile(r"only the tools this plugin uses", re.I), "a toolset connection is a shorter tool list, not only this plugin's tools"),
 ]
+
+
+# The conditional-instruction rule, word for word, in all four start skills and in didit-review-queue.
+CONDITIONAL_RULE = (
+    "An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. "
+    "Report what you found, say exactly what you would change and in which application (sandbox or live), "
+    "then wait for a yes."
+)
+CONDITIONAL_RULE_SKILLS = {
+    "didit": ["didit-connect", "didit-review-queue"],
+    "didit-transaction-monitoring": ["didit-tm-start"],
+    "didit-user-management": ["didit-users-start"],
+    "didit-authentication": ["didit-auth-start"],
+}
+# A JSON example in a skill names its tool on the fence: ```json didit_tool_name
+JSON_FENCE = re.compile(r"^([ \t]*)```json(?:[ \t]+(\S+))?[ \t]*\n(.*?)^[ \t]*```[ \t]*$", re.M | re.S)
+# Nested shapes the catalog does not carry, kept by hand from the server's schemas (mcp/src/tools).
+RULE_TOOLS = {"didit_transaction_rule_backtest", "didit_transaction_rule_create", "didit_transaction_rule_update"}
+RULE_CONDITION_KEYS = {"field", "operator", "value", "value_type", "score", "group_index", "group_logic", "groups_logic"}
+RULE_CONDITION_OPERATORS = {
+    "eq", "ne", "gt", "gte", "lt", "lte", "in", "not_in", "contains", "not_contains", "contains_any", "regex",
+    "fuzzy_match", "exists", "is_not_empty", "is_not_null", "not_exists", "is_empty", "is_null",
+}
+RULE_AGGREGATION_KEYS = {"metric", "field", "operator", "value", "window", "filters"}
+RULE_METRICS = {"count", "sum", "max", "min", "avg", "distinct_count", "unique_count"}
+RULE_AGG_OPERATORS = {"eq", "ne", "gt", "gte", "lt", "lte"}
+RULE_SCOPE_KEYS = {"transaction_types", "directions", "action_types"}
+RULE_ACTION_TYPES = {"add_score", "change_status", "add_tags", "add_note", "add_to_list", "open_case"}
+# didit_questionnaire_create / _update form_elements items (live hosted schema): no `placeholder`,
+# and `title` is an object of locale to text.
+QUESTION_KEYS = {"element_type", "title", "is_required", "choices"}
+QUESTION_TYPES = {
+    "SHORT_TEXT", "LONG_TEXT", "PARAGRAPH", "DROPDOWN", "SINGLE_CHOICE", "MULTIPLE_CHOICE", "NUMBER", "IMAGE",
+    "FILE_UPLOAD", "TIME", "EMAIL", "ADDRESS", "PHONE", "COUNTRY", "DATE_PICKER", "CONSENT", "SECTION_HEADER",
+    "SEPARATOR", "HEADING", "REPEATABLE_GROUP",
+}
+QUESTIONNAIRE_TOOLS = {"didit_questionnaire_create", "didit_questionnaire_update"}
+WORKFLOW_FEATURES = {
+    "AGE_ESTIMATION", "AML", "BANK_VERIFICATION", "DATABASE_VALIDATION", "DOCUMENT_AI", "EMAIL_VERIFICATION",
+    "FACE_MATCH", "GEOLOCATION", "IP_ANALYSIS", "KYB_DOCUMENTS", "KYB_KEY_PEOPLE", "KYB_REGISTRY", "LIVENESS", "NFC",
+    "OCR", "PHONE_VERIFICATION", "PROOF_OF_ADDRESS", "QUESTIONNAIRE", "SIGNATURE",
+}
+# Arguments the schemas declare as arrays (a lone string is a wrong call).
+ARRAY_ARGS = {
+    "didit_org_invite_member": {"emails", "app_ids"},
+    "didit_workflow_create": {"features"},
+    "didit_questionnaire_create": {"form_elements"},
+    "didit_travel_rule_send_message": {"requested_documents", "files"},
+    "didit_case_create": {"links", "tags"},
+    **{tool: {"conditions", "aggregation", "actions"} for tool in RULE_TOOLS},
+}
+
+
+def rule_definition_problems(args: dict) -> list[str]:
+    problems = []
+    for cond in args.get("conditions", []):
+        if not isinstance(cond, dict) or not {"field", "operator"} <= set(cond):
+            problems.append(f"condition needs field and operator: {cond}")
+            continue
+        problems += [f"condition has unknown key {k}" for k in sorted(set(cond) - RULE_CONDITION_KEYS)]
+        if cond["operator"] not in RULE_CONDITION_OPERATORS:
+            problems.append(f"condition operator {cond['operator']!r} is not in the schema")
+    for agg in args.get("aggregation", []):
+        if not isinstance(agg, dict) or not {"metric", "operator", "value", "window"} <= set(agg):
+            problems.append(f"aggregation needs metric, operator, value and window: {agg}")
+            continue
+        problems += [f"aggregation has unknown key {k}" for k in sorted(set(agg) - RULE_AGGREGATION_KEYS)]
+        if agg["metric"] not in RULE_METRICS:
+            problems.append(f"aggregation metric {agg['metric']!r} is not in the schema")
+        if agg["operator"] not in RULE_AGG_OPERATORS:
+            problems.append(f"aggregation operator {agg['operator']!r} is not in the schema")
+        if not isinstance(agg["value"], (int, float)) or isinstance(agg["value"], bool):
+            problems.append(f"aggregation value must be a number: {agg['value']!r}")
+        if not re.fullmatch(r"\d+[mhd]", str(agg["window"])):
+            problems.append(f"aggregation window {agg['window']!r} is not <N>m, <N>h or <N>d")
+    if "evaluation_mode" in args and args["evaluation_mode"] not in {"ALL", "ANY"}:
+        problems.append(f"evaluation_mode {args['evaluation_mode']!r} is not ALL or ANY")
+    scope = args.get("scope", {})
+    problems += [f"scope has unknown key {k}" for k in sorted(set(scope) - RULE_SCOPE_KEYS)]
+    problems += [f"scope direction {d!r} is not INBOUND or OUTBOUND" for d in scope.get("directions", []) if d not in {"INBOUND", "OUTBOUND"}]
+    if "period_days" in args and not (isinstance(args["period_days"], int) and 1 <= args["period_days"] <= 365):
+        problems.append(f"period_days {args['period_days']!r} is not 1 to 365")
+    for action in args.get("actions", []):
+        if action.get("type") not in RULE_ACTION_TYPES:
+            problems.append(f"action type {action.get('type')!r} is not in the schema")
+    return problems
+
+
+def questionnaire_problems(args: dict) -> list[str]:
+    problems = []
+    for element in args.get("form_elements", []):
+        if not isinstance(element, dict) or "element_type" not in element:
+            problems.append(f"form element needs element_type: {element}")
+            continue
+        problems += [f"form element has unknown key {k}" for k in sorted(set(element) - QUESTION_KEYS)]
+        if element["element_type"] not in QUESTION_TYPES:
+            problems.append(f"form element type {element['element_type']!r} is not in the schema")
+        if "title" in element and not isinstance(element["title"], dict):
+            problems.append(f"form element title must be a locale object: {element['title']!r}")
+    if "title" in args and not isinstance(args["title"], str):
+        problems.append("the questionnaire title is a string")
+    return problems
+
+
+def fence_lead_problems(text: str) -> list[str]:
+    """A ```json example right under a tool's own line (`- `tool`: ...`) is that tool's example."""
+    problems = []
+    for match in JSON_FENCE.finditer(text):
+        before = [line for line in text[: match.start()].split("\n") if line.strip()]
+        if not before:
+            continue
+        lead = re.match(r"^\s*(?:-\s+)?`(didit_[a-z0-9_]+)`:", before[-1])
+        if lead and match.group(2) != lead.group(1):
+            problems.append(f"```json {match.group(2)} follows the line of {lead.group(1)}")
+    return problems
+
+
+CONFIRM_RULE = "Send `confirm: true` only to a tool whose schema declares `confirm`, and only after the person agreed to that exact action."
+CONFIRM_LIST_LEAD = "In this plugin's recipes those tools are:"
+CONFIRM_OUTSIDE = ("Any other tool you reach by name or through discovery follows its own schema: "
+                   "if it declares `confirm`, the same rule applies.")
+
+
+def confirm_list(text: str) -> set[str] | None:
+    """Tools a start skill lists as the `confirm` tools of its recipes (empty for "none").
+
+    None when the binding rule, the list or the clause for tools outside the recipes is missing.
+    """
+    if CONFIRM_RULE not in text or CONFIRM_OUTSIDE not in text or CONFIRM_LIST_LEAD not in text:
+        return None
+    span = text.split(CONFIRM_LIST_LEAD, 1)[1].split(CONFIRM_OUTSIDE, 1)[0]
+    return set(TOOL_TOKEN.findall(span))
+
+
+def confirm_list_problems(listed: set[str] | None, used: set[str], known: dict[str, dict]) -> list[str]:
+    """`listed` must equal the tools named in this plugin's skills that declare `confirm`.
+
+    A tool that declares `confirm` but is outside the recipes is not listed: the clause for tools
+    reached by name or discovery covers it.
+    """
+    if listed is None:
+        return ["no binding `confirm` rule with a recipe list and a clause for tools outside the recipes"]
+    declares = {name for name, tool in known.items() if tool["confirm"]}
+    problems = [f"{t} is named in the plugin's skills and takes `confirm`, but the start list omits it" for t in sorted((used & declares) - listed)]
+    problems += [f"{t} is in the start list but does not take `confirm`" for t in sorted(listed - declares)]
+    return problems
+
+
+def json_example_problems(text: str, tools: dict[str, dict]) -> list[str]:
+    """Every ```json fence names a catalog tool, parses, and uses only arguments that tool declares (required ones included)."""
+    problems = []
+    for indent, tool, body in JSON_FENCE.findall(text):
+        if not tool:
+            problems.append("a ```json example must name its tool on the fence (```json didit_...)")
+            continue
+        if tool not in tools:
+            problems.append(f"```json {tool}: not a catalog tool")
+            continue
+        try:
+            args = json.loads(body)
+        except json.JSONDecodeError as error:
+            problems.append(f"```json {tool}: not valid JSON ({error})")
+            continue
+        if not isinstance(args, dict):
+            problems.append(f"```json {tool}: the example must be an argument object")
+            continue
+        props, required = set(tools[tool]["properties"]), set(tools[tool]["required"])
+        problems += [f"{tool} has no argument {k}" for k in sorted(set(args) - props)]
+        problems += [f"{tool} example is missing required {k}" for k in sorted(required - set(args))]
+        problems += [f"{tool}: {k} must be a list" for k in sorted(ARRAY_ARGS.get(tool, set()) & set(args)) if not isinstance(args[k], list)]
+        if tool in RULE_TOOLS:
+            problems += [f"{tool}: {p}" for p in rule_definition_problems(args)]
+        if tool in QUESTIONNAIRE_TOOLS:
+            problems += [f"{tool}: {p}" for p in questionnaire_problems(args)]
+        if tool == "didit_workflow_create":
+            problems += [f"{tool}: unknown feature {f.get('feature')!r}" for f in args.get("features", []) if f.get("feature") not in WORKFLOW_FEATURES]
+    return problems + fence_lead_problems(text)
+
+
+def conditional_rule_problems(texts: dict[str, str]) -> list[str]:
+    return [f"{where}: missing the conditional-instruction rule" for where, text in texts.items() if CONDITIONAL_RULE not in text]
 
 
 def strip_ticks(text: str) -> str:
@@ -383,6 +588,28 @@ def full_url_problems(text: str) -> list[str]:
             for n, line in enumerate(text.split("\n"), 1) if FULL_URL_DISPLAY.search(line)]
 
 
+def local_only_problems(text: str) -> list[str]:
+    """Every sentence (or table cell) that names a local-only tool says it is local server only."""
+    problems = []
+    for line in text.split("\n"):
+        for cell in line.split("|"):
+            for sentence in re.split(r"(?<=[.!?])\s+", cell):
+                named = [tool for tool in LOCAL_ONLY_TOOLS if tool in sentence]
+                if named and not LOCAL_ONLY.search(sentence):
+                    problems.append(f"{', '.join(named)} outside a 'local server only' sentence: {sentence.strip()[:120]}")
+    return problems
+
+
+def person_note_problems(text: str, person_only: set[str]) -> list[str]:
+    """A section that names a tool absent from an API key connection carries the person sign-in note."""
+    problems = []
+    for section in sections(text):
+        missing = sorted(person_only & set(TOOL_TOKEN.findall(section)))
+        if missing and PERSON_SIGN_IN_NOTE not in section:
+            problems.append(f"{section.split(chr(10), 1)[0]}: {', '.join(missing)} without '{PERSON_SIGN_IN_NOTE}'")
+    return problems
+
+
 def readme_section(text: str, heading: str) -> str:
     """The section from `heading` up to the next level-2 heading (or the end)."""
     start = text.index(heading + "\n")
@@ -419,10 +646,12 @@ class Tree:
         return tools
 
     def skill_texts(self, base: Path) -> list[tuple[str, str]]:
-        """(where, text) for every SKILL.md and the prompts file of one plugin."""
+        """(where, text) for every SKILL.md, every skill's references/*.md and, last, the prompts file of one plugin."""
         out = []
         for name in EXPECTED_SKILLS[base.name]:
             out.append((f"{base.name}/skills/{name}/SKILL.md", (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")))
+            for ref in sorted((base / "skills" / name).glob("references/*.md")):
+                out.append((f"{base.name}/skills/{name}/references/{ref.name}", ref.read_text(encoding="utf-8")))
         out.append((f"{base.name}/tests/prompts.md", (base / "tests" / "prompts.md").read_text(encoding="utf-8")))
         return out
 
@@ -599,7 +828,8 @@ class SkillTests(TreeCase):
                     seen[name] = plugin
 
     def test_every_tool_exists_in_catalog(self):
-        known = self.t.known_tools()
+        # The local-only tools are not in the hosted catalog; test_local_only_tools_are_named_only_as_local guards them.
+        known = {**self.t.known_tools(), **{name: {} for name in LOCAL_ONLY_TOOLS}}
         for base in self.t.plugin_dirs():
             for where, text in self.t.skill_texts(base):
                 for token in sorted(set(TOOL_TOKEN.findall(text)) - NOT_TOOLS):
@@ -635,6 +865,71 @@ class SkillTests(TreeCase):
             for where, text in self.t.skill_texts(base)[:-1]:
                 with self.subTest(file=where):
                     self.assertEqual(arg_pair_problems(text, props), [])
+
+    def test_json_examples_match_the_catalog(self):
+        tools = self.t.known_tools()
+        seen = 0
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                seen += len(JSON_FENCE.findall(text))
+                with self.subTest(file=where):
+                    self.assertEqual(json_example_problems(text, tools), [])
+        self.assertGreater(seen, 0)
+
+    def test_start_skill_confirm_list_matches_catalog(self):
+        """Each start skill lists exactly the tools named in this plugin's skills that declare `confirm`."""
+        known = self.t.known_tools()
+        starts = {"didit": "didit-connect", **START_SKILL}
+        for base in self.t.plugin_dirs():
+            used: set[str] = set()
+            for _, text in self.t.skill_texts(base)[:-1]:
+                used |= set(TOOL_TOKEN.findall(text))
+            start = (base / "skills" / starts[base.name] / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(plugin=base.name):
+                self.assertEqual(confirm_list_problems(confirm_list(start), used, known), [])
+
+    def test_confirm_tool_outside_the_recipes(self):
+        """The umbrella plugin's hosted connection exposes `confirm` tools its recipes never name; the start skill must allow them by schema."""
+        known = self.t.known_tools()
+        base = self.t.plugins / "didit"
+        used: set[str] = set()
+        for _, text in self.t.skill_texts(base)[:-1]:
+            used |= set(TOOL_TOKEN.findall(text))
+        start = (base / "skills" / "didit-connect" / "SKILL.md").read_text(encoding="utf-8")
+        listed = confirm_list(start)
+        for tool in ("didit_investigator_accept", "didit_session_batch_delete"):
+            with self.subTest(tool=tool):
+                self.assertTrue(known[tool]["confirm"])
+                self.assertNotIn(tool, used)
+                self.assertNotIn(tool, listed)
+        self.assertIn(CONFIRM_OUTSIDE, start)
+        self.assertNotIn("Never add `confirm` to any other tool", start)
+
+
+    def test_conditional_instruction_is_not_agreement(self):
+        texts = {}
+        for plugin, skills in CONDITIONAL_RULE_SKILLS.items():
+            for skill in skills:
+                texts[f"{plugin}/{skill}"] = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+        self.assertEqual(conditional_rule_problems(texts), [])
+
+    def test_rule_definition_is_taught(self):
+        for plugin, skill in (("didit", "didit-monitor-transactions"), ("didit-transaction-monitoring", "didit-tm-rules")):
+            text = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIn("### Rule definition", text)
+                self.assertIn("`period_days: 90`", text)
+                self.assertIn("10,000 most recent transactions", text)
+                self.assertIn("A back-test is a read, so it needs no agreement", text)
+                self.assertGreaterEqual(text.count("```json didit_transaction_rule_backtest"), 3)
+
+    def test_references_are_mentioned(self):
+        for base in self.t.plugin_dirs():
+            for name in EXPECTED_SKILLS[base.name]:
+                skill = (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+                for ref in (base / "skills" / name).glob("references/*.md"):
+                    with self.subTest(file=ref.name, skill=name):
+                        self.assertIn(f"references/{ref.name}", skill)
 
     def test_billing_notice_before_billable_calls(self):
         for base in self.t.plugin_dirs():
@@ -673,9 +968,12 @@ class SkillTests(TreeCase):
     def test_authentication_token_and_logout_contract(self):
         integrate = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-integrate" / "SKILL.md").read_text(encoding="utf-8")
         sdk = (self.t.rest / "didit-sdk-integration" / "SKILL.md").read_text(encoding="utf-8")
-        for text in (integrate, sdk):
-            self.assertIn("depends on the application's Authentication runtime as documented", re.sub(r"\s+", " ", text))
-        self.assertIn("read the current tokens page with `didit_docs_search`", integrate)
+        # The tokens page documents one access token format: an ES256 JWT verified offline against the JWKS.
+        self.assertIn("depends on the application's Authentication runtime as documented", re.sub(r"\s+", " ", sdk))
+        self.assertIn("The access token is a JWT with header `alg: ES256` and `typ: at+jwt`", integrate)
+        self.assertNotIn("Opaque access token", integrate)
+        self.assertNotIn("Authentication runtime", integrate)
+        self.assertIn("the current tokens page with `didit_docs_search`", integrate)
         self.assertIn("Local sign-out", integrate)
         self.assertIn("revocation is not confirmed", integrate)
         self.assertIn("No answer to the refresh made for sign-out", integrate)
@@ -709,6 +1007,46 @@ class SkillTests(TreeCase):
         self.assertIn("--data-urlencode 'token@-'", text)
         self.assertIn('"x-api-key": "${DIDIT_API_KEY}"', text)
         self.assertIn("`didit_org_reveal_application_api_key`", text)
+        self.assertIn("`didit_org_top_up` and `didit_org_reveal_application_api_key` are local server only; on the hosted server "
+                      "a new key is created with `didit_org_create_api_key`, and credit is added in the Didit console.", text)
+        self.assertNotIn("is listed on the hosted server", text)
+        self.assertIn(ROLE_SENTENCE, text)
+        self.assertIn("178 on an API key connection", text)
+        self.assertNotIn("208", text)
+
+    def test_local_only_tools_are_named_only_as_local(self):
+        """No skill or README tells an assistant to call the two local-only tools on a hosted connection."""
+        files = [self.t.root / "README.md", *sorted(self.t.rest.glob("*/SKILL.md")), *sorted(self.t.rest.glob("*/references/*.md"))]
+        for base in self.t.plugin_dirs():
+            files.append(base / "README.md")
+            files += sorted((base / "skills").rglob("*.md"))
+        for path in files:
+            with self.subTest(file=path.relative_to(self.t.root).as_posix()):
+                self.assertEqual(local_only_problems(path.read_text(encoding="utf-8")), [])
+        self.assertEqual(local_only_problems("Call `didit_org_top_up` with an amount."), [
+            "didit_org_top_up outside a 'local server only' sentence: Call `didit_org_top_up` with an amount."])
+
+    def test_api_key_rule_in_start_skills(self):
+        starts = {"didit": "didit-connect", **START_SKILL}
+        for plugin, skill in starts.items():
+            text = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIn(API_KEY_RULE, text)
+                self.assertNotIn("tools your role may use are listed", text)
+                if plugin != "didit-authentication":
+                    self.assertIn(ROLE_SENTENCE, text)
+
+    def test_person_only_recipes_are_marked(self):
+        profiles = self.t.catalog()["profiles"]
+        person_only = {t["name"] for t in profiles["all"]["tools"]} - {t["name"] for t in profiles["api_key_all"]["tools"]}
+        for plugin, skills in PERSON_ONLY_SKILLS.items():
+            for skill in skills:
+                text = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+                with self.subTest(skill=skill):
+                    self.assertTrue(person_only & set(TOOL_TOKEN.findall(text)), "no person-only tool named")
+                    self.assertEqual(person_note_problems(text, person_only), [])
+        self.assertEqual(person_note_problems("## 1. Members\n\n`didit_org_list_members` lists members.", person_only),
+                         ["## 1. Members: didit_org_list_members without 'Needs a person sign-in'"])
 
     def test_focused_plugins_skip_business_update(self):
         # No recipe uses it (its route does not exist as coded); prompts.md may list it as forbidden.
@@ -723,6 +1061,38 @@ class SkillTests(TreeCase):
         read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
         self.assertTrue(read_only, "all_read_only is empty")
+        # The hosted server as measured on 2026-11-18 (v5.1.67) with a new customer account (organization owner, not staff).
+        self.assertEqual(len(full), 206)
+        self.assertEqual(len(core), 29)
+        self.assertEqual(len(read_only), 97)
+        expected = {
+            "all": (206, 97, 75, 34),
+            "core": (29, 22, 3, 4),
+            "all_read_only": (97, 97, 0, 0),
+            "api_key_all": (178, 81, 66, 31),
+            "api_key_core": (27, 21, 3, 3),
+            "api_key_read_only": (81, 81, 0, 0),
+        }
+        self.assertEqual(set(profiles), set(expected))
+        for name, profile in profiles.items():
+            with self.subTest(profile=name):
+                types = [tool["type"] for tool in profile["tools"]]
+                counts = (len(types), types.count("read"), types.count("write"), types.count("destructive"))
+                self.assertEqual(counts, expected[name])
+                self.assertEqual((profile["total"], profile["read"], profile["write"], profile["destructive"]), expected[name])
+                names = {tool["name"] for tool in profile["tools"]}
+                self.assertEqual(names & set(LOCAL_ONLY_TOOLS), set(), "a local-only tool is listed")
+                self.assertEqual([n for n in names if n.startswith("didit_staff")], [], "staff-only tools in the catalog")
+        api_key = {tool["name"] for tool in profiles["api_key_all"]["tools"]}
+        self.assertTrue(api_key <= set(full))
+        person_only = set(full) - api_key
+        self.assertEqual(len(person_only), 28)
+        for name in ("didit_org_list_members", "didit_org_create_api_key", "didit_billing_get_plan",
+                     "didit_compliance_requirements", "didit_audit_log_list", "didit_workflow_build_graph"):
+            self.assertIn(name, person_only)
+        self.assertIn("didit_org_get_balance", api_key)
+        travel = {n for n in full if n.startswith("didit_travel_rule_")}
+        self.assertEqual(len(travel), 23)
         for tool in read_only:
             with self.subTest(tool=tool["name"]):
                 self.assertEqual(tool["type"], "read")
@@ -777,7 +1147,8 @@ class SkillTests(TreeCase):
                     "proxy call",
                     "wait for a clear yes before calling the tool",
                     "`confirm: true`",
-                    "only after the person agreed to that exact action in this conversation",
+                    CONFIRM_RULE,
+                    CONFIRM_OUTSIDE,
                     "a password, an API key or a one-time code",
                     "`didit_docs_search`",
                     "https://didit.me/pricing",
@@ -787,19 +1158,27 @@ class SkillTests(TreeCase):
                 for skill in EXPECTED_SKILLS[plugin]:
                     if skill != start:
                         self.assertIn(skill, text, f"{start} must route to {skill}")
-                if plugin in {"didit-transaction-monitoring", "didit-user-management"}:
-                    self.assertIn("Never add `confirm` to any other tool", text)
-                    named = set(re.findall(r"didit_[a-z0-9_]+", text.split("Only some tools declare", 1)[1].split("Send `confirm", 1)[0]))
-                    self.assertTrue(named and named <= CONFIRM_TOOLS, named)
+                self.assertNotIn("Never add `confirm` to any other tool", text)
         auth = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-start" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Products page of the Didit console", auth)
+
+    def test_non_admin_roles_rule_in_start_skills(self):
+        for plugin, start in (("didit", "didit-connect"), ("didit-transaction-monitoring", "didit-tm-start"),
+                              ("didit-user-management", "didit-users-start"), ("didit-authentication", "didit-auth-start")):
+            text = (self.t.plugins / plugin / "skills" / start / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=start):
+                for rule in (ZERO_APPS_RULE, ROLE_REFUSAL_RULE, RECONNECT_RULE, "`accessible_applications`"):
+                    self.assertIn(rule, text)
 
     def test_secrets_are_not_displayed_or_stored(self):
         team = (self.t.plugins / "didit-user-management" / "skills" / "didit-users-team" / "SKILL.md").read_text(encoding="utf-8")
         self.assertNotRegex(team, r"write it (straight )?to [^.\n]*if they asked")
-        self.assertIn("never offer to", team)
+        # The server's own rule for a new key: straight to the project's secret store or .env where
+        # files can be written, shown once otherwise, never repeated or kept in notes or memory.
+        self.assertIn("write it straight to the project's secret store or `.env` and do not print it in the chat", team)
+        self.assertIn("Never repeat it later, never put it in notes or memory", team)
         prompts = (self.t.plugins / "didit-user-management" / "tests" / "prompts.md").read_text(encoding="utf-8")
-        self.assertIn("writing the secret to `.env`", prompts)
+        self.assertIn("repeating the secret", prompts)
         alerts = (self.t.plugins / "didit-transaction-monitoring" / "skills" / "didit-tm-alerts-cases" / "SKILL.md").read_text(encoding="utf-8")
         self.assertNotIn("Show the channel, destination and on/off state", alerts)
         self.assertIn("masked", alerts)
@@ -912,6 +1291,50 @@ class BundleTests(TreeCase):
                 self.assertEqual(data, reference)
 
 
+GRADER_TYPES = {"regex", "tool_used", "tool_order", "file_exists", "llm", "baseline"}
+
+
+def eval_problems(base: Path, known: set[str]) -> list[str]:
+    """`claude plugin eval` cases of one plugin: a prompt, at least one grader, and mocks named after catalog tools."""
+    evals = base / "evals"
+    if not evals.is_dir():
+        return []
+    problems: list[str] = []
+    cases = sorted(p for p in evals.iterdir() if p.is_dir() and p.name not in {"mocks", "results"})
+    if not cases:
+        problems.append("evals/ has no cases")
+    for case in cases:
+        where = f"{base.name}/evals/{case.name}"
+        prompt = case / "prompt.md"
+        if not prompt.is_file():
+            problems.append(f"{where}: no prompt.md")
+        else:
+            text = prompt.read_text(encoding="utf-8")
+            body = text.split("\n---\n", 1)[1] if text.startswith("---\n") and "\n---\n" in text else text
+            if not body.strip():
+                problems.append(f"{where}: prompt.md has no prompt")
+        graders = sorted((case / "graders").glob("*.md"))
+        if not graders:
+            problems.append(f"{where}: no grader")
+        for grader in graders:
+            match = re.search(r"^type:\s*(\S+)\s*$", grader.read_text(encoding="utf-8"), re.M)
+            if not match or match.group(1) not in GRADER_TYPES:
+                problems.append(f"{where}/graders/{grader.name}: missing or unknown grader type")
+    mock_files = sorted(evals.glob("mocks/*/*.md")) + sorted(evals.glob("*/mocks/*/*.md"))
+    for mock in mock_files:
+        if mock.stem not in known:
+            problems.append(f"{mock.relative_to(base).as_posix()}: {mock.stem} is not a catalog tool")
+    return problems
+
+
+class EvalTests(TreeCase):
+    def test_eval_cases(self):
+        known = set(self.t.known_tools())
+        for base in self.t.plugin_dirs():
+            with self.subTest(plugin=base.name):
+                self.assertEqual(eval_problems(base, known), [])
+
+
 class CommittedTree:
     """Mixin: run a test class against HEAD instead of the working tree."""
 
@@ -933,6 +1356,10 @@ class CommittedSkillTests(CommittedTree, SkillTests):
 
 
 class CommittedBundleTests(CommittedTree, BundleTests):
+    pass
+
+
+class CommittedEvalTests(CommittedTree, EvalTests):
     pass
 
 
@@ -1001,6 +1428,66 @@ class LintSelfTests(unittest.TestCase):
         self.assertNotEqual(arg_pair_problems("- `didit_docs_search`: `query`, `organization_id`.", props), [])
         self.assertNotEqual(arg_pair_problems("`didit_org_list_members` with `organization_id` and `application_id`", props), [])
         self.assertEqual(arg_pair_problems("- `didit_docs_search`: `query`, optional `language` (`en`).", props), [])
+
+    def test_json_example_defects_are_rejected(self):
+        tools = {
+            "didit_org_invite_member": {"properties": ["app_ids", "emails", "organization_id", "role"], "required": ["app_ids", "emails", "role"]},
+            "didit_transaction_rule_backtest": {"properties": ["aggregation", "conditions", "evaluation_mode", "period_days", "scope"], "required": []},
+        }
+        for bad in (
+            '```json\n{"emails": ["a@example.com"]}\n```\n',
+            '```json didit_unknown_tool\n{}\n```\n',
+            '```json didit_org_invite_member\n{"role": "r", "app_ids": ["a"]}\n```\n',
+            '```json didit_org_invite_member\n{"emails": "a@example.com", "role": "r", "app_ids": ["a"]}\n```\n',
+            '```json didit_org_invite_member\n{"emails": ["a"], "role": "r", "app_ids": ["a"], "team": "x"}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "operator": "gt", "value": 1}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "total", "operator": "gt", "value": 1, "window": "1d"}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "operator": "gt", "value": 1, "window": "1 day"}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"conditions": [{"field": "amount", "operator": "greater_than", "value": 1}]}\n```\n',
+            '```json didit_transaction_rule_backtest\n{"period_days": 400}\n```\n',
+            '  ```json didit_transaction_rule_backtest\n  {"period_days": 90,}\n  ```\n',
+        ):
+            with self.subTest(text=bad):
+                self.assertNotEqual(json_example_problems(bad, tools), [])
+        ok = ('  ```json didit_org_invite_member\n  {"emails": ["a@example.com"], "role": "<role>", "app_ids": ["<app>"]}\n  ```\n'
+              '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", '
+              '"value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__"}}], "period_days": 90}\n```\n')
+        self.assertEqual(json_example_problems(ok, tools), [])
+
+    def test_confirm_list_defects_are_rejected(self):
+        known = {"didit_a": {"confirm": True}, "didit_b": {"confirm": True}, "didit_c": {"confirm": False}}
+        start = f"{CONFIRM_RULE} {CONFIRM_LIST_LEAD} `didit_a` and `didit_c`. {CONFIRM_OUTSIDE}"
+        listed = confirm_list(start)
+        self.assertEqual(listed, {"didit_a", "didit_c"})
+        self.assertEqual(confirm_list(f"{CONFIRM_RULE} {CONFIRM_LIST_LEAD} none. {CONFIRM_OUTSIDE}"), set())
+        # Without the clause for tools outside the recipes, a discovered `confirm` tool would be forbidden.
+        self.assertIsNone(confirm_list(f"{CONFIRM_RULE} {CONFIRM_LIST_LEAD} `didit_a`."))
+        self.assertIsNone(confirm_list("Only some tools declare a `confirm` argument: `didit_a`. Never add `confirm` to any other tool."))
+        problems = confirm_list_problems(listed, {"didit_a", "didit_b"}, known)
+        self.assertTrue(any("didit_b" in p for p in problems) and any("didit_c" in p for p in problems), problems)
+        self.assertNotEqual(confirm_list_problems(None, set(), known), [])
+        self.assertEqual(confirm_list_problems({"didit_a"}, {"didit_a", "didit_c"}, known), [])
+        # didit_b declares `confirm` but no recipe names it: it stays off the list and is not a defect.
+        self.assertEqual(confirm_list_problems({"didit_a"}, {"didit_a"}, known), [])
+
+    def test_nested_example_defects_are_rejected(self):
+        tools = {"didit_questionnaire_create": {"properties": ["form_elements", "status", "title"], "required": ["form_elements", "title"]},
+                 "didit_org_list_roles": {"properties": [], "required": []}}
+        for bad in (
+            '```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "LONG_TEXT", "title": "Q"}]}\n```\n',
+            '```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "LONG_TEXT", "title": {"en": "Q"}, "placeholder": "x"}]}\n```\n',
+            '```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "long_text"}]}\n```\n',
+            '- `didit_org_list_roles`: lists roles.\n\n```json didit_questionnaire_create\n{"title": "T", "form_elements": []}\n```\n',
+        ):
+            with self.subTest(text=bad):
+                self.assertNotEqual(json_example_problems(bad, tools), [])
+        ok = '`didit_questionnaire_create`:\n\n```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "LONG_TEXT", "title": {"en": "Q"}, "is_required": false}]}\n```\n'
+        self.assertEqual(json_example_problems(ok, tools), [])
+
+    def test_missing_conditional_rule_is_rejected(self):
+        self.assertNotEqual(conditional_rule_problems({"a": "Wait for a clear yes before calling the tool."}), [])
+        self.assertNotEqual(conditional_rule_problems({"a": CONDITIONAL_RULE, "b": CONDITIONAL_RULE.replace("is not agreement", "counts")}), [])
+        self.assertEqual(conditional_rule_problems({"a": "Rules. " + CONDITIONAL_RULE}), [])
 
     def test_billing_overstatements_are_rejected(self):
         for bad in ("In a live application each check uses Didit credits.", "In a live application every session is billed.",

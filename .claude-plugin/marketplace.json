@@ -30,7 +30,7 @@
     {
       "name": "didit-transaction-monitoring",
       "source": "./plugins/didit-transaction-monitoring",
-      "description": "Transaction monitoring from chat: search transactions, build and back-test rules, screen wallets, work alerts and cases, and review the AI Investigator queue in your Didit account.",
+      "description": "Transaction monitoring from chat: search transactions, back-test rules, screen wallets, run the Travel Rule, work alerts and cases, and review the AI Investigator queue in your Didit account.",
       "version": "1.0.0",
       "author": {
         "name": "Didit",

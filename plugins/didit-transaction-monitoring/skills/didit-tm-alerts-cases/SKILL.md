@@ -1,6 +1,6 @@
 ---
 name: didit-tm-alerts-cases
-description: Used when someone wants to see or change where Didit monitoring alerts are sent (email or Slack), manage webhook destinations for monitoring events, or find, open, assign, escalate, comment on, resolve or reopen compliance cases and read case statistics in their Didit account.
+description: Manages monitoring alerts, webhook destinations and compliance cases in their Didit account. Use when the user asks "where do alerts go", says "send alerts to Slack", "change the alert email", "set up a webhook", "open a case", "assign this case", "escalate", "resolve the case", "file a SAR", "reopen", or asks for case statistics in Didit.
 ---
 
 # Alerts, webhooks and cases
@@ -37,14 +37,22 @@ These send account data to an address outside Didit or stop deliveries. Show the
 
 - `subject`: `type` (`user` or `business`) and `uuid`, the record's `didit_internal_id` from `didit_vendor_user_get` or `didit_vendor_business_get`. It is not their `vendor_data`.
 - `links`: up to 20 items with `entity_type` (`session`, `business_session`, `transaction`) and `entity_uuid`.
-- Optional: `priority` (`LOW`, `MEDIUM` default, `HIGH`), `assigned_to` (a member's `user_id` from `didit_org_list_members`), `due_at`, `tags`, `blueprint`, `review_duplicates`.
+- Optional: `priority` (`LOW`, `MEDIUM` default, `HIGH`), `assigned_to` (a member's `user_id` from `didit_org_list_members`, which needs a person sign-in: on an API key connection leave `assigned_to` out unless the person gives the id), `due_at`, `tags`, `blueprint`, `review_duplicates`.
 - With `review_duplicates: true`, a `409 case_duplicate_review_required` means a case about the same subject is already open. Show it. Send `separate_incident_reason` only if the person still wants a separate case.
+
+```json didit_case_create
+{"title": "Daily outbound total above threshold", "subject": {"type": "user", "uuid": "<didit_internal_id>"}, "links": [{"entity_type": "transaction", "entity_uuid": "<transaction_id>"}], "priority": "HIGH", "review_duplicates": true}
+```
 
 Confirm the title, subject or links, priority and assignee before creating it.
 
 ## 5. Work a case
 
-`didit_case_manage` takes `case_id`, `action` (`assign`, `resolve`, `reopen`, `escalate`, `comment`, `update`) and `data` (for example the assignee or the comment).
+`didit_case_manage` takes `case_id`, `action` (`assign`, `resolve`, `reopen`, `escalate`, `comment`, `update`) and `data` (for example the assignee or the comment). A comment, after the person agreed to its text:
+
+```json didit_case_manage
+{"case_id": "<case_id>", "action": "comment", "data": {"comment": "Customer sent proof of source of funds."}}
+```
 
 - Describe the exact action and payload and wait for the person to confirm before each call.
 - Filing a SAR is a regulatory action: it needs `confirm: true`, sent only after the person confirmed that exact filing in this conversation.

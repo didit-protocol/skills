@@ -1,6 +1,6 @@
 ---
 name: didit-tm-transactions
-description: Used when someone wants to find monitored transactions, read one transaction and why it was flagged or which rules fired, list the transactions of one application, or submit a new transaction for monitoring in their Didit account. Covers search filters, the rule-evaluation result and the submit payload.
+description: Finds, reads and submits monitored transactions in their Didit account. Use when the user asks "why was this transaction flagged", "which rules fired", "show transactions for this customer", "transactions in the last 7 days", "what was the risk outcome", or says "submit a transaction for monitoring" with Didit.
 ---
 
 # Transactions

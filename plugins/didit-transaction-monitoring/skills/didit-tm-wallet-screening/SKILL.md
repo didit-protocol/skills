@@ -1,6 +1,6 @@
 ---
 name: didit-tm-wallet-screening
-description: Used when someone wants to check one crypto wallet address for AML risk, sanctions exposure or where its funds come from or go to, without recording a transaction, and to decide what to do with a risky result in their Didit account.
+description: Screens one crypto wallet address for AML risk with Didit without recording a transaction. Use when the user says "screen a wallet", "check this wallet address", "is this address sanctioned", "wallet risk score", "where did these funds come from", or asks what to do about a risky wallet in their Didit account.
 ---
 
 # Wallet screening

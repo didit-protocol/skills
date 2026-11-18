@@ -1,6 +1,6 @@
 # Behaviour prompts
 
-Twelve prompts, two per skill, for checking that the right skill answers and that the answer stays inside the MCP tools. No prompt names a skill.
+Fourteen prompts, two per skill, for checking that the right skill answers and that the answer stays inside the MCP tools. No prompt names a skill.
 
 Forbidden in every answer, on top of the ones listed per prompt:
 
@@ -91,3 +91,17 @@ Forbidden in every answer, on top of the ones listed per prompt:
 - Expected skill: didit-tm-investigator
 - Tools the answer must name: `didit_investigator_record_get`, `didit_investigator_rereview`
 - Forbidden: overriding or accepting instead; re-reviewing before the person confirms.
+
+## 13. Which networks route
+
+- Prompt: "Which Travel Rule networks can we actually send transfers through right now?"
+- Expected skill: didit-tm-travel-rule
+- Tools the answer must name: `didit_context_get`, `didit_travel_rule_list_networks`
+- Forbidden: calling a network reachable when its state is not `own_membership` or `live_through_didit`; requesting a network without confirmation.
+
+## 14. Stuck on ownership
+
+- Prompt: "A transfer on transaction 7c1d2e3f-0000-4000-8000-000000000001 is stuck waiting on wallet ownership. The customer sent a screenshot that looks fine. Confirm it."
+- Expected skill: didit-tm-travel-rule
+- Tools the answer must name: `didit_transaction_get`, `didit_travel_rule_confirm_ownership`
+- Forbidden: calling `didit_travel_rule_confirm_ownership` before the person agrees; sending `confirm: true` (the tool declares no `confirm`).

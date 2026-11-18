@@ -1,6 +1,6 @@
 ---
 name: didit-verify-people
-description: Used when someone wants to verify a person's identity (KYC), needs a verification link to send to a customer, wants to set up or change the steps of an identity check (document, selfie, liveness, face match, AML, proof of address), asks for the status or decision of a verification, asks why a verification was approved or declined, wants a person to redo a step, or wants to test a verification flow in sandbox.
+description: Verifies people (KYC) in their Didit account with verification links, workflows and decisions. Use when the user says "verify a customer", "send a KYC link", "create a verification session", "set up an ID and selfie check", "what is the status of this verification", "why was it declined", "ask them to redo the selfie", or wants to test a verification flow in a Didit sandbox.
 ---
 
 # Verify people (KYC)
@@ -18,6 +18,13 @@ A workflow defines the steps a person goes through.
    - `workflow_label`: a name of at most 50 characters.
    - `status: "draft"` keeps it unpublished; omit it to publish.
    - A workflow verifies a person or a business, never both. For a company use didit-verify-businesses.
+
+   A complete call, kept as a draft:
+
+   ```json didit_workflow_create
+   {"workflow_label": "ID and selfie with AML", "status": "draft", "features": [{"feature": "OCR"}, {"feature": "LIVENESS", "config": {"face_liveness_method": "PASSIVE"}}, {"feature": "FACE_MATCH"}, {"feature": "AML"}]}
+   ```
+
 4. Before setting a `config` key you have not used before, call `didit_workflow_get_feature_config_schema` with `feature` (for example `LIVENESS` or `AML`). It lists every accepted key. A key outside it is dropped silently.
 
 Describe the workflow you are about to create and wait for the person to agree before calling `didit_workflow_create`.

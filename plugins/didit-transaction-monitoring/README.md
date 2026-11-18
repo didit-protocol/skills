@@ -1,8 +1,8 @@
 # Didit Transaction Monitoring plugin
 
-For compliance and fraud teams. Use your Didit account from Claude, Codex or Cursor to search monitored transactions and see why they were flagged, build and back-test monitoring rules, screen crypto wallets, manage alert channels and webhooks, work cases, and review the AI Investigator queue.
+For compliance and fraud teams. Use your Didit account from Claude, Codex or Cursor to search monitored transactions and see why they were flagged, build and back-test monitoring rules, screen crypto wallets, handle Travel Rule transfers with other VASPs, manage alert channels and webhooks, work cases, and review the AI Investigator queue.
 
-The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds six skills that teach the assistant to pick the right application, to back-test before changing a rule, and to ask before any decision or billable screening.
+The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds seven skills that teach the assistant to pick the right application, to back-test before changing a rule, and to ask before any decision or billable screening.
 
 ## Which Didit plugin should I install?
 
@@ -55,12 +55,15 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 | didit-tm-wallet-screening | Screen one crypto wallet and decide whether to open a case |
 | didit-tm-alerts-cases | Alert channels, webhook destinations, and cases: open, assign, escalate, resolve |
 | didit-tm-investigator | The AI Investigator queue: reports, accept or override, re-review, policy questions, performance |
+| didit-tm-travel-rule | Travel Rule: settings, VASP directory, counterparty contacts, wallet address book and ownership, messages, transfer actions, networks, sandbox tests |
+
+Checked against the live server on 2026-11-18 with a customer account: 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
 
 ## What this plugin does on your machine and where data goes
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
-- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
+- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
 - It reads data from your Didit account and writes back only the changes you approve.
 - Submitting transactions and screening wallets: in a live application this can use your Didit credits. Sandbox applications are free to test in. The skills tell the assistant to say so and wait for your agreement before running anything billable in a live application. See https://didit.me/pricing.
 

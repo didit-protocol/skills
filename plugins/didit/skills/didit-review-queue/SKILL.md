@@ -1,6 +1,6 @@
 ---
 name: didit-review-queue
-description: Used when a compliance analyst or operator wants to see verifications waiting for manual review, look up a person's session by name, email or number, decide whether to approve or decline a session in review, add a review note, read a session's review history, or work on compliance cases (assign, comment, escalate, resolve, reopen).
+description: Works the manual review queue and compliance cases in their Didit account. Use when the user says "show the review queue", "what is waiting for review", "find the session for this person", "approve" or "decline" a verification, "why was it declined", "add a review note", "review history", or wants to assign, comment on, escalate, resolve or reopen a Didit case.
 ---
 
 # Review queue and cases
@@ -41,6 +41,8 @@ Summarize: what triggered the review, what the evidence shows, and what a review
 - `send_email: true` sends a notification that cannot be recalled.
 
 Before calling it, confirm the session, the new status and any email recipient with the person. Call it only after they agree to that exact change.
+
+An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. Report what you found, say exactly what you would change and in which application (sandbox or live), then wait for a yes. For example, "if it was only a blurry photo, approve her": explain the decline from `didit_session_explain_decision`, then propose the approval (or a resubmission of the document step) and stop. Call `didit_session_update_status` only after the person answers yes in a later message.
 
 ## 5. Work cases
 

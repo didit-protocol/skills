@@ -1,6 +1,6 @@
 ---
 name: didit-users-businesses
-description: Used when someone wants to find a company they verified with Didit (KYB), read its record and status, create a business record, flag or block a business, or permanently delete business records in their Didit account.
+description: Finds and manages the companies they verified with Didit (business records, KYB). Use when the user says "find this business", "look up a company we verified", "create a business record", "flag this business", "block a company", or "delete business records" in their Didit account.
 ---
 
 # Vendor businesses (the companies you verify)

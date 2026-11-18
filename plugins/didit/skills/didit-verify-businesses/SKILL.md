@@ -1,6 +1,6 @@
 ---
 name: didit-verify-businesses
-description: Used when someone needs to verify a company (KYB), look a business up in an official company registry, check which registry data is available for a country, send a business a verification link, or find and read a business that was already verified in their Didit account.
+description: Verifies companies (KYB) with Didit, from registry lookups to business verification links. Use when the user says "verify a company", "KYB", "look up this business in the registry", "which countries have registry data", "send a business verification link", or wants to find and read a business already verified in their Didit account.
 ---
 
 # Verify businesses (KYB)
@@ -30,7 +30,12 @@ Both calls are writes. In a live application this can use your Didit credits. Sa
 When the business itself should submit details and documents, use a KYB workflow and a session. The tools are the ones described in didit-verify-people:
 
 1. `didit_workflow_search` to find an existing KYB workflow.
-2. If none exists, `didit_workflow_create` with KYB features only, for example `[{"feature":"KYB_REGISTRY"},{"feature":"KYB_DOCUMENTS"},{"feature":"KYB_KEY_PEOPLE"}]`. Do not mix in person-only features such as `OCR` or `LIVENESS`. To verify the people behind the company, create a separate KYC workflow and link it from the `KYB_KEY_PEOPLE` step. Check config keys with `didit_workflow_get_feature_config_schema` first. Confirm the workflow with the person before creating it.
+2. If none exists, `didit_workflow_create` with KYB features only, for example `[{"feature":"KYB_REGISTRY"},{"feature":"KYB_DOCUMENTS"},{"feature":"KYB_KEY_PEOPLE"}]`. Do not mix in person-only features such as `OCR` or `LIVENESS`. To verify the people behind the company, create a separate KYC workflow and link it from the `KYB_KEY_PEOPLE` step. Check config keys with `didit_workflow_get_feature_config_schema` first. Confirm the workflow with the person before creating it. A complete call, kept as a draft:
+
+   ```json didit_workflow_create
+   {"workflow_label": "Company KYB", "status": "draft", "features": [{"feature": "KYB_REGISTRY"}, {"feature": "KYB_DOCUMENTS"}, {"feature": "KYB_KEY_PEOPLE"}]}
+   ```
+
 3. `didit_session_create` with the KYB `workflow_id` and the business's id as `vendor_data`. Give the person the returned `url` to send to the business.
 4. Read the result with `didit_session_get_decision` and the reason with `didit_session_explain_decision`. Summarize the registry match, the documents received, the key people found and any warning.
 

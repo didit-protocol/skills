@@ -36,7 +36,7 @@ To work in your Didit account from chat instead (no API key needed; you sign in 
 | [**didit-case-management**](skills/didit-case-management/) | 1.1.0 | Review cases: create, assign, resolve, 4-eyes approval, notes, blueprints, and regulatory reports (SAR, STR and others). |
 | [**didit-fraud-networks**](skills/didit-fraud-networks/) | 1.1.0 | Fraud networks: clusters of users and businesses that share devices, IPs, faces, documents, phones, emails or addresses. |
 | [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.2.0 | Three-product integration prompt covering Identity verification, Transaction monitoring and end-user Authentication, plus web and native verification, transactions and device events. |
-| [**didit-mcp-server**](skills/didit-mcp-server/) | 1.1.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, ChatGPT, Codex, Cursor, VS Code, Windsurf, Zed), with OAuth or an application API key. |
+| [**didit-mcp-server**](skills/didit-mcp-server/) | 1.2.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, ChatGPT, Codex, Cursor, VS Code, Windsurf, Zed), with OAuth or an application API key. |
 
 > **Naming convention:** skill names use the domain terms people actually search for (`face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`), in lowercase kebab-case with a `didit-` prefix. Every skill that uses an API key includes a **Getting Started** section for account creation and credits.
 
@@ -64,12 +64,14 @@ Agents can go from nothing to a live verification link in **5 API calls**:
 
 The `didit` plugin connects your assistant to Didit's hosted MCP server and adds eight skills for working in your Didit account from chat: verification links and decisions, the review queue and cases, one-off checks, KYB, transaction monitoring, reports and workspace admin. You sign in with your Didit account (OAuth); no API key is needed. See [plugins/didit](plugins/didit/).
 
+Tool count: 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97.
+
 Want only one Didit product? Install a focused plugin instead. All of them use the same `didit` server, so installing several keeps one connection.
 
 | Plugin | What it covers | Install (Claude Code 2.1.275+) |
 |---|---|---|
 | [`didit`](plugins/didit/) | Everything in your Didit account | `/plugin install didit --marketplace didit-protocol/skills` |
-| [`didit-transaction-monitoring`](plugins/didit-transaction-monitoring/) | Transactions, rules, wallet screening, alerts, cases, AI Investigator | `/plugin install didit-transaction-monitoring --marketplace didit-protocol/skills` |
+| [`didit-transaction-monitoring`](plugins/didit-transaction-monitoring/) | Transactions, rules, wallet screening, Travel Rule, alerts, cases, AI Investigator | `/plugin install didit-transaction-monitoring --marketplace didit-protocol/skills` |
 | [`didit-user-management`](plugins/didit-user-management/) | People and companies you verify, lists, team and API keys | `/plugin install didit-user-management --marketplace didit-protocol/skills` |
 | [`didit-authentication`](plugins/didit-authentication/) | Guidance for adding Didit end-user sign-in to your app | `/plugin install didit-authentication --marketplace didit-protocol/skills` |
 | `didit-api` | Developer skills for the REST API (below) | `/plugin install didit-api --marketplace didit-protocol/skills` |
@@ -242,7 +244,7 @@ Each live check passes only when the endpoint answers with the documented status
 ```
 .claude-plugin/marketplace.json      ← Claude marketplace "didit": didit, the three focused plugins, didit-api
 .agents/plugins/marketplace.json     ← Codex marketplace "didit": didit and the three focused plugins
-plugins/didit-transaction-monitoring/ ← focused plugin: 6 skills (didit-tm-*), same MCP server
+plugins/didit-transaction-monitoring/ ← focused plugin: 7 skills (didit-tm-*), same MCP server
 plugins/didit-user-management/       ← focused plugin: 5 skills (didit-users-*), same MCP server
 plugins/didit-authentication/        ← focused plugin: 4 guidance skills (didit-auth-*), same MCP server
 plugins/didit/                       ← the didit plugin: hosted MCP server + 8 skills
@@ -250,7 +252,7 @@ plugins/didit/                       ← the didit plugin: hosted MCP server + 8
 ├── .mcp.json                         https://mcp.didit.me/mcp
 ├── skills/                           didit-connect, didit-verify-people, didit-review-queue, didit-run-checks,
 │                                     didit-verify-businesses, didit-monitor-transactions, didit-reports, didit-workspace-admin
-└── tests/                            tool-catalog.json (MCP tool snapshot) + prompts.md
+└── tests/                            tool-catalog.json (MCP tool snapshot) + prompts.md; every plugin also has evals/
 skills/                              ← 20 skills (1 hub + 1 KYC recipe + 18 product skills)
 ├── didit-verification-management/    SKILL.md + scripts/{setup_account,manage_workflows,create_session}.py
 ├── didit-kyc-onboarding/             SKILL.md + scripts/run_kyc.py

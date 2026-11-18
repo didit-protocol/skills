@@ -1,6 +1,6 @@
 ---
 name: didit-run-checks
-description: Used when someone wants a single check on one person without a full verification flow, such as screening a name against sanctions, PEP and adverse media lists, checking an ID document or a proof of address, validating identity data against official databases, comparing two faces, searching a face against past users, checking a selfie for liveness, or confirming a phone number (or, through a session, an email address) with a one-time code.
+description: Runs one-off checks on a person with Didit, without a full verification flow. Use when the user says "sanctions check", "PEP check", "adverse media", "AML screen this name", "check this ID document", "proof of address", "validate against government databases", "compare these two faces", "face search", "liveness check", or "send a phone code" in their Didit account.
 ---
 
 # Run one-off checks
