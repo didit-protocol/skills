@@ -256,9 +256,23 @@ class ContentTest(unittest.TestCase):
         if not NAME_GUARD_KEY:
             self.skipTest("DIDIT_NAME_GUARD_KEY is not set: the name-guard workflow runs this check")
         digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
-        _, found = name_guard.scan(ROOT, NAME_GUARD_KEY.encode("utf-8"), digests)
-        # The message names the files and the lines, never the words found.
-        self.assertEqual(found, [], "a withheld name is on these lines")
+        # What a push would publish: tracked files and new ones git does not ignore. A working
+        # copy also holds build output (bytecode caches) that no clone ever gets.
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            cwd=ROOT, capture_output=True, check=True,
+        ).stdout.decode("utf-8")  # fmt: skip
+        with tempfile.TemporaryDirectory() as folder:
+            for name in filter(None, listed.split("\0")):
+                source = ROOT / name
+                if source.is_file() and not source.is_symlink():
+                    target = Path(folder) / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(source.read_bytes())
+            _, found, unreadable = name_guard.scan(folder, NAME_GUARD_KEY.encode("utf-8"), digests)
+        # The message says where a name is, never what it is.
+        self.assertEqual(found, [], "a withheld name is in these places")
+        self.assertEqual(unreadable, [], "these files cannot be read as text, so they cannot be checked")
 
 
 class NameGuardTest(unittest.TestCase):
@@ -333,6 +347,51 @@ class NameGuardTest(unittest.TestCase):
         code, output = self.run_guard()
         self.assertEqual(code, 0, output)
         self.assertIn("1 files checked", output)
+
+    def test_a_name_in_a_file_or_folder_name_fails_and_the_report_hides_that_part(self):
+        (self.tree / "zorvex-notes.md").write_text("nothing here\n", encoding="utf-8")
+        (self.tree / "docs" / "Quill_Harbor").mkdir(parents=True)
+        (self.tree / "docs" / "Quill_Harbor" / "readme.md").write_text("clean\n", encoding="utf-8")
+        (self.tree / "docs" / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertIn("  docs/<withheld>/readme.md: in its path", output)
+        self.assertIn("a withheld name is in 2 of 3 files", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "a path that holds a name is never printed whole")
+
+    def test_a_name_in_both_the_path_and_the_text_is_reported_once_with_both(self):
+        (self.tree / "zorvex.md").write_text("first\nzorvex again\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path; line 2", output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_file_the_guard_cannot_read_is_refused_not_skipped(self):
+        # A PDF by its suffix, an archive by its first bytes whatever it is called, and any other binary.
+        (self.tree / "guide.pdf").write_bytes(b"%PDF-1.7\nstream\nx\x9c+\nendstream\n")
+        (self.tree / "renamed.txt").write_bytes(b"PK\x03\x04\x14\x00\x00\x00 archive bytes")
+        (self.tree / "blob.bin").write_bytes(b"\x00\x01\x02 zorvex \x00")
+        (self.tree / "zorvex.zip").write_bytes(b"PK\x03\x04")
+        (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("4 of 5 files cannot be read as text", output)
+        for shown in ("  guide.pdf", "  renamed.txt", "  blob.bin", "  <withheld>"):
+            self.assertIn(shown, output.splitlines(), output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_images_and_fonts_are_allowed_and_their_bytes_are_compared(self):
+        png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
+        (self.tree / "icon.png").write_bytes(png)
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        (self.tree / "captioned.png").write_bytes(png + b"\x00\x00\x00\x13tEXtComment\x00by Zorvex\x00")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  captioned.png: in its bytes", output)
+        self.assertNotIn("zorvex", output.lower())
 
     def test_without_a_key_nothing_is_reported_as_checked(self):
         (self.tree / "a.txt").write_text("zorvex\n", encoding="utf-8")
