@@ -1,14 +1,14 @@
 ---
 name: didit-aml-screening
 description: >
-  Integrate the Didit AML Screening standalone API to screen people or companies against
-  sanctions, PEP, warning and adverse-media watchlists. Use when the user wants to run AML or
-  KYC/AML compliance checks, screen against OFAC/UN/EU sanctions lists, check PEP status, search
-  adverse media, tune match and risk scoring, review AML hits (Confirmed Match, False Positive,
-  Inconclusive), or turn on ongoing AML monitoring using Didit. Covers POST /v3/aml/ (1,300+
-  watchlists, fuzzy name matching, configurable weights and thresholds, idempotent retries) and
-  the AML hit review endpoints.
-version: 1.3.0
+  Use when writing backend or API-key integration code for Didit AML Screening, the standalone
+  API that screens people or companies against sanctions, PEP, warning and adverse-media
+  watchlists. Use when the user wants to run AML or KYC/AML compliance checks, screen against
+  OFAC/UN/EU sanctions lists, check PEP status, search adverse media, tune match and risk
+  scoring, review AML hits (Confirmed Match, False Positive, Inconclusive), or turn on ongoing
+  AML monitoring using Didit. Covers POST /v3/aml/ (1,300+ watchlists, fuzzy name matching,
+  configurable weights and thresholds, idempotent retries) and the AML hit review endpoints.
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit AML Screening API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -45,7 +47,7 @@ Screens a person or company against 1,300+ global watchlists and databases in on
 
 **Sandbox:** sandbox API keys skip screening and billing and return a mocked result: `"Approved"` with zero hits unless you pass `sandbox_scenario` (`decline_aml_hit` returns one hit and `"Declined"`, `review_aml_possible_match` returns `"In Review"`; catalog at `GET /v1/sandbox/scenarios/`). `sandbox_scenario` is rejected on live applications.
 
-**Pricing:** AML Screening $0.20 per screening (one credit charged after a successful screening; idempotent replays are not charged again; standalone calls have no free tier). AML Monitoring $0.07 per monitored profile per year. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** AML Screening $0.20 per screening (one credit charged after a successful screening; idempotent replays are not charged again); AML Monitoring $0.07 per monitored profile per year. Standalone calls are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:** https://docs.didit.me/standalone-apis/aml-screening
 **Feature Guide:** https://docs.didit.me/core-technology/aml-screening/overview
@@ -384,7 +386,7 @@ PATCH https://verification.didit.me/v3/session/{sessionId}/bulk-update-aml-hit-s
 
 ## Continuous Monitoring
 
-Off by default. Once on, the profile is re-screened as the watchlists update; a status change fires `status.updated` and a hit change fires `data.updated`. Billed as AML Monitoring ($0.07 per monitored profile per year).
+Off by default. Once on, the profile is re-screened as the watchlists update; a status change fires `status.updated` and a hit change fires `data.updated`. Billed as AML Monitoring (price: see Pricing above).
 
 Ways to turn it on:
 - `include_ongoing_monitoring: true` on `POST /v3/aml/` (with `save_api_request: true`).

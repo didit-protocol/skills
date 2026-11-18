@@ -6,14 +6,45 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhere
 
 ## [Unreleased]
 
-### Fixed
-- ClawHub bundles keep `scripts/`, so the helpers referenced by skills are included. Credential,
-  cache and development exclusions remain in place. Manual installation now copies complete folders.
-- **didit-verification-management:** `setup_account.py` reads the password from `DIDIT_PASSWORD` or a
-  no-echo prompt instead of a command-line argument, which exposed it in the process list, shell history
-  and agent logs (CWE-214). A positional password still works but prints a warning.
+## [5.2.0] - 2026-11-18
+
+Every skill re-checked against the Didit MCP server v5.1.67 source and the pricing pages as they stood on
+2026-11-18. Skill versions: aml-screening 1.4.0, biometric-age-estimation 1.3.0, case-management 1.1.0,
+database-validation 1.4.0, document-ai 1.1.0, email-verification 1.4.0, event-monitoring 1.1.0,
+face-match 1.6.0, face-search 1.4.0, fraud-check 1.1.0, fraud-networks 1.1.0, id-document-verification 1.4.0,
+kyc-onboarding 1.3.0, liveness-detection 1.4.0, mcp-server 1.1.0, phone-verification 1.5.0,
+proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), transaction-monitoring 1.2.0, verification-management 5.2.0.
 
 ### Changed
+- **didit-mcp-server (1.0.0 to 1.1.0):** matches server v5.1.67. Documents API key connections (one
+  application, the key's own access, person-only tools refused) next to OAuth, which stays the default;
+  the three advertised scopes, with `didit:staff` for Didit staff only; that a successful tool result is
+  compact JSON plus `structuredContent` (arrays and scalars wrapped as `{value}`), with secrets redacted except
+  the one-time secret from `didit_org_create_api_key` and large payloads summarized, while errors are sanitized
+  text with no `structuredContent`; that revoking stops refresh while an accepted access token can reach the
+  server for up to 60 seconds (separate from a rotated API key's grace period); device-code `login` and
+  `logout` with stored, refreshed credentials (logout deletes the local copy even when revocation fails); what
+  `GET` and `DELETE` on `/mcp` and the bare origin return, on the hosted server and on an open-source build
+  without the connect page; which confirmations the server enforces per operation; tool
+  coverage (167 tools for a signed-in person, 9 more on a local server, `?toolsets=core` with 29 tools,
+  `read_only=true`, the discovery tools, `didit_docs_search`); the `organization_id`/`application_id` rules
+  (tools that require ids, the six per-app lists with a cross-app fallback); the self-hosting and stdio
+  triggers in the description; OpenAI Codex and the per-client docs pages; the Claude Code plugin install; launcher versions pinned;
+  and which top-up and key tools are hosted or local only.
+- **All skills, pricing (checked against https://docs.didit.me/getting-started/pricing and the pages it links
+  on 2026-11-18):** removed the sentence about list prices until 1 November 2026. Each skill has one dated
+  Pricing note ("as of 2026-11-18" with a link); prices and billing statements elsewhere in a skill point to
+  that note, to a dated table heading, or to the skill that owns the price, so each price is stated in one
+  place. The figures that changed are listed on the pricing page; this entry does not repeat them. Statements
+  about 500 free checks a month and "no free tier" were replaced by the current credit rule, which lives in the
+  didit-verification-management Pricing note. Prices were removed from the Document AI and Transaction
+  Monitoring descriptions.
+- **didit-database-validation:** coverage is 45 countries plus a Global group, 122 live services, with 60+
+  countries tracked and activated on demand; the highest service price is $8.00, and the Argentina, Spain,
+  Guatemala, Panama, Peru, Kenya and South Africa service prices match the current pricing table.
+- **All REST skills:** each description starts with the integration boundary ("Use when writing backend or
+  API-key integration code for ..."), and each body points people working inside a connected Didit account
+  to the Didit plugin or MCP server tools instead of REST calls.
 - **didit-sdk-integration (1.0.0 to 1.1.0):** adds a three-product prompt for all seven combinations of
   Identity verification, Transaction monitoring and end-user Authentication. Uses one server-owned
   `vendor_data`, separate credentials and backend-confirmed decisions; keeps unavailable Authentication,
@@ -24,7 +55,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhere
 - Dedicated Authentication, electronic-signature and biometric-consent skills remain deferred until
   their APIs are merged and documented. The integration guidance does not certify runtime readiness.
 
+### Security
+- **didit-verification-management:** `setup_account.py` prints a fixed summary: no response body, server
+  message or exception text. Credentials in it (API key, access and refresh tokens, and the temporary token of a
+  second-factor challenge) are masked to the first 4 and last 4 characters. A second-factor challenge or an
+  SSO-only organization is reported as such and exits 1. HTTP, transport and decoding failures report the
+  status, a safe error code and fixed text only. `--write-env <path>` refuses symlinks and non-regular files,
+  reads the old file without following links, writes single-quoted values through a 0600 temporary file and
+  `os.replace`, and is checked before the single-use code is spent. `--show-secrets` prints full credentials
+  only when spelled out in full (abbreviations are rejected on every parser).
+
+### Fixed
+- ClawHub bundles keep `scripts/`, so the helpers referenced by skills are included. Credential,
+  cache and development exclusions remain in place. Manual installation now copies complete folders.
+- **didit-verification-management:** `setup_account.py` reads the password from `DIDIT_PASSWORD` or a
+  no-echo prompt instead of a command-line argument, which exposed it in the process list, shell history
+  and agent logs (CWE-214), and the verification code from `DIDIT_VERIFICATION_CODE` or a no-echo prompt. A
+  positional password or code still works for compatibility but prints a warning.
+
 ### Tests
+- Offline tests feed synthetic responses to `setup_account.py` and scan stdout and stderr separately: masked
+  verify and login output, abbreviated `--show` rejected, non-JSON and JSON error bodies and transport
+  exception text not echoed, a second-factor `temp_token` masked, SSO reported, a symlink `--write-env`
+  destination refused before the code is spent, the 0600 single-quoted file written, and unquotable values
+  rejected.
 - Offline publication-filter regression verifies that every skill's Python helpers survive the ignore
   policies and that credential, cache and development files stay excluded.
 

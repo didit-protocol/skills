@@ -1,14 +1,14 @@
 ---
 name: didit-face-search
 description: >
-  Runs a 1:N face search with Didit's standalone Face Search API (POST /v3/face-search/)
-  against every face enrolled in the application: verification sessions, saved standalone
-  calls, faces uploaded to User profiles, face lists and retained biometric templates.
-  Use when detecting duplicate accounts, checking whether a face already exists, preventing
-  repeat registrations, screening a face against the face blocklist, or investigating
-  fraud rings. Returns up to 5 ranked matches with similarity percentages, match source and
-  session details, plus blocklist and duplicate-face warnings.
-version: 1.3.0
+  Use when writing backend or API-key integration code for Didit Face Search (POST
+  /v3/face-search/), a standalone 1:N search against every face enrolled in the application:
+  verification sessions, saved standalone calls, faces uploaded to User profiles, face lists and
+  retained biometric templates. Use when detecting duplicate accounts, checking whether a face
+  already exists, preventing repeat registrations, screening a face against the face blocklist,
+  or investigating fraud rings. Returns up to 5 ranked matches with similarity percentages,
+  match source and session details, plus blocklist and duplicate-face warnings.
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Face Search API (1:N)
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -38,7 +40,7 @@ Searches the largest face in an image against your application's face search ind
 - With several faces the largest one is searched and `MULTIPLE_FACES_DETECTED` is added
 - `vendor_data` does **not** exclude the same user's earlier faces from the results (unlike Passive Liveness)
 
-**Pricing:** $0.05 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.05 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Decision:** `Declined` only when `FACE_IN_BLOCKLIST` or `POSSIBLE_FACE_IN_BLOCKLIST` fires; otherwise `Approved`. Duplicate and multiple-face warnings never decline, and there is no `In Review`. `Approved` does **not** mean the face is new: check `total_matches` and the duplicate warnings. This endpoint returns no liveness verdict (use **didit-liveness-detection** for that).
 
@@ -46,7 +48,7 @@ Searches the largest face in an image against your application's face search ind
 
 **Similarity guidance:** the Face Search docs read 90%+ as a strong likelihood of the same person and 70-89% as a possible match that may need review. Didit's own verdict is the warning: `DUPLICATED_FACE` / `FACE_IN_BLOCKLIST` for strong matches, `POSSIBLE_DUPLICATED_FACE` / `POSSIBLE_FACE_IN_BLOCKLIST` for weaker ones.
 
-**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed.
+**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed (see Pricing above).
 
 **API Reference:** https://docs.didit.me/standalone-apis/face-search
 **Feature Guide:** https://docs.didit.me/core-technology/face-search/overview

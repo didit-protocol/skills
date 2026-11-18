@@ -1,17 +1,18 @@
 ---
 name: didit-sdk-integration
 description: >
-  Integrate the Didit client SDKs into web and mobile apps. Use when the user wants to launch
-  a Didit verification session in a web page (redirect, iframe, or the JavaScript SDK
-  @didit-protocol/sdk-web), an iOS app (DiditSDK, Swift), an Android app (me.didit:didit-sdk,
-  Kotlin), a React Native or Expo app (@didit-protocol/sdk-react-native) or a Flutter app
-  (didit_sdk); create the session on a backend and hand the url or session_token to the
-  client; handle SDK results, callbacks and errors; submit monitored transactions from the
-  device with a transaction SDK token (submitTransaction, wallet ownership, step-up
-  verification); or send monitoring events from a device with a monitoring token. Keeps the
-  API key on the backend. Also use for any combination of Identity verification,
-  Transaction monitoring and end-user Authentication, checking release availability first.
-version: 1.1.0
+  Use when writing app, backend or API-key integration code for the Didit client SDKs in web and
+  mobile apps. Use when the user wants to launch a Didit verification session in a web page
+  (redirect, iframe, or the JavaScript SDK @didit-protocol/sdk-web), an iOS app (DiditSDK,
+  Swift), an Android app (me.didit:didit-sdk, Kotlin), a React Native or Expo app
+  (@didit-protocol/sdk-react-native) or a Flutter app (didit_sdk); create the session on a
+  backend and hand the url or session_token to the client; handle SDK results, callbacks and
+  errors; submit monitored transactions from the device with a transaction SDK token
+  (submitTransaction, wallet ownership, step-up verification); or send monitoring events from a
+  device with a monitoring token. Keeps the API key on the backend. Also use for any combination
+  of Identity verification, Transaction monitoring and end-user Authentication, checking release
+  availability first.
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -22,6 +23,8 @@ metadata:
 ---
 
 # Didit SDK Integration (Web, iOS, Android, React Native, Flutter)
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -41,7 +44,7 @@ Choose Identity verification, Transaction monitoring, Authentication, or any com
 
 **Verification/transaction versions documented here:** Web SDK 0.4.0, iOS 4.9.1, Android 4.9.1, React Native 4.9.1, Flutter 4.9.1. These versions do not establish availability of Authentication or `@didit-protocol/signals`.
 
-**Pricing:** The SDKs have no list price of their own. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one ($0.02 Transaction Screening). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for the SDKs. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one, as Transaction Screening (allowance and price: the Pricing note in **didit-transaction-monitoring**). Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Docs:** https://docs.didit.me/integration/sdks · Web: https://docs.didit.me/integration/web-sdks/javascript-sdk · Native: https://docs.didit.me/integration/native-sdks/overview · Transactions from the device: https://docs.didit.me/transaction-monitoring/sdk-transaction-submission · Events from the device: https://docs.didit.me/transaction-monitoring/sdk-event-submission
 

@@ -1,15 +1,16 @@
 ---
 name: didit-verification-management
 description: >
-  Manages the whole Didit identity verification platform over the API: programmatic account and
-  application setup, API keys, workflows, verification sessions (create, retrieve, list, approve,
-  decline, resubmit, correct data, AML hit review, PDF, share, delete), bulk imports, questionnaires,
-  block/allow lists, users (KYC) and businesses (KYB) with AML monitoring and biometric templates,
-  KYB registry lookups, billing and top-ups, branding, and webhook destinations with signature
-  verification. Use when someone needs to create a Didit account or API key, build a verification
-  workflow, create or poll verification sessions, review or resubmit a session, manage users,
-  businesses or lists, check or top up credits, configure webhooks, or verify Didit webhook signatures.
-version: 5.1.0
+  Use when writing backend or API-key integration code that manages the whole Didit identity
+  verification platform over the API: programmatic account and application setup, API keys,
+  workflows, verification sessions (create, retrieve, list, approve, decline, resubmit, correct
+  data, AML hit review, PDF, share, delete), bulk imports, questionnaires, block/allow lists,
+  users (KYC) and businesses (KYB) with AML monitoring and biometric templates, KYB registry
+  lookups, billing and top-ups, branding, and webhook destinations with signature verification.
+  Use when someone needs to create a Didit account or API key, build a verification workflow,
+  create or poll verification sessions, review or resubmit a session, manage users, businesses
+  or lists, check or top up credits, configure webhooks, or verify Didit webhook signatures.
+version: 5.2.0
 metadata:
   openclaw:
     requires:
@@ -20,6 +21,8 @@ metadata:
 ---
 
 # Didit Identity Verification Platform
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -40,7 +43,7 @@ The hub skill for the Didit platform: account and application setup, workflows, 
 | Web and mobile SDKs, SDK tokens | `didit-sdk-integration` |
 | Didit from an MCP client | `didit-mcp-server` |
 
-**Pricing:** a session costs the sum of the features its workflow runs, and only features that finish are charged (the workflow's `total_price`, which excludes variable-priced features such as `DATABASE_VALIDATION` and `PHONE_VERIFICATION`); each organization gets 500 free checks a month for each core KYC feature (document capture, passive liveness, face match, Device & IP Analysis). No list price is published for the management endpoints themselves. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** a session costs the sum of the features its workflow runs, and only features that finish are charged (the workflow's `total_price`, which excludes variable-priced features such as `DATABASE_VALIDATION` and `PHONE_VERIFICATION`). As of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)) the pricing page lists no separate price for the management endpoints themselves. The Free plan includes $10 of credit a month for organizations that signed up with a work email in the console; an organization created through the API (as `setup_account.py` does) starts at $0, and the Free credit does not pay for phone verification. Top-ups are $50 to $20,000 each on Free, Growth and Scale; Enterprise organizations cannot buy top-ups and are invoiced for overage instead. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Base URLs:** `https://verification.didit.me/v3` (everything with `x-api-key`), `https://apx.didit.me/auth/v2` (account setup).
 
@@ -616,7 +619,7 @@ POST /v3/businesses/aml-monitoring/
 GET  /v3/aml-monitoring/jobs/{job_id}/
 ```
 
-Body: `is_enabled` (required), `estimate_only` (default `false`: return the cost estimate without changing anything), `vendor_data_list` and/or `didit_internal_id_list` (up to 1000 identifiers in total). Up to 20 profiles run inline (`200` with the finished job); more return `202` and run in the background. Job: `job_id`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), `is_enabled`, `target_type`, `total`, `processed`, `outcomes`, `results[]`, `error`, `created_at`, `completed_at`. Not enough credits: `403` with the `estimate`. AML Monitoring is listed at $0.07 a year on the pricing page.
+Body: `is_enabled` (required), `estimate_only` (default `false`: return the cost estimate without changing anything), `vendor_data_list` and/or `didit_internal_id_list` (up to 1000 identifiers in total). Up to 20 profiles run inline (`200` with the finished job); more return `202` and run in the background. Job: `job_id`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), `is_enabled`, `target_type`, `total`, `processed`, `outcomes`, `results[]`, `error`, `created_at`, `completed_at`. Not enough credits: `403` with the `estimate`. AML Monitoring is listed at $0.07 per profile a year (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
 
 ### Biometric Templates
 
@@ -648,10 +651,12 @@ POST   /v3/businesses/aml-monitoring/               # see AML Ongoing Monitoring
 
 ### KYB Registry (no session)
 
+List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing), [KYB prices by country](https://docs.didit.me/getting-started/kyb-registry-pricing)).
+
 | Endpoint | Body | Price |
 |---|---|---|
 | `POST /v3/kyb/search/` | `country_code` (required; ISO alpha-2, US needs a state such as `US-CA`), `name` and/or `registration_number`, `search_type` (`contains`), `vendor_data`, `metadata`, `webhook_url` | $0.50 per successful search with paid-source results |
-| `POST /v3/kyb/select/` | `kyb_response_id` (required), `vendor_data`, `metadata` | Lite profile and officers, $2.00 (prices by country) |
+| `POST /v3/kyb/select/` | `kyb_response_id` (required), `vendor_data`, `metadata` | Lite profile and officers, $2.00-$3.00 by country |
 | `POST /v3/kyb/shareholders/` | same as select | Lite plus direct shareholders, $5.00-$22.00 by country |
 | `POST /v3/kyb/ubo/` | same as select | Shareholders plus ultimate beneficial owners, $9.00-$96.00 by country |
 
@@ -678,9 +683,9 @@ GET   /v3/transactions/{uuid}/   # Didit's transaction uuid from the create resp
 | Endpoint | Body | Response |
 |---|---|---|
 | `GET /v3/billing/balance/` | - | `{"balance": "142.5000", "auto_refill_enabled": true, "auto_refill_amount": "100.0000", "auto_refill_threshold": "10.0000"}`; the auto-refill values are `null` when unset |
-| `POST /v3/billing/top-up/` | `amount_in_dollars` (required, minimum 50), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
+| `POST /v3/billing/top-up/` | `amount_in_dollars` (required; limits as of 2026-11-18: see Pricing above), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
 
-Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Organizations on an annual plan get `400` and top up through their account manager.
+Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Enterprise organizations cannot buy top-ups (as of 2026-11-18, see Pricing above): usage beyond their contract credit is invoiced as overage ([pricing](https://docs.didit.me/getting-started/pricing#credit-and-top-ups)).
 
 ---
 
@@ -941,16 +946,37 @@ pip install requests
 read -rs DIDIT_PASSWORD && export DIDIT_PASSWORD   # optional: otherwise each command prompts
 python scripts/setup_account.py register you@yourdomain.com
 # (check email for the 6-character code)
-python scripts/setup_account.py verify you@yourdomain.com A3K9F2      # prints org uuid, app uuid, api_key
+python scripts/setup_account.py verify you@yourdomain.com --write-env .env   # prompts for the code; saves DIDIT_API_KEY and tokens
 python scripts/setup_account.py resend-otp you@yourdomain.com
-python scripts/setup_account.py login you@yourdomain.com
+python scripts/setup_account.py login you@yourdomain.com --write-env .env
 ```
 
-The password comes from the `DIDIT_PASSWORD` environment variable or a no-echo prompt. Never put it on the
-command line: other local users can read it in the process list, and it stays in shell history and agent logs.
-A positional password still works for older callers, but the script prints a warning.
+Output is a fixed summary (status line, organization and application UUIDs, masked credentials). The
+script never prints a response body, a server message or exception text, and never prints a full API key,
+access token, refresh token, temporary second-factor token or password. Credentials are masked to the first
+4 and last 4 characters (for example `dk_t...cdef`); values under 12 characters show as `****`.
+To keep the full values:
+- `--write-env <path>` writes `DIDIT_API_KEY`, `DIDIT_ACCESS_TOKEN` and `DIDIT_REFRESH_TOKEN` to that file as
+  single-quoted literals, through a `0600` temporary file in the same directory that atomically replaces it;
+  other lines in the file are kept. It refuses a symlink or anything that is not a regular file, and it checks
+  the destination before the code is spent. Keep the file out of version control.
+- `--show-secrets` prints those credentials in full in the summary. Pass it only on purpose: terminals, shell
+  recordings and agent logs keep what is printed.
+- Flags must be spelled out in full: an abbreviation such as `--show` is rejected.
+
+The verification code works once, so pass `--write-env` on `verify`: without it the API key is shown masked
+only and you create a new key in the console later. An account that already has a second factor gets a
+second-factor challenge instead of tokens, and an organization that enforces SSO gets `sso_required`; the
+script reports either one (the temporary token stays masked) and exits 1. Sign in at
+https://business.didit.me instead.
+
+The password comes from `DIDIT_PASSWORD` and the code from `DIDIT_VERIFICATION_CODE`, or from a no-echo
+prompt. Never put either on the command line: other local users can read it in the process list, and it stays
+in shell history and agent logs. A positional password or code still works for older callers, but the script
+prints a warning, and by then the value is already exposed.
 When an agent runs these commands without a terminal, the script cannot prompt: ask the user to export
-`DIDIT_PASSWORD` in the agent's environment instead of pasting the password into the conversation.
+`DIDIT_PASSWORD` (and `DIDIT_VERIFICATION_CODE`) in the agent's environment instead of pasting them into the
+conversation. Imported as a library, the functions raise `SetupError` with fixed text on any failure.
 
 ### manage_workflows.py: workflow CRUD
 

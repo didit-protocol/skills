@@ -1,14 +1,14 @@
 ---
 name: didit-proof-of-address
 description: >
-  Integrate the Didit Proof of Address standalone API (POST /v3/poa/) to verify address
-  documents. Use when the user wants to verify a proof of address, validate a utility bill,
-  bank statement or government letter, extract and geocode the address on a document,
-  enforce a maximum document age, cross-check a document against an expected name, address
-  or country, detect edited PDFs, or perform PoA checks using Didit. Returns Approved or
-  Declined with itemized warnings, the parsed address with coordinates, issuer, dates,
-  holder name, bank fields and QR/barcode data.
-version: 1.3.0
+  Use when writing backend or API-key integration code for the Didit Proof of Address standalone
+  API (POST /v3/poa/), which verifies address documents. Use when the user wants to verify a
+  proof of address, validate a utility bill, bank statement or government letter, extract and
+  geocode the address on a document, enforce a maximum document age, cross-check a document
+  against an expected name, address or country, detect edited PDFs, or perform PoA checks using
+  Didit. Returns Approved or Declined with itemized warnings, the parsed address with
+  coordinates, issuer, dates, holder name, bank fields and QR/barcode data.
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -21,11 +21,13 @@ metadata:
 
 # Didit Proof of Address API
 
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
+
 ## Overview
 
 Verifies an address document (image or PDF) in one call. The document is classified (type and subtype), the issuer, dates, holder name and address are extracted, the address is parsed and geocoded, PDF/EXIF forensics look for tampering, and optional `expected_*` values are cross-checked. The answer is `Approved` or `Declined` with a `warnings` list explaining every issue found.
 
-**Pricing:** $0.20 per call (every `200` response is billed, `Approved` or `Declined`; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.20 per standalone call (every `200` response is billed, `Approved` or `Declined`), paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Key constraints:**
 - Formats: **JPG, JPEG, PNG, TIFF, PDF, WEBP**. Multi-page PDFs are supported. Encrypted PDFs need `document_password`.

@@ -1,15 +1,15 @@
 ---
 name: didit-fraud-networks
 description: >
-  Integrate Didit Fraud Networks (fraud ring detection) through the API. Use when the user
-  wants to detect fraud rings, multi-accounting or identity fraud clusters, list networks
-  of users, businesses or transaction parties linked by a shared device, IP address, face,
-  document number, phone, email or address, filter networks by status, risk band, signal type
-  or pattern, inspect a network's members, signals, graph, timeline or map, download a
-  network PDF report, or check whether a session, user, business, transaction or transaction
-  party belongs to a fraud network using Didit. Networks are built automatically from
-  production verifications and transactions; the API is read-only.
-version: 1.0.0
+  Use when writing backend or API-key integration code for Didit Fraud Networks (fraud ring
+  detection). Use when the user wants to detect fraud rings, multi-accounting or identity fraud
+  clusters, list networks of users, businesses or transaction parties linked by a shared device,
+  IP address, face, document number, phone, email or address, filter networks by status, risk
+  band, signal type or pattern, inspect a network's members, signals, graph, timeline or map,
+  download a network PDF report, or check whether a session, user, business, transaction or
+  transaction party belongs to a fraud network using Didit. Networks are built automatically
+  from production verifications and transactions; the API is read-only.
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -21,6 +21,8 @@ metadata:
 ---
 
 # Didit Fraud Networks API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -35,7 +37,7 @@ A **network** is a cluster of subjects (users, businesses and transaction partie
 - A shared signal is a reason to investigate, not proof of fraud. A signal linking an unusually large number of subjects (office IP, kiosk device, data-center IP) is flagged `is_hub` rather than treated as fraud evidence.
 - Status changes, dismissing, blocklisting, creating a case from a network and network notes are done in the Business Console (notes are for console users only; API keys get `403`).
 
-**Pricing:** No list price is published for these endpoints; check [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for these endpoints. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/management-api/networks/list
 **Feature guide:** https://docs.didit.me/console/networks

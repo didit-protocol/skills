@@ -1,15 +1,16 @@
 ---
 name: didit-database-validation
 description: >
-  Integrate the Didit Database Validation API (POST /v3/database-validation/) to check
-  identity data against government and authoritative registries. Use when the user wants
-  to validate a national ID, CPF, CURP, DNI, RUT or cedula number against official records,
-  confirm a person's name and date of birth with a civil registry, run a registry face match
-  (Argentina RENAPER, Panama SIB), choose database validation services per country, or
-  implement government database lookups using Didit. Covers 100+ services in 45 countries
-  (strongest in Latin America, plus Spain, South Africa, Kenya and other markets) with
-  per-service pricing and per-field match results.
-version: 1.3.0
+  Use when writing backend or API-key integration code for Didit Database Validation (POST
+  /v3/database-validation/), which checks identity data against government and authoritative
+  registries. Use when the user wants to validate a national ID, CPF, CURP, DNI, RUT or cedula
+  number against official records, confirm a person's name and date of birth with a civil
+  registry, run a registry face match (Argentina RENAPER, Panama SIB), choose database
+  validation services per country, or implement government database lookups using Didit. Covers
+  120+ live services in 45 countries plus a global group (strongest in Latin America, plus
+  Spain, South Africa, Kenya and other markets) with per-service pricing and per-field match
+  results.
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -22,20 +23,22 @@ metadata:
 
 # Didit Database Validation API
 
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
+
 ## Overview
 
 Verifies personal data against the authoritative source for a country (civil registry, tax authority, electoral roll or biometric registry) and returns a per-field comparison, a per-service outcome code and the registry record. Use it to catch synthetic identities and ID numbers that do not belong to the person.
 
-**Pricing:** per service, from $0.05 (Dominican Republic `dom_cedula`) to $7.00 per query; most Latin American national ID services are $0.20 (billed once per service the registry answered, including no-match and not-found answers; `400` rejections and services the source never answered are free; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [database validation pricing](https://docs.didit.me/getting-started/database-validation-pricing)):** per service, from $0.05 (Dominican Republic `dom_cedula`) to $8.00 per query; most Latin American national ID services are $0.20. A query is billed once per service the registry answered, including no-match and not-found answers; `400` rejections and services the source never answered are free. Queries are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Key constraints:**
 - `issuing_state` is ISO 3166-1 **alpha-3** (`BRA`, `PER`, `ARG`). Alpha-2 codes (`BR`) return `400` "Invalid issuing state".
 - Each country exposes one or more **services** (`service_id`). Without `services`, exactly **one** default service runs. Spain, Kenya, Zambia and most non-Latin-American services have no default: name them in `services`.
-- Required fields depend on the selected services. Missing or malformed fields return `400` before any registry call (never billed).
+- Required fields depend on the selected services. Missing or malformed fields return `400` before any registry call (never billed, see Pricing above).
 - Send JSON, or `multipart/form-data` when a service needs a `selfie` (Argentina `arg_renaper`, Panama `pan_cedula_sib`, other biometric services).
 - Results per field: `full_match`, `partial_match`, `no_match`. Overall `status`: `Approved`, `Declined` or `In Review`.
 
-**Coverage:** the public catalog listed 123 live services in 45 countries plus a global (`GLB`) group on 2026-10-12: 17 Latin American countries, Spain, South Africa, Kenya, Zambia, Nigeria and identity, credit, residential and phone datasets in Europe, North America and Asia-Pacific. Read the live list (no API key needed):
+**Coverage:** as of 2026-11-18 the [supported countries page](https://docs.didit.me/core-technology/database-validation/database-validation-supported-countries) lists 122 live services in 45 countries plus a global (`GLB`) group: 17 Latin American countries, Spain, South Africa, Kenya, Zambia, Nigeria and identity, credit, residential and phone datasets in Europe, North America and Asia-Pacific. The wider catalog tracks 60+ countries; services outside the live list are activated on demand. Read the live list (no API key needed):
 
 ```
 GET https://verification.didit.me/v1/organization/database-validation-countries/
@@ -226,9 +229,9 @@ A decline wins over review. A multi-service request can be `Approved` on one ser
 | `401` | The API key has expired | Rotate it or create a new key in **Developers > API keys** |
 | `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
-| `502` | No selected service returned a usable result. Body: `error` plus `validation_errors[]` (`service_id`, `code` e.g. `empty_provider_response`, `message`, `retryable: true`). Nothing is billed | Retry later; with `save_api_request=true` the attempt is still recorded as a session |
+| `502` | No selected service returned a usable result. Body: `error` plus `validation_errors[]` (`service_id`, `code` e.g. `empty_provider_response`, `message`, `retryable: true`). Nothing is billed (see Pricing above) | Retry later; with `save_api_request=true` the attempt is still recorded as a session |
 
-`400` bodies on this endpoint (never billed):
+`400` bodies on this endpoint (never billed, see Pricing above):
 - `{"error": ["Invalid issuing state. Valid options are: ARE, ARG, ..."]}`: wrong or alpha-2 `issuing_state`
 - `{"error": ["No database validation services configured for ESP."]}`: no default service for the country; send `services`
 - `{"error": ["Missing required fields: tax_number (or use 'identification_number' ...)"], "fields_required_by": {"tax_number": ["bra_cpf"]}}`; also `any_field_required_by`, `field_dependencies_required_by`, `address_fields_required_by` for the same family of problems
@@ -253,13 +256,13 @@ The credit check covers the sum of the selected services' prices and runs before
 | `database_validation.match_type` | string/null | `full_match`, `partial_match` or `no_match` across services; `null` for outcome-only services |
 | `database_validation.validations` | array or object | Per service: `service_id`, `service_name`, `validation` (field to `full_match`/`partial_match`/`no_match`), `outcome_code`, `outcome_detail`, `source_data` (registry record). Merged map when `save_api_request=false` |
 | `database_validation.warnings` | array | `{feature, risk, additional_data, log_type, short_description, long_description}`; empty on a clean full match |
-| `database_validation.errors` | array | Only when some services failed: `service_id`, `code`, `message`, `retryable`. Those services are not billed |
+| `database_validation.errors` | array | Only when some services failed: `service_id`, `code`, `message`, `retryable`. Those services are not billed (see Pricing above) |
 | `database_validation.services_used` | array | Services that returned a result (only when the request sent `services`) |
 | `database_validation.match_score` | number | 0.0-1.0 share of attempted services with a full match (only when the request sent `services`) |
 | `vendor_data` / `metadata` | string/object | Echo of your values |
 | `created_at` | string | ISO 8601 UTC timestamp |
 
-**`outcome_code` values:** `MATCH`, `PARTIAL_MATCH`, `NO_MATCH` (definitive mismatch), `DOCUMENT_NOT_FOUND` (number not in the registry), `INVALID_DOCUMENT_FORMAT` / `INVALID_INPUT` (the registry rejected the data), `MINOR_BLOCKED`, `DECEASED`, `BIOMETRIC_NO_MATCH` (face does not match), `BIOMETRIC_IMAGE_UNUSABLE` (retake the selfie), `INCONCLUSIVE` (review, not a no-match), `DOCUMENT_SUPERSEDED` (a newer edition of the document exists), `REGISTRY_UNAVAILABLE` / `REGISTRY_ERROR` (source failure, not billed).
+**`outcome_code` values:** `MATCH`, `PARTIAL_MATCH`, `NO_MATCH` (definitive mismatch), `DOCUMENT_NOT_FOUND` (number not in the registry), `INVALID_DOCUMENT_FORMAT` / `INVALID_INPUT` (the registry rejected the data), `MINOR_BLOCKED`, `DECEASED`, `BIOMETRIC_NO_MATCH` (face does not match), `BIOMETRIC_IMAGE_UNUSABLE` (retake the selfie), `INCONCLUSIVE` (review, not a no-match), `DOCUMENT_SUPERSEDED` (a newer edition of the document exists), `REGISTRY_UNAVAILABLE` / `REGISTRY_ERROR` (source failure, not billed; see Pricing above).
 
 ---
 
@@ -291,11 +294,11 @@ The credit check covers the sum of the selected services' prices and runs before
 
 ## Supported Countries
 
-Main countries, from the public catalog and pricing table (2026-10-12). "Default" is the service that runs when `services` is omitted.
+Main countries, from the public catalog and the [pricing table](https://docs.didit.me/getting-started/database-validation-pricing) (list prices as of 2026-11-18). "Default" is the service that runs when `services` is omitted.
 
 | `issuing_state` | Default service | Required fields | Number format | Coverage | Price | Other services |
 |---|---|---|---|---|---|---|
-| `ARG` | `arg_renaper` (biometric) | `document_number`, `selfie`, `gender` | DNI, 7-8 digits, optional M/F prefix | - | $0.20 | `arg_renaper_data` (`document_number`, `gender`, no selfie, $0.20); `arg_citizens` $1.90, `arg_credit_bureau` $2.15 |
+| `ARG` | `arg_renaper` (biometric) | `document_number`, `selfie`, `gender` | DNI, 7-8 digits, optional M/F prefix | - | $0.20 | `arg_renaper_data` (`document_number`, `gender`, no selfie, $0.20); `arg_citizens` $3.17, `arg_credit_bureau` $3.59 |
 | `BOL` | `bol_cedula` | `document_number`, `date_of_birth` | CI, 6-10 digits | 90-95% | $0.20 | - |
 | `BRA` | `bra_cpf` | `tax_number`, `date_of_birth` | CPF, exactly 11 digits | ~100% | $0.20 | 9 more, e.g. `bra_cpf_facial` (selfie, consent, $0.45), `bra_unico_idcloud` (selfie, consent, $0.20), `bra_death_check`, `bra_tax_registration` $0.15 |
 | `CHL` | `chl_rut` | `personal_number` | RUT, e.g. `12345678-9` | - | $0.20 | - |
@@ -303,19 +306,19 @@ Main countries, from the public catalog and pricing table (2026-10-12). "Default
 | `CRI` | `cri_cedula` | `personal_number` | Cedula, 9-12 digits | 90-95% | $0.20 | - |
 | `DOM` | `dom_cedula` | `personal_number` | Cedula, exactly 11 digits | - | $0.05 | - |
 | `ECU` | `ecu_cedula` | `personal_number` | Cedula, exactly 10 digits | - | $0.20 | - |
-| `ESP` | none: send `services: ["esp_dni"]` and `consent: true` | `first_name`, `last_name`, `date_of_birth`, `address` (street + postal code) | No number field; optional `national_id` (DNI/NIE) is also compared | ~75% | $1.26 | - |
-| `GTM` | `gtm_dpi` | `document_number`, `date_of_birth` | DPI, exactly 13 digits | 90-95% | $0.20 | `gtm_dpi_facial` (`document_number`, `selfie`, consent, $0.35) |
+| `ESP` | none: send `services: ["esp_dni"]` and `consent: true` | `first_name`, `last_name`, `date_of_birth`, `address` (street + postal code) | No number field; optional `national_id` (DNI/NIE) is also compared | ~75% | $2.10 | - |
+| `GTM` | `gtm_dpi` | `document_number`, `date_of_birth` | DPI, exactly 13 digits | 90-95% | $0.20 | `gtm_dpi_facial` (`document_number`, `selfie`, consent, $0.40) |
 | `HND` | `hnd_dni` | `document_number` | DNI, exactly 13 digits | 90-95% | $0.20 | - |
 | `MEX` | `mex_curp` | `personal_number` | CURP, exactly 18 characters | ~100% | $0.20 | `mex_ine_vigencia` (INE credential: `cic`, `identificador_ciudadano`, `ocr` or `voter_number` + `emission_number`, $0.20) |
-| `PAN` | `pan_cedula_sib` (biometric) | `personal_number`, `selfie` | Cedula, 5-20 characters | - | $0.75 | `pan_cedula_sib_plus` (same fields, $1.50) |
-| `PER` | `per_dni` | `personal_number` | DNI, exactly 8 digits | - | $0.20 | `per_tax_registration` (`first_name`, `last_name`, `date_of_birth`, `personal_number`, $1.75) |
+| `PAN` | `pan_cedula_sib` (biometric) | `personal_number`, `selfie` | Cedula, 5-20 characters | - | $1.25 | `pan_cedula_sib_plus` (same fields, $1.50) |
+| `PER` | `per_dni` | `personal_number` | DNI, exactly 8 digits | - | $0.20 | `per_tax_registration` (`first_name`, `last_name`, `date_of_birth`, `personal_number`, $2.92) |
 | `PRY` | `pry_cedula` | `document_number` | CI, 6-10 digits | 90-95% | $0.20 | - |
 | `SLV` | `slv_dui` | `document_number`, `date_of_birth` | DUI, exactly 9 digits | 90-95% | $0.20 | - |
 | `URY` | `ury_cedula` | `personal_number`, `date_of_birth` | CI, 7-9 digits | 90-95% | $0.20 | - |
 | `VEN` | `ven_cedula` | `document_number` | Cedula, 7-10 digits, optional V/E prefix | 90-95% | $0.20 | - |
-| `KEN` | none: `ken_national_id` | `first_name`, `last_name`, `date_of_birth`, `national_id` | - | ~90% | $0.65 | - |
+| `KEN` | none: `ken_national_id` | `first_name`, `last_name`, `date_of_birth`, `national_id` | - | ~90% | $0.75 | - |
 | `ZMB` | none: `zmb_national_id` | `national_id`, `first_name`, `last_name` | - | - | $0.20 | - |
-| `ZAF` | `zaf_africa_national_id` | `first_name`, `last_name`, `date_of_birth`, `national_id` | - | ~100% | $1.10 | 12 more (driving licence, bank account holder, company registry, fraud prevention, ...) |
+| `ZAF` | `zaf_africa_national_id` | `first_name`, `last_name`, `date_of_birth`, `national_id` | - | ~100% | $1.34 | 11 more (driving licence, bank account holder, company registry, fraud prevention, ...) |
 
 Other countries (Australia, Austria, Canada, China, Denmark, Finland, France, Germany, India, Indonesia, Italy, Cambodia, Malaysia, Netherlands, New Zealand, Nigeria, Norway, Philippines, Singapore, Sweden, Switzerland, Thailand, United Kingdom, United States) and the `GLB` group: read the catalog and always send `services`; most of them have no default service. Optional fields (usually `first_name`, `last_name`) add name comparison where the service supports it.
 
@@ -335,7 +338,7 @@ Other countries (Australia, Austria, Canada, China, Denmark, Finland, France, Ge
 4. Approved -> data confirmed by the registry
    Declined -> DATABASE_VALIDATION_NO_MATCH / _DOCUMENT_SUPERSEDED: do not trust the identity data
    In Review -> COULD_NOT_PERFORM_DATABASE_VALIDATION: review or retry later
-   502 -> no service answered (not billed): retry later
+   502 -> no service answered (not billed, see Pricing above): retry later
 ```
 
 ### Spain DNI/NIE
