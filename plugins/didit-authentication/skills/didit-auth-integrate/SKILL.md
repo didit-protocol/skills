@@ -42,12 +42,12 @@ The answer holds `access_token`, `id_token`, `refresh_token`, `token_type`, `exp
 
 ## 4. Validate an access token on the server
 
-The access token format depends on the application's Authentication runtime as documented. Before choosing a method, read the current tokens page with `didit_docs_search` (https://docs.didit.me/authentication/tokens-and-jwks) and follow what it says for this application:
+The access token is a JWT with header `alg: ES256` and `typ: at+jwt`, valid for at most 5 minutes. Verify it offline on every request against the issuer's JWKS; keep `GET {issuer}/session/` for the moments that need a stricter check (step 5). Read the current tokens page with `didit_docs_search` (https://docs.didit.me/authentication/tokens-and-jwks) and cite it.
 
-- **Opaque access token:** do not decode it. Validate it with `GET {issuer}/session/` (see step 5) and cache the answer only briefly.
-- **ES256 JWT access token** (`typ` `at+jwt`): verify it offline against the JWKS with the checks below.
+- **Node.js:** `verifyToken` from `@didit-protocol/auth/server` (see the JavaScript quickstart, https://docs.didit.me/authentication/quickstarts/javascript), or a JWT library such as `jose` with the checks below, as the tokens page shows. Name only packages the docs name.
+- **Other languages:** a JWT library with ES256 support and the same checks.
 
-Do not mix the two, and never invent a JWKS URL for a runtime that does not publish one. Take the issuer and application ID from configuration, never from the token. For a JWT, check all of these:
+Take the issuer and application ID from configuration, never from the token. Check all of these:
 
 1. Header `alg` is `ES256` and `typ` is `at+jwt`. Reject anything else, `none` included.
 2. The `kid` is in `{issuer}/.well-known/jwks.json` and the signature verifies.

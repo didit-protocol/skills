@@ -1,5 +1,5 @@
 ---
-description: The didit-users-start skill should answer; graded on the final reply.
+description: Both user tools answer with the server's missing-permission error; graded on the final reply and on not working around the error.
 max_turns: 15
 allowed_tools: [Skill]
 ---

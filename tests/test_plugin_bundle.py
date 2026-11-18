@@ -825,9 +825,12 @@ class SkillTests(TreeCase):
     def test_authentication_token_and_logout_contract(self):
         integrate = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-integrate" / "SKILL.md").read_text(encoding="utf-8")
         sdk = (self.t.rest / "didit-sdk-integration" / "SKILL.md").read_text(encoding="utf-8")
-        for text in (integrate, sdk):
-            self.assertIn("depends on the application's Authentication runtime as documented", re.sub(r"\s+", " ", text))
-        self.assertIn("read the current tokens page with `didit_docs_search`", integrate)
+        # The tokens page documents one access token format: an ES256 JWT verified offline against the JWKS.
+        self.assertIn("depends on the application's Authentication runtime as documented", re.sub(r"\s+", " ", sdk))
+        self.assertIn("The access token is a JWT with header `alg: ES256` and `typ: at+jwt`", integrate)
+        self.assertNotIn("Opaque access token", integrate)
+        self.assertNotIn("Authentication runtime", integrate)
+        self.assertIn("the current tokens page with `didit_docs_search`", integrate)
         self.assertIn("Local sign-out", integrate)
         self.assertIn("revocation is not confirmed", integrate)
         self.assertIn("No answer to the refresh made for sign-out", integrate)
@@ -1075,6 +1078,50 @@ class BundleTests(TreeCase):
                 self.assertEqual(data, reference)
 
 
+GRADER_TYPES = {"regex", "tool_used", "tool_order", "file_exists", "llm", "baseline"}
+
+
+def eval_problems(base: Path, known: set[str]) -> list[str]:
+    """`claude plugin eval` cases of one plugin: a prompt, at least one grader, and mocks named after catalog tools."""
+    evals = base / "evals"
+    if not evals.is_dir():
+        return []
+    problems: list[str] = []
+    cases = sorted(p for p in evals.iterdir() if p.is_dir() and p.name not in {"mocks", "results"})
+    if not cases:
+        problems.append("evals/ has no cases")
+    for case in cases:
+        where = f"{base.name}/evals/{case.name}"
+        prompt = case / "prompt.md"
+        if not prompt.is_file():
+            problems.append(f"{where}: no prompt.md")
+        else:
+            text = prompt.read_text(encoding="utf-8")
+            body = text.split("\n---\n", 1)[1] if text.startswith("---\n") and "\n---\n" in text else text
+            if not body.strip():
+                problems.append(f"{where}: prompt.md has no prompt")
+        graders = sorted((case / "graders").glob("*.md"))
+        if not graders:
+            problems.append(f"{where}: no grader")
+        for grader in graders:
+            match = re.search(r"^type:\s*(\S+)\s*$", grader.read_text(encoding="utf-8"), re.M)
+            if not match or match.group(1) not in GRADER_TYPES:
+                problems.append(f"{where}/graders/{grader.name}: missing or unknown grader type")
+    mock_files = sorted(evals.glob("mocks/*/*.md")) + sorted(evals.glob("*/mocks/*/*.md"))
+    for mock in mock_files:
+        if mock.stem not in known:
+            problems.append(f"{mock.relative_to(base).as_posix()}: {mock.stem} is not a catalog tool")
+    return problems
+
+
+class EvalTests(TreeCase):
+    def test_eval_cases(self):
+        known = set(self.t.known_tools())
+        for base in self.t.plugin_dirs():
+            with self.subTest(plugin=base.name):
+                self.assertEqual(eval_problems(base, known), [])
+
+
 class CommittedTree:
     """Mixin: run a test class against HEAD instead of the working tree."""
 
@@ -1096,6 +1143,10 @@ class CommittedSkillTests(CommittedTree, SkillTests):
 
 
 class CommittedBundleTests(CommittedTree, BundleTests):
+    pass
+
+
+class CommittedEvalTests(CommittedTree, EvalTests):
     pass
 
 
