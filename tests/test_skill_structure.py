@@ -458,12 +458,19 @@ class NameGuardTest(unittest.TestCase):
             "bad-checksum.png": bytes(broken_crc),
             "cut-short.png": good[:-6],
             "bad-compression.png": self.png((b"zTXt", b"Comment\x00\x00not zlib")),
+            # A complete compressed stream followed by more bytes: the rest would go unread.
+            "after-the-stream.png": self.png((b"zTXt", b"Comment\x00\x00" + zlib.compress(b"fine") + b"zorvex")),
+            "after-the-stream-i.png": self.png((b"iTXt", b"T\x00\x01\x00\x00\x00" + zlib.compress(b"fine") + b"zorvex")),
+            "after-the-profile.png": self.png((b"iCCP", b"sRGB\x00\x00" + zlib.compress(b"profile") + b"zorvex")),
+            "other-method.png": self.png((b"zTXt", b"Comment\x00\x01" + zlib.compress(b"zorvex"))),
+            "odd-flag.png": self.png((b"iTXt", b"T\x00\x02\x00\x00\x00zorvex")),
+            "no-stream-end.png": self.png((b"zTXt", b"Comment\x00\x00" + zlib.compress(b"zorvex" * 50)[:-6])),
         }
         for name, data in cases.items():
             (self.tree / name).write_bytes(data)
         code, output = self.run_guard()
         self.assertEqual(code, 1, output)
-        self.assertIn("5 of 5 files cannot be inspected in full", output)
+        self.assertIn("11 of 11 files cannot be inspected in full", output)
         for name in cases:
             self.assertIn(f"  {name}", output.splitlines(), output)
         self.assertNotIn("zorvex", output.lower())

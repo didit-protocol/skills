@@ -158,12 +158,18 @@ def cannot_be_read(path, data):
     return b"\x00" in data
 
 
-def inflate(data):
-    """zlib data, whole and bounded. ValueError when it is not complete or too large."""
+def inflate(method, data):
+    """zlib data, whole and bounded. ValueError when anything in it is left unread.
+
+    That is: a compression method other than the one PNG defines, a stream that does not end,
+    one larger than the limit, or bytes after its end.
+    """
+    if method != 0:
+        raise ValueError("unknown compression method")
     stream = zlib.decompressobj()
     out = stream.decompress(data, MAX_INFLATED)
-    if stream.unconsumed_tail or not stream.eof:
-        raise ValueError("not a complete zlib stream, or larger than the limit")
+    if stream.unconsumed_tail or not stream.eof or stream.unused_data:
+        raise ValueError("not exactly one complete zlib stream within the limit")
     return out
 
 
@@ -197,18 +203,20 @@ def png_text(data):
                 texts.append(body.decode("latin-1"))
             elif kind == b"zTXt":
                 keyword, _, rest = body.partition(b"\x00")
-                texts += [keyword.decode("latin-1"), inflate(rest[1:]).decode("latin-1")]
+                texts += [keyword.decode("latin-1"), inflate(rest[0], rest[1:]).decode("latin-1")]
             elif kind == b"iTXt":
                 keyword, _, rest = body.partition(b"\x00")
-                compressed, rest = rest[0], rest[2:]
+                compressed, method, rest = rest[0], rest[1], rest[2:]
                 language, _, rest = rest.partition(b"\x00")
                 translated, _, text = rest.partition(b"\x00")
-                text = inflate(text) if compressed else text
+                if compressed not in (0, 1):
+                    return None
+                text = inflate(method, text) if compressed else text
                 texts += [keyword.decode("latin-1"), language.decode("latin-1")]
                 texts += [translated.decode("utf-8", errors="replace"), text.decode("utf-8", errors="replace")]
             elif kind == b"iCCP":
                 name, _, rest = body.partition(b"\x00")
-                texts += [name.decode("latin-1"), every_encoding(inflate(rest[1:]))]
+                texts += [name.decode("latin-1"), every_encoding(inflate(rest[0], rest[1:]))]
             elif kind in (b"eXIf", b"sPLT"):
                 texts.append(every_encoding(body))
             else:
