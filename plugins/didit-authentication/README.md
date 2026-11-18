@@ -54,6 +54,8 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 | didit-auth-integrate | Hosted flow with PKCE, code exchange, token validation as the docs specify, refresh, sign-out |
 | didit-auth-events | Sign-in timeline, auth webhooks, event rules, linking sign-in risk to other products |
 
+Checked against the live server on 2026-11-18: 208 tools on the hosted server as of 2026-11-18 (97 read, 75 write, 36 destructive); the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
+
 ## What this plugin does on your machine and where data goes
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.

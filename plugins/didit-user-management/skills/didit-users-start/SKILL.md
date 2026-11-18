@@ -1,6 +1,6 @@
 ---
 name: didit-users-start
-description: Used when someone starts managing the people and companies they verify, their lists or their Didit workspace team from chat, asks which applications they can use, wonders whether an application is sandbox or live, cannot find a Didit tool, hits a permission error, or asks what this plugin covers. Sets the rules every user management skill follows and routes the request.
+description: Starts managing verified users, businesses, lists and the team in their Didit account, picks the application and sets the shared rules. Use when the user begins user management with Didit, asks "which apps do I have", "is this sandbox or live", "what can you manage", cannot find a Didit tool, or hits a permission or read-only error.
 ---
 
 # Didit user management: start here

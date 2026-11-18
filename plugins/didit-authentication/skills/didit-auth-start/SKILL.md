@@ -1,6 +1,6 @@
 ---
 name: didit-auth-start
-description: Used when a developer asks what Didit Authentication is, how end-user sign-in relates to Didit identity verification and transaction monitoring, whether it is on for their application, or what this plugin can and cannot do. Sets the rules every Didit Authentication skill follows and routes the request.
+description: Explains Didit Authentication (end-user sign-in for their own app) and routes the request. Use when the user asks "what is Didit sign-in", "is Authentication on for my app", "how does sign-in relate to KYC or transaction monitoring", or "what can this plugin do" with Didit. Sets the rules every Didit Authentication skill follows.
 ---
 
 # Didit Authentication: start here

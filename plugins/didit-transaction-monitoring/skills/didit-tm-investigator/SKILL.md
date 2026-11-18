@@ -1,6 +1,6 @@
 ---
 name: didit-tm-investigator
-description: Used when someone wants to work the Didit AI Investigator queue, read why it recommended approving, declining, escalating or requesting information on an item, accept or override its recommendations, ask it to review an item again, answer its policy questions, back-test its policy, or read its performance, dashboard and activity log.
+description: Works the AI Investigator queue in their Didit account. Use when the user says "Investigator queue", "what did the Investigator recommend", "why did it recommend decline", "accept the recommendations", "override this one", "review it again", "answer its policy question", "back-test the policy", or asks for Investigator performance or activity with Didit.
 ---
 
 # The AI Investigator

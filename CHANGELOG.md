@@ -6,6 +6,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhere
 
 ## [Unreleased]
 
+Checked against the live hosted server (`https://mcp.didit.me/mcp`, v5.1.67) on 2026-11-18: 208 tools on the hosted server as of 2026-11-18 (97 read, 75 write, 36 destructive); the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97.
+
+### Added
+- **didit-transaction-monitoring plugin:** new skill `didit-tm-travel-rule` for the 23 Travel Rule tools: settings, the VASP directory, counterparty contacts, the wallet address book and ownership confirmation, messages, transfer actions, networks and the due-diligence questionnaire, and sandbox tests. Two behaviour prompts added.
+- **All four plugins:** an `evals/` suite for `claude plugin eval`: one case per skill (two for the start skill), each with an `llm` rubric and a `tool_used: Skill` indicator, and MCP mocks under `evals/mocks/didit/` so no real server is needed. The mocked context has an application named "Sandbox" whose mode is live and one named "Production copy" whose mode is sandbox.
+
+### Changed
+- **Plugins:** `plugins/didit/tests/tool-catalog.json` is now the live hosted catalog (208 / 29 / 97 tools), staff-only tools removed. Every plugin skill description now says what the skill does and the situations and words that should load it.
+- **didit-mcp-server (1.1.0 to 1.2.0):** hosted counts updated; the tool-family overview adds the hosted-only groups Travel Rule, Compliance, Marketplace and Networks plus `didit_transaction_sdk_token`. Corrects the earlier statement that `didit_org_reveal_application_api_key` and `didit_org_top_up` are local only: the hosted server lists both, each needs `confirm: true`, the revealed key is a credential shown once and never stored or repeated, and a top-up returns a checkout link unless a person turned on saved-card top-ups.
+- **didit plugin:** didit-connect names the hosted-only tool groups; didit-monitor-transactions has a short Travel Rule section; didit-reports covers `didit_org_top_up`. **didit-user-management:** didit-users-team covers `didit_org_reveal_application_api_key`.
+
 ## [5.2.0] - 2026-11-18
 
 Every skill re-checked against the Didit MCP server v5.1.67 source and the pricing pages as they stood on

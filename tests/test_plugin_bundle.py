@@ -44,6 +44,7 @@ EXPECTED_SKILLS = {
         "didit-tm-wallet-screening",
         "didit-tm-alerts-cases",
         "didit-tm-investigator",
+        "didit-tm-travel-rule",
     ],
     "didit-user-management": [
         "didit-users-start",
@@ -89,8 +90,9 @@ SOLICIT = re.compile(
 EM_DASH = chr(0x2014)
 TOOL_TOKEN = re.compile(r"\bdidit_[a-z0-9_]+\b")
 DISCOVERY = {"didit_tool_search", "didit_tool_describe", "didit_tool_call_read", "didit_tool_call_write"}
-# Tokens that look like tool names but are not: a record field and the Flutter Authentication package.
-NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth"}
+# Tokens that look like tool names but are not: record fields (a Travel Rule settings field included)
+# and the Flutter Authentication package.
+NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth", "didit_network"}
 
 
 def load_json(path: Path):
@@ -229,6 +231,8 @@ CONFIRM_TOOLS = {
     "didit_investigator_question_dismiss",
     "didit_investigator_rereview",
     "didit_org_create_api_key",
+    "didit_org_reveal_application_api_key",
+    "didit_org_top_up",
     "didit_session_batch_delete",
     "didit_session_delete",
     "didit_vendor_business_delete",
@@ -723,6 +727,17 @@ class SkillTests(TreeCase):
         read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
         self.assertTrue(read_only, "all_read_only is empty")
+        # The hosted server as measured on 2026-11-18 (v5.1.67, signed-in person, staff-only tools removed).
+        self.assertEqual(len(full), 208)
+        self.assertEqual(len(core), 29)
+        self.assertEqual(len(read_only), 97)
+        types = [tool["type"] for tool in full.values()]
+        self.assertEqual((types.count("read"), types.count("write"), types.count("destructive")), (97, 75, 36))
+        for name, profile in profiles.items():
+            self.assertEqual(profile["total"], len(profile["tools"]), name)
+        self.assertEqual([n for n in full if n.startswith("didit_staff")], [], "staff-only tools in the catalog")
+        travel = {n for n in full if n.startswith("didit_travel_rule_")}
+        self.assertEqual(len(travel), 23)
         for tool in read_only:
             with self.subTest(tool=tool["name"]):
                 self.assertEqual(tool["type"], "read")

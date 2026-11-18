@@ -1,6 +1,6 @@
 ---
 name: didit-tm-start
-description: Used when someone starts transaction monitoring work in their Didit account from chat, asks which applications they can monitor, wonders whether an application is sandbox or live, cannot find a Didit tool, hits a permission error, or asks what this plugin covers. Sets the rules every transaction monitoring skill follows and sends the request to the right skill.
+description: Starts transaction monitoring work in their Didit account, picks the application and sets the rules every monitoring action follows. Use when the user begins monitoring work with Didit, asks "which apps are monitored", "is this sandbox or live", "what can you do for transaction monitoring", cannot find a Didit tool, or hits a permission or read-only error.
 ---
 
 # Didit transaction monitoring: start here
@@ -28,6 +28,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 | Screen one crypto wallet address | didit-tm-wallet-screening |
 | Alert channels, webhook destinations, cases | didit-tm-alerts-cases |
 | The AI Investigator queue, reports, policy questions | didit-tm-investigator |
+| Travel Rule: settings, VASPs, counterparty contacts, wallet address book, messages, networks, sandbox tests | didit-tm-travel-rule |
 
 ## What good output looks like
 

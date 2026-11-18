@@ -1,6 +1,6 @@
 ---
 name: didit-auth-integrate
-description: Used when a developer is wiring Didit sign-in into their app or backend, starting the hosted sign-in with PKCE, exchanging the authorization code, validating access tokens the way the application's documented runtime requires (opaque session check or ES256 JWT with the JWKS), checking a session, rotating refresh tokens, signing users out, or registering redirect URLs.
+description: Guides wiring Didit sign-in into their app or backend. Use when the user says "add Didit sign-in to my app", "PKCE", "exchange the authorization code", "validate the access token", "JWKS", "check the session", "refresh tokens", "tokens", "sign the user out", "logout", or "redirect URL" with Didit.
 ---
 
 # Integrate the hosted sign-in

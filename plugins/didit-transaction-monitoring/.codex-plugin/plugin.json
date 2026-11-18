@@ -1,7 +1,7 @@
 {
   "name": "didit-transaction-monitoring",
   "version": "1.0.0",
-  "description": "Transaction monitoring from chat: search transactions, build and back-test rules, screen wallets, work alerts and cases, and review the AI Investigator queue in your Didit account.",
+  "description": "Transaction monitoring from chat: search transactions, back-test rules, screen wallets, run the Travel Rule, work alerts and cases, and review the AI Investigator queue in your Didit account.",
   "author": {
     "name": "Didit",
     "email": "hello@didit.me",
@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "Didit Transaction Monitoring",
     "shortDescription": "Transaction monitoring, rules and cases",
-    "longDescription": "Sign in with your Didit account to search monitored transactions, back-test and manage rules, screen crypto wallets, work alerts and cases, and review the AI Investigator queue, all from Codex.",
+    "longDescription": "Sign in with your Didit account to search monitored transactions, back-test and manage rules, screen crypto wallets, run Travel Rule transfers, work alerts and cases, and review the AI Investigator queue, all from Codex.",
     "developerName": "Didit",
     "category": "Business & Operations",
     "capabilities": [],

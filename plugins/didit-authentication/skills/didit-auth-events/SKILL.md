@@ -1,6 +1,6 @@
 ---
 name: didit-auth-events
-description: Used when a developer asks how Didit sign-in activity shows up in the console, which auth webhooks exist and what they carry, how to subscribe to them, how sign-in events feed event rules and fraud views, or how to link sign-in risk to identity verification and transaction monitoring.
+description: Explains how Didit sign-in activity shows up and how to react to it. Use when the user asks "which auth webhooks exist", "what does the sign-in webhook send", "subscribe to sign-in events", "sign-in risk", "failed logins", "use sign-in events in fraud rules", or how sign-in links to verification and transaction monitoring with Didit.
 ---
 
 # Sign-in events and webhooks

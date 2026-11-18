@@ -1,6 +1,6 @@
 ---
 name: didit-auth-sign-in-methods
-description: Used when a developer is choosing which Didit sign-in methods to offer their users (password, email code, magic link, phone code, passkey, social sign-in, organization SSO), setting up MFA, password reset, sign-up policy or invitations, or building their own sign-in screens instead of the hosted page.
+description: Helps choose and set up the sign-in methods their users get with Didit Authentication. Use when the user asks about "passkeys", "magic links", "email or phone codes", "social sign-in", "organization SSO", "MFA", "password reset", "who can sign up", "invitations", or building their own sign-in screens with Didit.
 ---
 
 # Sign-in methods, MFA and password reset

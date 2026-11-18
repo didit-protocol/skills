@@ -1,6 +1,6 @@
 ---
 name: didit-tm-rules
-description: Used when someone wants to see, install or remove preset transaction monitoring rules from the Didit rule library, create, change, pause or delete a custom rule, or test how often a rule would have fired on past transactions before turning it on. Always back-tests first and confirms before enabling or removing anything.
+description: Builds and tunes transaction monitoring rules in their Didit account, always back-testing first. Use when the user says "monitoring rule", "create a rule", "velocity rule", "back-test", "how often would this have fired", "install the preset rules", "rule library", "pause this rule", "turn the rule on", or "delete a rule" in Didit.
 ---
 
 # Transaction monitoring rules

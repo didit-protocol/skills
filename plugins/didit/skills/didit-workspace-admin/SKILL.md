@@ -1,6 +1,6 @@
 ---
 name: didit-workspace-admin
-description: Used when an admin wants to see or manage who has access to their Didit organization (invite, change role, remove), set up or change webhook destinations, create allowlists or custom lists, update the logo or SMS sender name of the verification screens, or create and edit the custom questionnaires people fill in during verification.
+description: Administers their Didit workspace (members, webhooks, lists, branding and questionnaires). Use when the user says "invite a teammate", "change someone's role", "remove a member", "set up a webhook", "change the webhook URL", "create a blocklist or allowlist", "custom list", "update the logo", "SMS sender name", or "edit the questionnaire" in their Didit account.
 ---
 
 # Workspace admin

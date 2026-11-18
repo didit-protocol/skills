@@ -1,6 +1,6 @@
 ---
 name: didit-verify-people
-description: Used when someone wants to verify a person's identity (KYC), needs a verification link to send to a customer, wants to set up or change the steps of an identity check (document, selfie, liveness, face match, AML, proof of address), asks for the status or decision of a verification, asks why a verification was approved or declined, wants a person to redo a step, or wants to test a verification flow in sandbox.
+description: Verifies people (KYC) in their Didit account with verification links, workflows and decisions. Use when the user says "verify a customer", "send a KYC link", "create a verification session", "set up an ID and selfie check", "what is the status of this verification", "why was it declined", "ask them to redo the selfie", or wants to test a verification flow in a Didit sandbox.
 ---
 
 # Verify people (KYC)

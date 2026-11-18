@@ -1,6 +1,6 @@
 ---
 name: didit-reports
-description: Used when someone asks how many verifications ran, how many were approved or declined, where people drop off in the flow, how the numbers compare with the previous period, how many credits are left, which plan the organization is on, or wants to export sessions, transactions or business records to a file.
+description: Reads usage, analytics, credits and plan details and exports data from their Didit account. Use when the user asks "how many verifications this month", "approval rate", "where do people drop off", "compare with last month", "how many credits are left", "what is my balance", "which plan are we on", "top up", or says "export sessions" or "export transactions" from Didit.
 ---
 
 # Reports, analytics and billing
@@ -23,6 +23,8 @@ Answer the question asked first (for example "312 sessions, 81% approved"), then
 - `didit_billing_get_plan` returns the plan, its status, the next charge, the last payment and any unpaid invoice. `next_steps.plans_url` is where the person changes plan.
 
 Report balances and plan details only as the tools return them. For list prices, link https://didit.me/pricing.
+
+To add credit, `didit_org_top_up` is listed on the hosted server: `amount_in_dollars` and `confirm: true`, optional `payment_method` and `idempotency_key`. With `payment_method: "checkout"` (the default) it returns a checkout page link (`checkout_session_url`) for the person to pay and charges nothing by itself. With `saved_card` it charges the organization's saved card at once, only when a person turned on agent top-ups in the console (`agent_top_up.enabled` in the balance), and it needs one `idempotency_key` per intended top-up, reused on any retry of that same top-up. State the organization, the amount and the payment method and wait for a clear yes before calling it. A refusal carries `next_step.url`: give the person that link to finish in the console. `next_steps.top_up_url` from the balance opens the same dialog.
 
 ## 3. Exports
 

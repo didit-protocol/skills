@@ -1,6 +1,6 @@
 ---
 name: didit-users-records
-description: Used when someone wants to find a person they verified with Didit, read their record and status, pre-register a new user, update a user's profile, approved emails or phones, flag or block a user, or permanently delete user records in their Didit account.
+description: Finds and manages the people they verified with Didit (user records). Use when the user says "find this customer", "look up a user", "pre-register a user", "update their email or phone", "flag this user", "block a user", "unblock", or "delete user records" in their Didit account.
 ---
 
 # Vendor users (the people you verify)

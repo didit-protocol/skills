@@ -1,6 +1,6 @@
 ---
 name: didit-tm-alerts-cases
-description: Used when someone wants to see or change where Didit monitoring alerts are sent (email or Slack), manage webhook destinations for monitoring events, or find, open, assign, escalate, comment on, resolve or reopen compliance cases and read case statistics in their Didit account.
+description: Manages monitoring alerts, webhook destinations and compliance cases in their Didit account. Use when the user asks "where do alerts go", says "send alerts to Slack", "change the alert email", "set up a webhook", "open a case", "assign this case", "escalate", "resolve the case", "file a SAR", "reopen", or asks for case statistics in Didit.
 ---
 
 # Alerts, webhooks and cases

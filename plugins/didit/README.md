@@ -58,6 +58,18 @@ You can install `didit` on its own or a focused plugin alongside it; they share 
 | didit-reports | Analytics, credit balance, plan, and exports |
 | didit-workspace-admin | Members and roles, webhooks, lists, branding, questionnaires |
 
+Checked against the live server on 2026-11-18: 208 tools on the hosted server as of 2026-11-18 (97 read, 75 write, 36 destructive); the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
+
+## Tested
+
+Run end to end on the live server on 2026-11-18 with this plugin in Claude Code, signed in to a test organization:
+
+- Read the organizations and applications, listed sessions, read analytics and the credit balance, listed members, listed webhooks, rules and lists, and read the company registry catalog.
+- Listing webhooks without an application when the organization has several: the server refused and named the applications, and the assistant asked which one.
+- A full sandbox flow: created a workflow, created a session, simulated an Approved result and read the decision, with no tool errors.
+- A read-only connection refused to create a session, as it should.
+- An application named "Sandbox" turned out to be live. The skills read sandbox or live from the context result, never from the application's name.
+
 ## What this plugin does on your machine and where data goes
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.

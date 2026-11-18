@@ -1,6 +1,6 @@
 ---
 name: didit-users-lists
-description: Used when someone wants to see, create, rename or delete Didit lists (allowlists and custom lists), add or remove list entries, add a face to a face list from a photo, block or unblock the face, document, phone or email of a verification session, read the blocklist, or trust a session's phone number.
+description: Manages Didit lists, the blocklist and allowlists. Use when the user says "blocklist", "block this face, document, phone or email", "unblock", "allowlist", "trust this phone number", "custom list", "add an entry", "remove from the list", "add a face from a photo", or "delete a list" in their Didit account.
 ---
 
 # Lists, blocklist and allowlist

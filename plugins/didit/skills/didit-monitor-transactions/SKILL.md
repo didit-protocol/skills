@@ -1,6 +1,6 @@
 ---
 name: didit-monitor-transactions
-description: Used when someone wants to look up monitored transactions and why they were flagged, submit a transaction for monitoring, see or create transaction monitoring rules, test how often a rule would fire on past data before turning it on, screen a crypto wallet address for risk, or check where monitoring alerts are sent.
+description: Monitors transactions in their Didit account, from flagged transactions to rules, wallet screening and the Travel Rule. Use when the user asks "why was this transaction flagged", says "submit a transaction", "monitoring rule", "back-test this rule", "how often would it fire", "screen a wallet", "where do alerts go", or asks about Travel Rule transfers and VASPs with Didit.
 ---
 
 # Monitor transactions
@@ -49,6 +49,14 @@ Confirm the title, conditions, actions and mode with the person before creating 
 ## 5. Alert channels
 
 `didit_alert_list` lists where the application sends alerts (email or Slack), with the destination and whether each channel is on. A Slack webhook URL is a posting credential: show only `hooks.slack.com/...` and the last 4 characters, and mask email addresses to the first letter and the domain.
+
+## 6. Travel Rule
+
+The hosted server lists 23 Travel Rule tools (for example `didit_travel_rule_get_settings`) for crypto transfers between VASPs: settings, the VASP directory, counterparty contacts, the wallet address book and ownership confirmation, messages with the counterparty, transfer actions, networks and the due-diligence questionnaire, and sandbox tests.
+
+- Read before acting: `didit_travel_rule_get_settings`, `didit_travel_rule_search_vasps`, `didit_travel_rule_list_networks` (only the states `own_membership` and `live_through_didit` route transfers; report each state as returned).
+- Every Travel Rule change needs the person's agreement first. Sending a message, setting a counterparty VASP, confirming wallet ownership and finishing or cancelling a transfer reach the counterparty or cannot be undone: show the exact action and wait for a clear yes. None of these tools declares `confirm`.
+- For the full recipes, install the `didit-transaction-monitoring` plugin and use its didit-tm-travel-rule skill, or read each tool's schema with `didit_tool_describe`.
 
 ## What good output looks like
 

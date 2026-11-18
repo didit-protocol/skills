@@ -1,6 +1,6 @@
 ---
 name: didit-review-queue
-description: Used when a compliance analyst or operator wants to see verifications waiting for manual review, look up a person's session by name, email or number, decide whether to approve or decline a session in review, add a review note, read a session's review history, or work on compliance cases (assign, comment, escalate, resolve, reopen).
+description: Works the manual review queue and compliance cases in their Didit account. Use when the user says "show the review queue", "what is waiting for review", "find the session for this person", "approve" or "decline" a verification, "why was it declined", "add a review note", "review history", or wants to assign, comment on, escalate, resolve or reopen a Didit case.
 ---
 
 # Review queue and cases

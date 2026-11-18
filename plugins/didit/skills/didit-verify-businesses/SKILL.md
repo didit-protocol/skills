@@ -1,6 +1,6 @@
 ---
 name: didit-verify-businesses
-description: Used when someone needs to verify a company (KYB), look a business up in an official company registry, check which registry data is available for a country, send a business a verification link, or find and read a business that was already verified in their Didit account.
+description: Verifies companies (KYB) with Didit, from registry lookups to business verification links. Use when the user says "verify a company", "KYB", "look up this business in the registry", "which countries have registry data", "send a business verification link", or wants to find and read a business already verified in their Didit account.
 ---
 
 # Verify businesses (KYB)

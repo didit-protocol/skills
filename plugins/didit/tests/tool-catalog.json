@@ -1,21 +1,24 @@
 {
  "source": {
-  "repo": "https://github.com/didit-protocol/mcp",
-  "commit": "c46249f",
-  "generated_on": "2026-11-18"
+  "server": "https://mcp.didit.me/mcp",
+  "server_version": "5.1.67",
+  "generated_on": "2026-11-18",
+  "note": "tools/list of the hosted server for a signed-in person; Didit staff-only tools removed",
+  "open_source_build": {
+   "repo": "https://github.com/didit-protocol/mcp",
+   "commit": "c46249f",
+   "total": 167
+  }
  },
- "server_version": "5.1.67",
  "profiles": {
   "all": {
-   "options": {},
-   "total": 167,
-   "instructions": "Didit is an identity verification platform: KYC, KYB, AML screening, transaction monitoring, document and biometric checks. This server acts as the signed-in person, with their role's permissions. Start with didit_context_get: it returns the organizations and applications you can use, their ids, and whether each application is sandbox or live.\n\norganization_id and application_id are optional on every tool: they default to the person's only organization and application. Pass them when didit_context_get shows several.\n\nBuild and test in a sandbox application: checks there are free and didit_session_simulate finishes a session with the outcome you choose. Use a live application for real verifications only.\n\nThis connection loads every toolset.\n\nTools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation. Sign-in is handled by OAuth: never ask the person for a password, an API key or a one-time code.\n\nFor how Didit works or how to integrate it, use didit_docs_search instead of answering from memory.",
+   "total": 208,
    "tools": [
     {
      "name": "didit_alert_configure",
+     "title": "Alert Configure",
      "type": "write",
      "group": "Webhooks & Alerts",
-     "permission": "write:applications",
      "required": [
       "alert_type"
      ],
@@ -29,9 +32,9 @@
     },
     {
      "name": "didit_alert_list",
+     "title": "Alert List",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:applications",
      "required": [],
      "properties": [
       "application_id",
@@ -41,9 +44,9 @@
     },
     {
      "name": "didit_allowlist_add",
+     "title": "Allowlist Add",
      "type": "write",
      "group": "Lists & Blocklist",
-     "permission": "write:blocklist",
      "required": [
       "allowlist_phone",
       "session_id"
@@ -58,9 +61,9 @@
     },
     {
      "name": "didit_analytics",
+     "title": "Analytics",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": "read:analytics",
      "required": [],
      "properties": [
       "application_id",
@@ -74,9 +77,9 @@
     },
     {
      "name": "didit_audit_log_list",
+     "title": "Audit Log List",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": "read:audit-logs",
      "required": [],
      "properties": [
       "action_category",
@@ -95,9 +98,9 @@
     },
     {
      "name": "didit_billing_get_details",
+     "title": "Billing Get Details",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -106,9 +109,9 @@
     },
     {
      "name": "didit_billing_get_plan",
+     "title": "Billing Get Plan",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -117,9 +120,9 @@
     },
     {
      "name": "didit_billing_list_payment_methods",
+     "title": "Billing List Payment Methods",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -128,9 +131,9 @@
     },
     {
      "name": "didit_billing_list_receipts",
+     "title": "Billing List Receipts",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "limit",
@@ -141,9 +144,9 @@
     },
     {
      "name": "didit_billing_quote_plan",
+     "title": "Billing Quote Plan",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [
       "plan"
      ],
@@ -156,9 +159,9 @@
     },
     {
      "name": "didit_billing_update_details",
+     "title": "Billing Update Details",
      "type": "write",
      "group": "Billing",
-     "permission": "write:subscription",
      "required": [],
      "properties": [
       "address",
@@ -173,9 +176,9 @@
     },
     {
      "name": "didit_blocklist_add",
+     "title": "Blocklist Add",
      "type": "write",
      "group": "Lists & Blocklist",
-     "permission": "write:blocklist",
      "required": [
       "session_id"
      ],
@@ -192,9 +195,9 @@
     },
     {
      "name": "didit_blocklist_get",
+     "title": "Blocklist Get",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:blocklist",
      "required": [],
      "properties": [
       "application_id",
@@ -207,9 +210,9 @@
     },
     {
      "name": "didit_blocklist_remove",
+     "title": "Blocklist Remove",
      "type": "destructive",
      "group": "Lists & Blocklist",
-     "permission": "write:blocklist",
      "required": [
       "session_id"
      ],
@@ -226,9 +229,9 @@
     },
     {
      "name": "didit_branding_get",
+     "title": "Branding Get",
      "type": "read",
      "group": "Branding",
-     "permission": "read:customization",
      "required": [],
      "properties": [
       "application_id",
@@ -238,9 +241,9 @@
     },
     {
      "name": "didit_branding_update",
+     "title": "Branding Update",
      "type": "write",
      "group": "Branding",
-     "permission": "write:customization",
      "required": [],
      "properties": [
       "application_id",
@@ -257,9 +260,9 @@
     },
     {
      "name": "didit_case_create",
+     "title": "Case Create",
      "type": "write",
      "group": "Cases",
-     "permission": "write:cases",
      "required": [
       "title"
      ],
@@ -281,9 +284,9 @@
     },
     {
      "name": "didit_case_get",
+     "title": "Case Get",
      "type": "read",
      "group": "Cases",
-     "permission": "read:cases",
      "required": [
       "case_id"
      ],
@@ -296,9 +299,9 @@
     },
     {
      "name": "didit_case_list",
+     "title": "Case List",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -310,9 +313,9 @@
     },
     {
      "name": "didit_case_manage",
+     "title": "Case Manage",
      "type": "destructive",
      "group": "Cases",
-     "permission": "write:cases",
      "required": [
       "action",
       "case_id"
@@ -329,9 +332,9 @@
     },
     {
      "name": "didit_case_search",
+     "title": "Case Search",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -347,9 +350,9 @@
     },
     {
      "name": "didit_case_statistics",
+     "title": "Case Statistics",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -366,19 +369,160 @@
      "confirm": false
     },
     {
+     "name": "didit_compliance_analyze_documents",
+     "title": "Compliance Analyze Documents",
+     "type": "write",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "application_id",
+      "document_2_base64",
+      "document_2_name",
+      "document_3_base64",
+      "document_3_name",
+      "document_4_base64",
+      "document_4_name",
+      "document_base64",
+      "document_name",
+      "notes",
+      "organization_id",
+      "subject",
+      "text"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_check_workflow",
+     "title": "Compliance Check Workflow",
+     "type": "read",
+     "group": "Compliance",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "as_of",
+      "organization_id",
+      "version",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_document_analysis_get",
+     "title": "Compliance Document Analysis Get",
+     "type": "read",
+     "group": "Compliance",
+     "required": [
+      "id"
+     ],
+     "properties": [
+      "application_id",
+      "id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_document_analysis_save_drafts",
+     "title": "Compliance Document Analysis Save Drafts",
+     "type": "write",
+     "group": "Compliance",
+     "required": [
+      "id"
+     ],
+     "properties": [
+      "application_id",
+      "id",
+      "organization_id",
+      "subject"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_generate_workflow",
+     "title": "Compliance Generate Workflow",
+     "type": "read",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "answers",
+      "application_id",
+      "as_of",
+      "organization_id",
+      "subject"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_interview_next",
+     "title": "Compliance Interview Next",
+     "type": "read",
+     "group": "Compliance",
+     "required": [
+      "answers"
+     ],
+     "properties": [
+      "answers",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_profile_get",
+     "title": "Compliance Profile Get",
+     "type": "read",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_profile_set",
+     "title": "Compliance Profile Set",
+     "type": "destructive",
+     "group": "Compliance",
+     "required": [
+      "answers"
+     ],
+     "properties": [
+      "answers",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_requirements",
+     "title": "Compliance Requirements",
+     "type": "read",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "application_id",
+      "as_of",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_context_get",
+     "title": "Context Get",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [],
      "properties": [],
      "confirm": false
     },
     {
      "name": "didit_docs_search",
+     "title": "Docs Search",
      "type": "read",
      "group": "Documentation",
-     "permission": null,
      "required": [
       "query"
      ],
@@ -391,9 +535,9 @@
     },
     {
      "name": "didit_investigator_accept",
+     "title": "Investigator Accept",
      "type": "destructive",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "confirm",
       "run_id"
@@ -409,9 +553,9 @@
     },
     {
      "name": "didit_investigator_activity_list",
+     "title": "Investigator Activity List",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "actor",
@@ -428,9 +572,9 @@
     },
     {
      "name": "didit_investigator_add_note",
+     "title": "Investigator Add Note",
      "type": "write",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "note",
       "run_id"
@@ -445,9 +589,9 @@
     },
     {
      "name": "didit_investigator_backtest_get",
+     "title": "Investigator Backtest Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "backtest_id"
      ],
@@ -460,9 +604,9 @@
     },
     {
      "name": "didit_investigator_backtest_start",
+     "title": "Investigator Backtest Start",
      "type": "write",
      "group": "Investigator",
-     "permission": "write:applications",
      "required": [
       "queues"
      ],
@@ -477,9 +621,9 @@
     },
     {
      "name": "didit_investigator_batch_accept",
+     "title": "Investigator Batch Accept",
      "type": "destructive",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "confirm",
       "run_ids"
@@ -494,9 +638,9 @@
     },
     {
      "name": "didit_investigator_dashboard_get",
+     "title": "Investigator Dashboard Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -507,9 +651,9 @@
     },
     {
      "name": "didit_investigator_override",
+     "title": "Investigator Override",
      "type": "destructive",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "action",
       "category",
@@ -530,9 +674,9 @@
     },
     {
      "name": "didit_investigator_performance_get",
+     "title": "Investigator Performance Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -544,9 +688,9 @@
     },
     {
      "name": "didit_investigator_question_answer",
+     "title": "Investigator Question Answer",
      "type": "destructive",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "answer",
       "confirm",
@@ -564,9 +708,9 @@
     },
     {
      "name": "didit_investigator_question_dismiss",
+     "title": "Investigator Question Dismiss",
      "type": "destructive",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "confirm",
       "question_id"
@@ -581,9 +725,9 @@
     },
     {
      "name": "didit_investigator_question_get",
+     "title": "Investigator Question Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "question_id"
      ],
@@ -596,9 +740,9 @@
     },
     {
      "name": "didit_investigator_question_list",
+     "title": "Investigator Question List",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -611,9 +755,9 @@
     },
     {
      "name": "didit_investigator_queue_list",
+     "title": "Investigator Queue List",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -632,9 +776,9 @@
     },
     {
      "name": "didit_investigator_record_get",
+     "title": "Investigator Record Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -646,9 +790,9 @@
     },
     {
      "name": "didit_investigator_report_get",
+     "title": "Investigator Report Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "run_id"
      ],
@@ -661,9 +805,9 @@
     },
     {
      "name": "didit_investigator_rereview",
+     "title": "Investigator Rereview",
      "type": "destructive",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "confirm",
       "run_id"
@@ -679,9 +823,9 @@
     },
     {
      "name": "didit_lists_create",
+     "title": "Lists Create",
      "type": "write",
      "group": "Lists & Blocklist",
-     "permission": "create:lists",
      "required": [
       "entry_type",
       "list_type",
@@ -699,9 +843,9 @@
     },
     {
      "name": "didit_lists_delete",
+     "title": "Lists Delete",
      "type": "destructive",
      "group": "Lists & Blocklist",
-     "permission": "delete:lists",
      "required": [
       "list_uuid"
      ],
@@ -714,9 +858,9 @@
     },
     {
      "name": "didit_lists_entries_list",
+     "title": "Lists Entries List",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:lists",
      "required": [
       "list_uuid"
      ],
@@ -733,9 +877,9 @@
     },
     {
      "name": "didit_lists_entry_create",
+     "title": "Lists Entry Create",
      "type": "write",
      "group": "Lists & Blocklist",
-     "permission": "create:lists",
      "required": [
       "list_uuid"
      ],
@@ -756,9 +900,9 @@
     },
     {
      "name": "didit_lists_entry_delete",
+     "title": "Lists Entry Delete",
      "type": "destructive",
      "group": "Lists & Blocklist",
-     "permission": "delete:lists",
      "required": [
       "entry_uuid",
       "list_uuid"
@@ -773,9 +917,9 @@
     },
     {
      "name": "didit_lists_entry_upload_face",
+     "title": "Lists Entry Upload Face",
      "type": "write",
      "group": "Lists & Blocklist",
-     "permission": "create:lists",
      "required": [
       "list_uuid"
      ],
@@ -792,9 +936,9 @@
     },
     {
      "name": "didit_lists_get",
+     "title": "Lists Get",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:lists",
      "required": [
       "list_uuid"
      ],
@@ -807,9 +951,9 @@
     },
     {
      "name": "didit_lists_list",
+     "title": "Lists List",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:lists",
      "required": [],
      "properties": [
       "application_id",
@@ -823,9 +967,9 @@
     },
     {
      "name": "didit_lists_update",
+     "title": "Lists Update",
      "type": "write",
      "group": "Lists & Blocklist",
-     "permission": "write:lists",
      "required": [
       "list_uuid"
      ],
@@ -839,10 +983,111 @@
      "confirm": false
     },
     {
+     "name": "didit_marketplace_list_catalog",
+     "title": "Marketplace List Catalog",
+     "type": "read",
+     "group": "Marketplace",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_marketplace_list_connections",
+     "title": "Marketplace List Connections",
+     "type": "read",
+     "group": "Marketplace",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_marketplace_request_integration",
+     "title": "Marketplace Request Integration",
+     "type": "write",
+     "group": "Marketplace",
+     "required": [
+      "provider_name"
+     ],
+     "properties": [
+      "application_id",
+      "category",
+      "note",
+      "organization_id",
+      "provider_name"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_network_get",
+     "title": "Network Get",
+     "type": "read",
+     "group": "Networks",
+     "required": [
+      "network_id"
+     ],
+     "properties": [
+      "application_id",
+      "depth",
+      "focus_id",
+      "focus_kind",
+      "include",
+      "network_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_network_list",
+     "title": "Network List",
+     "type": "read",
+     "group": "Networks",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "max_size",
+      "min_size",
+      "offset",
+      "ordering",
+      "organization_id",
+      "pattern_type",
+      "q",
+      "risk_band",
+      "signal_type",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_network_membership_get",
+     "title": "Network Membership Get",
+     "type": "read",
+     "group": "Networks",
+     "required": [
+      "subject_id",
+      "subject_kind"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "subject_id",
+      "subject_kind"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_org_create_api_key",
+     "title": "Org Create Api Key",
      "type": "destructive",
      "group": "Account & Org",
-     "permission": "write:api-keys",
      "required": [
       "application_id",
       "confirm",
@@ -861,9 +1106,9 @@
     },
     {
      "name": "didit_org_get_application",
+     "title": "Org Get Application",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [
       "application_id",
       "organization_id"
@@ -876,9 +1121,9 @@
     },
     {
      "name": "didit_org_get_balance",
+     "title": "Org Get Balance",
      "type": "read",
      "group": "Account & Org",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -887,9 +1132,9 @@
     },
     {
      "name": "didit_org_invite_member",
+     "title": "Org Invite Member",
      "type": "write",
      "group": "Account & Org",
-     "permission": "write:members",
      "required": [
       "app_ids",
       "emails",
@@ -905,18 +1150,18 @@
     },
     {
      "name": "didit_org_list",
+     "title": "Org List",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [],
      "properties": [],
      "confirm": false
     },
     {
      "name": "didit_org_list_api_keys",
+     "title": "Org List Api Keys",
      "type": "read",
      "group": "Account & Org",
-     "permission": "read:applications",
      "required": [
       "application_id"
      ],
@@ -928,9 +1173,9 @@
     },
     {
      "name": "didit_org_list_applications",
+     "title": "Org List Applications",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [
       "organization_id"
      ],
@@ -941,9 +1186,9 @@
     },
     {
      "name": "didit_org_list_members",
+     "title": "Org List Members",
      "type": "read",
      "group": "Account & Org",
-     "permission": "list:members",
      "required": [],
      "properties": [
       "organization_id"
@@ -952,9 +1197,9 @@
     },
     {
      "name": "didit_org_list_roles",
+     "title": "Org List Roles",
      "type": "read",
      "group": "Account & Org",
-     "permission": "list:roles",
      "required": [],
      "properties": [
       "organization_id"
@@ -963,9 +1208,9 @@
     },
     {
      "name": "didit_org_remove_member",
+     "title": "Org Remove Member",
      "type": "destructive",
      "group": "Account & Org",
-     "permission": "delete:members",
      "required": [
       "member_id"
      ],
@@ -976,10 +1221,44 @@
      "confirm": false
     },
     {
+     "name": "didit_org_reveal_application_api_key",
+     "title": "Org Reveal Application Api Key",
+     "type": "destructive",
+     "group": "Account & Org",
+     "required": [
+      "application_id",
+      "confirm",
+      "organization_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "organization_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_org_top_up",
+     "title": "Org Top Up",
+     "type": "destructive",
+     "group": "Account & Org",
+     "required": [
+      "amount_in_dollars"
+     ],
+     "properties": [
+      "amount_in_dollars",
+      "confirm",
+      "idempotency_key",
+      "organization_id",
+      "payment_method"
+     ],
+     "confirm": true
+    },
+    {
      "name": "didit_org_update_member",
+     "title": "Org Update Member",
      "type": "write",
      "group": "Account & Org",
-     "permission": "write:members",
      "required": [
       "accessible_applications",
       "member_id",
@@ -995,9 +1274,9 @@
     },
     {
      "name": "didit_questionnaire_append_choices",
+     "title": "Questionnaire Append Choices",
      "type": "write",
      "group": "Workflows & Questionnaires",
-     "permission": "write:questionnaires",
      "required": [
       "choices",
       "questionnaire_id"
@@ -1014,9 +1293,9 @@
     },
     {
      "name": "didit_questionnaire_create",
+     "title": "Questionnaire Create",
      "type": "write",
      "group": "Workflows & Questionnaires",
-     "permission": "write:questionnaires",
      "required": [
       "form_elements",
       "title"
@@ -1035,9 +1314,9 @@
     },
     {
      "name": "didit_questionnaire_delete",
+     "title": "Questionnaire Delete",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:questionnaires",
      "required": [
       "questionnaire_id"
      ],
@@ -1050,9 +1329,9 @@
     },
     {
      "name": "didit_questionnaire_get",
+     "title": "Questionnaire Get",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:questionnaires",
      "required": [
       "questionnaire_id"
      ],
@@ -1066,9 +1345,9 @@
     },
     {
      "name": "didit_questionnaire_list",
+     "title": "Questionnaire List",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:questionnaires",
      "required": [],
      "properties": [
       "application_id",
@@ -1080,9 +1359,9 @@
     },
     {
      "name": "didit_questionnaire_update",
+     "title": "Questionnaire Update",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:questionnaires",
      "required": [
       "questionnaire_id"
      ],
@@ -1101,9 +1380,9 @@
     },
     {
      "name": "didit_report_export",
+     "title": "Report Export",
      "type": "write",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [
       "kind"
      ],
@@ -1117,9 +1396,9 @@
     },
     {
      "name": "didit_report_get",
+     "title": "Report Get",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [
       "report_id"
      ],
@@ -1132,9 +1411,9 @@
     },
     {
      "name": "didit_report_get_download_url",
+     "title": "Report Get Download Url",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [
       "report_id"
      ],
@@ -1147,9 +1426,9 @@
     },
     {
      "name": "didit_report_list",
+     "title": "Report List",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -1164,9 +1443,9 @@
     },
     {
      "name": "didit_session_add_review",
+     "title": "Session Add Review",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "session_id"
      ],
@@ -1181,9 +1460,9 @@
     },
     {
      "name": "didit_session_batch_delete",
+     "title": "Session Batch Delete",
      "type": "destructive",
      "group": "Sessions",
-     "permission": "delete:sessions",
      "required": [
       "confirm"
      ],
@@ -1198,9 +1477,9 @@
     },
     {
      "name": "didit_session_check_import_provider",
+     "title": "Session Check Import Provider",
      "type": "write",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "credentials",
       "provider"
@@ -1217,9 +1496,9 @@
     },
     {
      "name": "didit_session_create",
+     "title": "Session Create",
      "type": "write",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "workflow_id"
      ],
@@ -1241,9 +1520,9 @@
     },
     {
      "name": "didit_session_create_import",
+     "title": "Session Create Import",
      "type": "write",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "source_file_url"
      ],
@@ -1267,9 +1546,9 @@
     },
     {
      "name": "didit_session_delete",
+     "title": "Session Delete",
      "type": "destructive",
      "group": "Sessions",
-     "permission": "delete:sessions",
      "required": [
       "confirm",
       "session_id"
@@ -1282,9 +1561,9 @@
     },
     {
      "name": "didit_session_explain_decision",
+     "title": "Session Explain Decision",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -1295,9 +1574,9 @@
     },
     {
      "name": "didit_session_generate_pdf",
+     "title": "Session Generate Pdf",
      "type": "write",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -1310,9 +1589,9 @@
     },
     {
      "name": "didit_session_get_decision",
+     "title": "Session Get Decision",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -1323,9 +1602,9 @@
     },
     {
      "name": "didit_session_get_import",
+     "title": "Session Get Import",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "import_id"
      ],
@@ -1338,9 +1617,9 @@
     },
     {
      "name": "didit_session_get_import_errors",
+     "title": "Session Get Import Errors",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "import_id"
      ],
@@ -1353,9 +1632,9 @@
     },
     {
      "name": "didit_session_get_import_template",
+     "title": "Session Get Import Template",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -1365,9 +1644,9 @@
     },
     {
      "name": "didit_session_get_location_evidence",
+     "title": "Session Get Location Evidence",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -1378,9 +1657,9 @@
     },
     {
      "name": "didit_session_get_signature_evidence",
+     "title": "Session Get Signature Evidence",
      "type": "write",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "node_id",
       "session_id"
@@ -1396,9 +1675,9 @@
     },
     {
      "name": "didit_session_get_signature_field_image",
+     "title": "Session Get Signature Field Image",
      "type": "write",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "field_id",
       "node_id",
@@ -1415,9 +1694,9 @@
     },
     {
      "name": "didit_session_get_signed_document",
+     "title": "Session Get Signed Document",
      "type": "write",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "document_id",
       "node_id",
@@ -1434,9 +1713,9 @@
     },
     {
      "name": "didit_session_import_shared",
+     "title": "Session Import Shared",
      "type": "write",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "share_token"
      ],
@@ -1447,9 +1726,9 @@
     },
     {
      "name": "didit_session_list",
+     "title": "Session List",
      "type": "read",
      "group": "Sessions",
-     "permission": "list:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -1468,9 +1747,9 @@
     },
     {
      "name": "didit_session_list_import_providers",
+     "title": "Session List Import Providers",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -1480,9 +1759,9 @@
     },
     {
      "name": "didit_session_list_reviews",
+     "title": "Session List Reviews",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -1497,9 +1776,9 @@
     },
     {
      "name": "didit_session_manage_import",
+     "title": "Session Manage Import",
      "type": "write",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "action",
       "import_id"
@@ -1515,9 +1794,9 @@
     },
     {
      "name": "didit_session_search",
+     "title": "Session Search",
      "type": "read",
      "group": "Sessions",
-     "permission": "list:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -1535,9 +1814,9 @@
     },
     {
      "name": "didit_session_share",
+     "title": "Session Share",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "partner_client_id",
       "session_id"
@@ -1550,9 +1829,9 @@
     },
     {
      "name": "didit_session_simulate",
+     "title": "Session Simulate",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "session_id"
      ],
@@ -1570,9 +1849,9 @@
     },
     {
      "name": "didit_session_update_data",
+     "title": "Session Update Data",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "session_id"
      ],
@@ -1600,9 +1879,9 @@
     },
     {
      "name": "didit_session_update_poa_data",
+     "title": "Session Update Poa Data",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "session_id"
      ],
@@ -1622,9 +1901,9 @@
     },
     {
      "name": "didit_session_update_status",
+     "title": "Session Update Status",
      "type": "destructive",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "new_status",
       "session_id"
@@ -1642,9 +1921,9 @@
     },
     {
      "name": "didit_session_validate_signatures",
+     "title": "Session Validate Signatures",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "node_id",
       "session_id"
@@ -1660,9 +1939,9 @@
     },
     {
      "name": "didit_session_webhook_resend",
+     "title": "Session Webhook Resend",
      "type": "write",
      "group": "Sessions",
-     "permission": "create:sessions",
      "required": [
       "session_id",
       "webhook_id"
@@ -1675,9 +1954,9 @@
     },
     {
      "name": "didit_session_webhooks",
+     "title": "Session Webhooks",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -1689,9 +1968,9 @@
     },
     {
      "name": "didit_transaction_create",
+     "title": "Transaction Create",
      "type": "write",
      "group": "Transactions (AML)",
-     "permission": "create:transactions",
      "required": [
       "subject",
       "transaction_category",
@@ -1717,9 +1996,9 @@
     },
     {
      "name": "didit_transaction_get",
+     "title": "Transaction Get",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [
       "transaction_id"
      ],
@@ -1732,9 +2011,9 @@
     },
     {
      "name": "didit_transaction_list",
+     "title": "Transaction List",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -1746,9 +2025,9 @@
     },
     {
      "name": "didit_transaction_rule_backtest",
+     "title": "Transaction Rule Backtest",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "aggregation",
@@ -1763,9 +2042,9 @@
     },
     {
      "name": "didit_transaction_rule_create",
+     "title": "Transaction Rule Create",
      "type": "write",
      "group": "Transactions (AML)",
-     "permission": "write:transactions",
      "required": [
       "actions",
       "category",
@@ -1790,9 +2069,9 @@
     },
     {
      "name": "didit_transaction_rule_delete",
+     "title": "Transaction Rule Delete",
      "type": "destructive",
      "group": "Transactions (AML)",
-     "permission": "write:transactions",
      "required": [
       "rule_uuid"
      ],
@@ -1805,9 +2084,9 @@
     },
     {
      "name": "didit_transaction_rule_get",
+     "title": "Transaction Rule Get",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [
       "rule_uuid"
      ],
@@ -1820,9 +2099,9 @@
     },
     {
      "name": "didit_transaction_rule_install",
+     "title": "Transaction Rule Install",
      "type": "write",
      "group": "Transactions (AML)",
-     "permission": "write:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -1834,9 +2113,9 @@
     },
     {
      "name": "didit_transaction_rule_library_list",
+     "title": "Transaction Rule Library List",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -1851,9 +2130,9 @@
     },
     {
      "name": "didit_transaction_rule_list",
+     "title": "Transaction Rule List",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -1871,9 +2150,9 @@
     },
     {
      "name": "didit_transaction_rule_uninstall",
+     "title": "Transaction Rule Uninstall",
      "type": "destructive",
      "group": "Transactions (AML)",
-     "permission": "write:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -1885,9 +2164,9 @@
     },
     {
      "name": "didit_transaction_rule_update",
+     "title": "Transaction Rule Update",
      "type": "write",
      "group": "Transactions (AML)",
-     "permission": "write:transactions",
      "required": [
       "rule_uuid"
      ],
@@ -1910,9 +2189,9 @@
     },
     {
      "name": "didit_transaction_screen_wallet",
+     "title": "Transaction Screen Wallet",
      "type": "write",
      "group": "Transactions (AML)",
-     "permission": "create:transactions",
      "required": [
       "blockchain",
       "wallet_address"
@@ -1927,10 +2206,27 @@
      "confirm": false
     },
     {
+     "name": "didit_transaction_sdk_token",
+     "title": "Transaction Sdk Token",
+     "type": "write",
+     "group": "Transactions (AML)",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "max_uses",
+      "organization_id",
+      "ttl_seconds",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_transaction_search",
+     "title": "Transaction Search",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -1945,10 +2241,400 @@
      "confirm": false
     },
     {
+     "name": "didit_travel_rule_add_counterparty_contact",
+     "title": "Travel Rule Add Counterparty Contact",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "email",
+      "vasp_id"
+     ],
+     "properties": [
+      "application_id",
+      "email",
+      "name",
+      "organization_id",
+      "vasp_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_add_wallet_address",
+     "title": "Travel Rule Add Wallet Address",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "address"
+     ],
+     "properties": [
+      "address",
+      "application_id",
+      "chain",
+      "entity_type",
+      "holder_name",
+      "holder_vendor_data",
+      "organization_id",
+      "self_declared",
+      "travel_address"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_confirm_ownership",
+     "title": "Travel Rule Confirm Ownership",
+     "type": "destructive",
+     "group": "Travel Rule",
+     "required": [
+      "confirmed",
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirmed",
+      "organization_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_delete_counterparty_contact",
+     "title": "Travel Rule Delete Counterparty Contact",
+     "type": "destructive",
+     "group": "Travel Rule",
+     "required": [
+      "contact_id"
+     ],
+     "properties": [
+      "application_id",
+      "contact_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_delete_wallet_address",
+     "title": "Travel Rule Delete Wallet Address",
+     "type": "destructive",
+     "group": "Travel Rule",
+     "required": [
+      "entry_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "entry_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_network_questionnaire",
+     "title": "Travel Rule Get Network Questionnaire",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_sandbox_scenarios",
+     "title": "Travel Rule Get Sandbox Scenarios",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_settings",
+     "title": "Travel Rule Get Settings",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_vasp",
+     "title": "Travel Rule Get Vasp",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [
+      "vasp_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "vasp_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_counterparty_contacts",
+     "title": "Travel Rule List Counterparty Contacts",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "vasp_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_messages",
+     "title": "Travel Rule List Messages",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_networks",
+     "title": "Travel Rule List Networks",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_wallet_addresses",
+     "title": "Travel Rule List Wallet Addresses",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_request_network",
+     "title": "Travel Rule Request Network",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "network"
+     ],
+     "properties": [
+      "application_id",
+      "network",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_search_vasps",
+     "title": "Travel Rule Search Vasps",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "jurisdiction",
+      "kind",
+      "limit",
+      "network",
+      "offset",
+      "organization_id",
+      "reachable",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_send_message",
+     "title": "Travel Rule Send Message",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "body",
+      "files",
+      "kind",
+      "organization_id",
+      "reply_to",
+      "requested_documents",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_set_counterparty_vasp",
+     "title": "Travel Rule Set Counterparty Vasp",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "transaction_id",
+      "vasp_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "transaction_id",
+      "vasp_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_submit_network_questionnaire",
+     "title": "Travel Rule Submit Network Questionnaire",
+     "type": "destructive",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_transfer_action",
+     "title": "Travel Rule Transfer Action",
+     "type": "destructive",
+     "group": "Travel Rule",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "action",
+      "application_id",
+      "organization_id",
+      "payment_txn_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_trigger_test_inbound",
+     "title": "Travel Rule Trigger Test Inbound",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "beneficiary_wallet_address"
+     ],
+     "properties": [
+      "amount",
+      "application_id",
+      "beneficiary_wallet_address",
+      "chain",
+      "currency",
+      "organization_id",
+      "reference",
+      "scenario"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_update_network_questionnaire",
+     "title": "Travel Rule Update Network Questionnaire",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "aml_ctf_policy_attested",
+      "application_id",
+      "assets",
+      "compliance_officer_email",
+      "compliance_officer_name",
+      "data_protection_attested",
+      "data_protection_contact_email",
+      "expected_monthly_transfers",
+      "expected_monthly_volume_usd",
+      "incorporation_country",
+      "legal_name",
+      "lei",
+      "licences",
+      "operating_jurisdictions",
+      "organization_id",
+      "registered_address",
+      "registration_number",
+      "sanctions_screening_attested",
+      "website"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_update_settings",
+     "title": "Travel Rule Update Settings",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "allow_screenshot_proof",
+      "allow_self_declaration",
+      "application_id",
+      "auto_wallet_verification",
+      "compliance_email",
+      "confirmation_timeout_hours",
+      "data_sharing_fields",
+      "disabled_networks",
+      "inbound_auto_accept",
+      "is_discoverable",
+      "is_enabled",
+      "jurisdiction",
+      "legal_name",
+      "lei",
+      "matching_rules",
+      "name_matching_strictness",
+      "organization_id",
+      "ownership_validation_mode",
+      "simplified_validation_threshold",
+      "threshold_amount",
+      "timeout_outcome",
+      "vasp_attribution_enabled"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_update_wallet_address",
+     "title": "Travel Rule Update Wallet Address",
+     "type": "write",
+     "group": "Travel Rule",
+     "required": [
+      "entry_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "entity_type",
+      "entry_uuid",
+      "holder_name",
+      "holder_vendor_data",
+      "organization_id",
+      "travel_address"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_vendor_business_create",
+     "title": "Vendor Business Create",
      "type": "write",
      "group": "Vendor Users & Businesses",
-     "permission": "create:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -1965,9 +2651,9 @@
     },
     {
      "name": "didit_vendor_business_delete",
+     "title": "Vendor Business Delete",
      "type": "destructive",
      "group": "Vendor Users & Businesses",
-     "permission": "delete:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -1981,9 +2667,9 @@
     },
     {
      "name": "didit_vendor_business_get",
+     "title": "Vendor Business Get",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "read:businesses",
      "required": [
       "vendor_data"
      ],
@@ -1996,9 +2682,9 @@
     },
     {
      "name": "didit_vendor_business_list",
+     "title": "Vendor Business List",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -2010,9 +2696,9 @@
     },
     {
      "name": "didit_vendor_business_search",
+     "title": "Vendor Business Search",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -2029,9 +2715,9 @@
     },
     {
      "name": "didit_vendor_business_update",
+     "title": "Vendor Business Update",
      "type": "write",
      "group": "Vendor Users & Businesses",
-     "permission": null,
      "required": [
       "vendor_data"
      ],
@@ -2050,9 +2736,9 @@
     },
     {
      "name": "didit_vendor_business_update_status",
+     "title": "Vendor Business Update Status",
      "type": "write",
      "group": "Vendor Users & Businesses",
-     "permission": "write:businesses",
      "required": [
       "status",
       "vendor_data"
@@ -2067,9 +2753,9 @@
     },
     {
      "name": "didit_vendor_user_create",
+     "title": "Vendor User Create",
      "type": "write",
      "group": "Vendor Users & Businesses",
-     "permission": "create:users",
      "required": [
       "vendor_data"
      ],
@@ -2090,9 +2776,9 @@
     },
     {
      "name": "didit_vendor_user_delete",
+     "title": "Vendor User Delete",
      "type": "destructive",
      "group": "Vendor Users & Businesses",
-     "permission": "delete:users",
      "required": [],
      "properties": [
       "application_id",
@@ -2105,9 +2791,9 @@
     },
     {
      "name": "didit_vendor_user_get",
+     "title": "Vendor User Get",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "read:users",
      "required": [
       "vendor_data"
      ],
@@ -2120,9 +2806,9 @@
     },
     {
      "name": "didit_vendor_user_list",
+     "title": "Vendor User List",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:users",
      "required": [],
      "properties": [
       "application_id",
@@ -2134,9 +2820,9 @@
     },
     {
      "name": "didit_vendor_user_search",
+     "title": "Vendor User Search",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:users",
      "required": [],
      "properties": [
       "application_id",
@@ -2153,9 +2839,9 @@
     },
     {
      "name": "didit_vendor_user_update",
+     "title": "Vendor User Update",
      "type": "write",
      "group": "Vendor Users & Businesses",
-     "permission": "write:users",
      "required": [
       "vendor_data"
      ],
@@ -2176,9 +2862,9 @@
     },
     {
      "name": "didit_vendor_user_update_status",
+     "title": "Vendor User Update Status",
      "type": "write",
      "group": "Vendor Users & Businesses",
-     "permission": "write:users",
      "required": [
       "status",
       "vendor_data"
@@ -2193,9 +2879,9 @@
     },
     {
      "name": "didit_verify_account_check",
+     "title": "Verify Account Check",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "account",
       "country",
@@ -2214,9 +2900,9 @@
     },
     {
      "name": "didit_verify_age",
+     "title": "Verify Age",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -2229,9 +2915,9 @@
     },
     {
      "name": "didit_verify_aml",
+     "title": "Verify Aml",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "full_name"
      ],
@@ -2252,9 +2938,9 @@
     },
     {
      "name": "didit_verify_database",
+     "title": "Verify Database",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "issuing_state"
      ],
@@ -2283,9 +2969,9 @@
     },
     {
      "name": "didit_verify_email_check",
+     "title": "Verify Email Check",
      "type": "write",
      "group": "Verification APIs",
-     "permission": null,
      "required": [
       "code",
       "email"
@@ -2300,9 +2986,9 @@
     },
     {
      "name": "didit_verify_email_send",
+     "title": "Verify Email Send",
      "type": "write",
      "group": "Verification APIs",
-     "permission": null,
      "required": [
       "email"
      ],
@@ -2315,9 +3001,9 @@
     },
     {
      "name": "didit_verify_face_match",
+     "title": "Verify Face Match",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -2332,9 +3018,9 @@
     },
     {
      "name": "didit_verify_face_search",
+     "title": "Verify Face Search",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -2347,9 +3033,9 @@
     },
     {
      "name": "didit_verify_id",
+     "title": "Verify Id",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -2367,9 +3053,9 @@
     },
     {
      "name": "didit_verify_kyb_search",
+     "title": "Verify Kyb Search",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "country_code"
      ],
@@ -2388,9 +3074,9 @@
     },
     {
      "name": "didit_verify_kyb_select",
+     "title": "Verify Kyb Select",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "kyb_response_id"
      ],
@@ -2406,9 +3092,9 @@
     },
     {
      "name": "didit_verify_passive_liveness",
+     "title": "Verify Passive Liveness",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -2421,9 +3107,9 @@
     },
     {
      "name": "didit_verify_phone_check",
+     "title": "Verify Phone Check",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "code",
       "phone_number"
@@ -2438,9 +3124,9 @@
     },
     {
      "name": "didit_verify_phone_send",
+     "title": "Verify Phone Send",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [
       "phone_number"
      ],
@@ -2453,9 +3139,9 @@
     },
     {
      "name": "didit_verify_poa",
+     "title": "Verify Poa",
      "type": "write",
      "group": "Verification APIs",
-     "permission": "create:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -2472,9 +3158,9 @@
     },
     {
      "name": "didit_webhook_create",
+     "title": "Webhook Create",
      "type": "write",
      "group": "Webhooks & Alerts",
-     "permission": "write:webhooks",
      "required": [
       "label",
       "url"
@@ -2492,9 +3178,9 @@
     },
     {
      "name": "didit_webhook_delete",
+     "title": "Webhook Delete",
      "type": "destructive",
      "group": "Webhooks & Alerts",
-     "permission": "write:webhooks",
      "required": [
       "destination_uuid"
      ],
@@ -2507,9 +3193,9 @@
     },
     {
      "name": "didit_webhook_get",
+     "title": "Webhook Get",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:webhooks",
      "required": [
       "destination_uuid"
      ],
@@ -2522,9 +3208,9 @@
     },
     {
      "name": "didit_webhook_list",
+     "title": "Webhook List",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:webhooks",
      "required": [],
      "properties": [
       "application_id",
@@ -2534,9 +3220,9 @@
     },
     {
      "name": "didit_webhook_update",
+     "title": "Webhook Update",
      "type": "destructive",
      "group": "Webhooks & Alerts",
-     "permission": "write:webhooks",
      "required": [
       "destination_uuid"
      ],
@@ -2554,9 +3240,9 @@
     },
     {
      "name": "didit_workflow_build_graph",
+     "title": "Workflow Build Graph",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -2573,9 +3259,9 @@
     },
     {
      "name": "didit_workflow_create",
+     "title": "Workflow Create",
      "type": "write",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "features"
      ],
@@ -2597,9 +3283,9 @@
     },
     {
      "name": "didit_workflow_create_draft",
+     "title": "Workflow Create Draft",
      "type": "write",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2612,9 +3298,9 @@
     },
     {
      "name": "didit_workflow_delete",
+     "title": "Workflow Delete",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2627,9 +3313,9 @@
     },
     {
      "name": "didit_workflow_edit_graph",
+     "title": "Workflow Edit Graph",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "operations",
       "workflow_id"
@@ -2645,9 +3331,9 @@
     },
     {
      "name": "didit_workflow_get",
+     "title": "Workflow Get",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2660,9 +3346,9 @@
     },
     {
      "name": "didit_workflow_get_branch_fields",
+     "title": "Workflow Get Branch Fields",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "branch_node_id",
       "graph",
@@ -2679,9 +3365,9 @@
     },
     {
      "name": "didit_workflow_get_feature_config_schema",
+     "title": "Workflow Get Feature Config Schema",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": null,
      "required": [],
      "properties": [
       "feature"
@@ -2690,9 +3376,9 @@
     },
     {
      "name": "didit_workflow_get_field_definitions",
+     "title": "Workflow Get Field Definitions",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2706,9 +3392,9 @@
     },
     {
      "name": "didit_workflow_get_graph",
+     "title": "Workflow Get Graph",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2722,9 +3408,9 @@
     },
     {
      "name": "didit_workflow_get_id_verification_methods_catalog",
+     "title": "Workflow Get Id Verification Methods Catalog",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2738,9 +3424,9 @@
     },
     {
      "name": "didit_workflow_get_kyb_registry_catalog",
+     "title": "Workflow Get Kyb Registry Catalog",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": null,
      "required": [],
      "properties": [
       "countries"
@@ -2749,9 +3435,9 @@
     },
     {
      "name": "didit_workflow_list",
+     "title": "Workflow List",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -2764,9 +3450,9 @@
     },
     {
      "name": "didit_workflow_publish",
+     "title": "Workflow Publish",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2779,9 +3465,9 @@
     },
     {
      "name": "didit_workflow_search",
+     "title": "Workflow Search",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -2794,9 +3480,9 @@
     },
     {
      "name": "didit_workflow_set_graph",
+     "title": "Workflow Set Graph",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "graph",
       "workflow_id"
@@ -2812,9 +3498,9 @@
     },
     {
      "name": "didit_workflow_update",
+     "title": "Workflow Update",
      "type": "destructive",
      "group": "Workflows & Questionnaires",
-     "permission": "write:workflows",
      "required": [
       "workflow_id"
      ],
@@ -2836,9 +3522,9 @@
     },
     {
      "name": "didit_workflow_validate_graph",
+     "title": "Workflow Validate Graph",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "graph"
      ],
@@ -2855,21 +3541,13 @@
    ]
   },
   "core": {
-   "options": {
-    "selection": {
-     "toolsets": {},
-     "readOnly": false,
-     "unknown": []
-    }
-   },
    "total": 29,
-   "instructions": "Didit is an identity verification platform: KYC, KYB, AML screening, transaction monitoring, document and biometric checks. This server acts as the signed-in person, with their role's permissions. Start with didit_context_get: it returns the organizations and applications you can use, their ids, and whether each application is sandbox or live.\n\norganization_id and application_id are optional on every tool: they default to the person's only organization and application. Pass them when didit_context_get shows several.\n\nBuild and test in a sandbox application: checks there are free and didit_session_simulate finishes a session with the outcome you choose. Use a live application for real verifications only.\n\nThis connection loads these toolsets: core. More tools exist in: account, billing, sessions, workflows, lists, vendors, transactions, cases, investigator, webhooks, reports, branding, verification. They are not in your tool list: find one with didit_tool_search, then run it with didit_tool_call_read or didit_tool_call_write. To load a toolset directly, the person can add `?toolsets=<ids>` (comma separated, or `toolsets=all`) to the server URL.\n\nTools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation. Sign-in is handled by OAuth: never ask the person for a password, an API key or a one-time code.\n\nFor how Didit works or how to integrate it, use didit_docs_search instead of answering from memory.",
    "tools": [
     {
      "name": "didit_analytics",
+     "title": "Analytics",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": "read:analytics",
      "required": [],
      "properties": [
       "application_id",
@@ -2883,9 +3561,9 @@
     },
     {
      "name": "didit_case_get",
+     "title": "Case Get",
      "type": "read",
      "group": "Cases",
-     "permission": "read:cases",
      "required": [
       "case_id"
      ],
@@ -2898,9 +3576,9 @@
     },
     {
      "name": "didit_case_search",
+     "title": "Case Search",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -2916,18 +3594,18 @@
     },
     {
      "name": "didit_context_get",
+     "title": "Context Get",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [],
      "properties": [],
      "confirm": false
     },
     {
      "name": "didit_docs_search",
+     "title": "Docs Search",
      "type": "read",
      "group": "Documentation",
-     "permission": null,
      "required": [
       "query"
      ],
@@ -2940,9 +3618,9 @@
     },
     {
      "name": "didit_org_create_api_key",
+     "title": "Org Create Api Key",
      "type": "destructive",
      "group": "Account & Org",
-     "permission": "write:api-keys",
      "required": [
       "application_id",
       "confirm",
@@ -2961,9 +3639,9 @@
     },
     {
      "name": "didit_org_get_application",
+     "title": "Org Get Application",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [
       "application_id",
       "organization_id"
@@ -2976,9 +3654,9 @@
     },
     {
      "name": "didit_org_get_balance",
+     "title": "Org Get Balance",
      "type": "read",
      "group": "Account & Org",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -2987,9 +3665,9 @@
     },
     {
      "name": "didit_org_list_api_keys",
+     "title": "Org List Api Keys",
      "type": "read",
      "group": "Account & Org",
-     "permission": "read:applications",
      "required": [
       "application_id"
      ],
@@ -3001,9 +3679,9 @@
     },
     {
      "name": "didit_session_create",
+     "title": "Session Create",
      "type": "write",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "workflow_id"
      ],
@@ -3025,9 +3703,9 @@
     },
     {
      "name": "didit_session_explain_decision",
+     "title": "Session Explain Decision",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -3038,9 +3716,9 @@
     },
     {
      "name": "didit_session_get_decision",
+     "title": "Session Get Decision",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -3051,9 +3729,9 @@
     },
     {
      "name": "didit_session_search",
+     "title": "Session Search",
      "type": "read",
      "group": "Sessions",
-     "permission": "list:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -3071,9 +3749,9 @@
     },
     {
      "name": "didit_session_simulate",
+     "title": "Session Simulate",
      "type": "write",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "session_id"
      ],
@@ -3091,9 +3769,9 @@
     },
     {
      "name": "didit_session_update_status",
+     "title": "Session Update Status",
      "type": "destructive",
      "group": "Sessions",
-     "permission": "write:sessions",
      "required": [
       "new_status",
       "session_id"
@@ -3111,9 +3789,9 @@
     },
     {
      "name": "didit_session_webhooks",
+     "title": "Session Webhooks",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -3125,9 +3803,9 @@
     },
     {
      "name": "didit_tool_call_read",
+     "title": "Tool Call Read",
      "type": "read",
      "group": "Tool Discovery",
-     "permission": null,
      "required": [
       "name"
      ],
@@ -3139,9 +3817,9 @@
     },
     {
      "name": "didit_tool_call_write",
+     "title": "Tool Call Write",
      "type": "destructive",
      "group": "Tool Discovery",
-     "permission": null,
      "required": [
       "name"
      ],
@@ -3153,9 +3831,9 @@
     },
     {
      "name": "didit_tool_describe",
+     "title": "Tool Describe",
      "type": "read",
      "group": "Tool Discovery",
-     "permission": null,
      "required": [
       "names"
      ],
@@ -3166,9 +3844,9 @@
     },
     {
      "name": "didit_tool_search",
+     "title": "Tool Search",
      "type": "read",
      "group": "Tool Discovery",
-     "permission": null,
      "required": [],
      "properties": [
       "limit",
@@ -3179,9 +3857,9 @@
     },
     {
      "name": "didit_transaction_get",
+     "title": "Transaction Get",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [
       "transaction_id"
      ],
@@ -3194,9 +3872,9 @@
     },
     {
      "name": "didit_transaction_search",
+     "title": "Transaction Search",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -3212,9 +3890,9 @@
     },
     {
      "name": "didit_vendor_business_search",
+     "title": "Vendor Business Search",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -3231,9 +3909,9 @@
     },
     {
      "name": "didit_vendor_user_search",
+     "title": "Vendor User Search",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:users",
      "required": [],
      "properties": [
       "application_id",
@@ -3250,9 +3928,9 @@
     },
     {
      "name": "didit_webhook_create",
+     "title": "Webhook Create",
      "type": "write",
      "group": "Webhooks & Alerts",
-     "permission": "write:webhooks",
      "required": [
       "label",
       "url"
@@ -3270,9 +3948,9 @@
     },
     {
      "name": "didit_webhook_list",
+     "title": "Webhook List",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:webhooks",
      "required": [],
      "properties": [
       "application_id",
@@ -3282,9 +3960,9 @@
     },
     {
      "name": "didit_webhook_update",
+     "title": "Webhook Update",
      "type": "destructive",
      "group": "Webhooks & Alerts",
-     "permission": "write:webhooks",
      "required": [
       "destination_uuid"
      ],
@@ -3302,9 +3980,9 @@
     },
     {
      "name": "didit_workflow_get",
+     "title": "Workflow Get",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -3317,9 +3995,9 @@
     },
     {
      "name": "didit_workflow_search",
+     "title": "Workflow Search",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -3333,21 +4011,13 @@
    ]
   },
   "all_read_only": {
-   "options": {
-    "selection": {
-     "toolsets": "all",
-     "readOnly": true,
-     "unknown": []
-    }
-   },
-   "total": 77,
-   "instructions": "Didit is an identity verification platform: KYC, KYB, AML screening, transaction monitoring, document and biometric checks. This server acts as the signed-in person, with their role's permissions. Start with didit_context_get: it returns the organizations and applications you can use, their ids, and whether each application is sandbox or live.\n\norganization_id and application_id are optional on every tool: they default to the person's only organization and application. Pass them when didit_context_get shows several.\n\nBuild and test in a sandbox application: checks there are free and didit_session_simulate finishes a session with the outcome you choose. Use a live application for real verifications only.\n\nThis connection loads every toolset. It is read-only: tools that change data are not available, and the person reconnects without read-only to allow changes.\n\nTools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation. Sign-in is handled by OAuth: never ask the person for a password, an API key or a one-time code.\n\nFor how Didit works or how to integrate it, use didit_docs_search instead of answering from memory.",
+   "total": 97,
    "tools": [
     {
      "name": "didit_alert_list",
+     "title": "Alert List",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:applications",
      "required": [],
      "properties": [
       "application_id",
@@ -3357,9 +4027,9 @@
     },
     {
      "name": "didit_analytics",
+     "title": "Analytics",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": "read:analytics",
      "required": [],
      "properties": [
       "application_id",
@@ -3373,9 +4043,9 @@
     },
     {
      "name": "didit_audit_log_list",
+     "title": "Audit Log List",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": "read:audit-logs",
      "required": [],
      "properties": [
       "action_category",
@@ -3394,9 +4064,9 @@
     },
     {
      "name": "didit_billing_get_details",
+     "title": "Billing Get Details",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -3405,9 +4075,9 @@
     },
     {
      "name": "didit_billing_get_plan",
+     "title": "Billing Get Plan",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -3416,9 +4086,9 @@
     },
     {
      "name": "didit_billing_list_payment_methods",
+     "title": "Billing List Payment Methods",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -3427,9 +4097,9 @@
     },
     {
      "name": "didit_billing_list_receipts",
+     "title": "Billing List Receipts",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "limit",
@@ -3440,9 +4110,9 @@
     },
     {
      "name": "didit_billing_quote_plan",
+     "title": "Billing Quote Plan",
      "type": "read",
      "group": "Billing",
-     "permission": "read:subscription",
      "required": [
       "plan"
      ],
@@ -3455,9 +4125,9 @@
     },
     {
      "name": "didit_blocklist_get",
+     "title": "Blocklist Get",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:blocklist",
      "required": [],
      "properties": [
       "application_id",
@@ -3470,9 +4140,9 @@
     },
     {
      "name": "didit_branding_get",
+     "title": "Branding Get",
      "type": "read",
      "group": "Branding",
-     "permission": "read:customization",
      "required": [],
      "properties": [
       "application_id",
@@ -3482,9 +4152,9 @@
     },
     {
      "name": "didit_case_get",
+     "title": "Case Get",
      "type": "read",
      "group": "Cases",
-     "permission": "read:cases",
      "required": [
       "case_id"
      ],
@@ -3497,9 +4167,9 @@
     },
     {
      "name": "didit_case_list",
+     "title": "Case List",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -3511,9 +4181,9 @@
     },
     {
      "name": "didit_case_search",
+     "title": "Case Search",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -3529,9 +4199,9 @@
     },
     {
      "name": "didit_case_statistics",
+     "title": "Case Statistics",
      "type": "read",
      "group": "Cases",
-     "permission": "list:cases",
      "required": [],
      "properties": [
       "application_id",
@@ -3548,19 +4218,106 @@
      "confirm": false
     },
     {
+     "name": "didit_compliance_check_workflow",
+     "title": "Compliance Check Workflow",
+     "type": "read",
+     "group": "Compliance",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "as_of",
+      "organization_id",
+      "version",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_document_analysis_get",
+     "title": "Compliance Document Analysis Get",
+     "type": "read",
+     "group": "Compliance",
+     "required": [
+      "id"
+     ],
+     "properties": [
+      "application_id",
+      "id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_generate_workflow",
+     "title": "Compliance Generate Workflow",
+     "type": "read",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "answers",
+      "application_id",
+      "as_of",
+      "organization_id",
+      "subject"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_interview_next",
+     "title": "Compliance Interview Next",
+     "type": "read",
+     "group": "Compliance",
+     "required": [
+      "answers"
+     ],
+     "properties": [
+      "answers",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_profile_get",
+     "title": "Compliance Profile Get",
+     "type": "read",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_compliance_requirements",
+     "title": "Compliance Requirements",
+     "type": "read",
+     "group": "Compliance",
+     "required": [],
+     "properties": [
+      "application_id",
+      "as_of",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_context_get",
+     "title": "Context Get",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [],
      "properties": [],
      "confirm": false
     },
     {
      "name": "didit_docs_search",
+     "title": "Docs Search",
      "type": "read",
      "group": "Documentation",
-     "permission": null,
      "required": [
       "query"
      ],
@@ -3573,9 +4330,9 @@
     },
     {
      "name": "didit_investigator_activity_list",
+     "title": "Investigator Activity List",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "actor",
@@ -3592,9 +4349,9 @@
     },
     {
      "name": "didit_investigator_backtest_get",
+     "title": "Investigator Backtest Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "backtest_id"
      ],
@@ -3607,9 +4364,9 @@
     },
     {
      "name": "didit_investigator_dashboard_get",
+     "title": "Investigator Dashboard Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3620,9 +4377,9 @@
     },
     {
      "name": "didit_investigator_performance_get",
+     "title": "Investigator Performance Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3634,9 +4391,9 @@
     },
     {
      "name": "didit_investigator_question_get",
+     "title": "Investigator Question Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "question_id"
      ],
@@ -3649,9 +4406,9 @@
     },
     {
      "name": "didit_investigator_question_list",
+     "title": "Investigator Question List",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3664,9 +4421,9 @@
     },
     {
      "name": "didit_investigator_queue_list",
+     "title": "Investigator Queue List",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3685,9 +4442,9 @@
     },
     {
      "name": "didit_investigator_record_get",
+     "title": "Investigator Record Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3699,9 +4456,9 @@
     },
     {
      "name": "didit_investigator_report_get",
+     "title": "Investigator Report Get",
      "type": "read",
      "group": "Investigator",
-     "permission": null,
      "required": [
       "run_id"
      ],
@@ -3714,9 +4471,9 @@
     },
     {
      "name": "didit_lists_entries_list",
+     "title": "Lists Entries List",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:lists",
      "required": [
       "list_uuid"
      ],
@@ -3733,9 +4490,9 @@
     },
     {
      "name": "didit_lists_get",
+     "title": "Lists Get",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:lists",
      "required": [
       "list_uuid"
      ],
@@ -3748,9 +4505,9 @@
     },
     {
      "name": "didit_lists_list",
+     "title": "Lists List",
      "type": "read",
      "group": "Lists & Blocklist",
-     "permission": "read:lists",
      "required": [],
      "properties": [
       "application_id",
@@ -3763,10 +4520,94 @@
      "confirm": false
     },
     {
+     "name": "didit_marketplace_list_catalog",
+     "title": "Marketplace List Catalog",
+     "type": "read",
+     "group": "Marketplace",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_marketplace_list_connections",
+     "title": "Marketplace List Connections",
+     "type": "read",
+     "group": "Marketplace",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_network_get",
+     "title": "Network Get",
+     "type": "read",
+     "group": "Networks",
+     "required": [
+      "network_id"
+     ],
+     "properties": [
+      "application_id",
+      "depth",
+      "focus_id",
+      "focus_kind",
+      "include",
+      "network_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_network_list",
+     "title": "Network List",
+     "type": "read",
+     "group": "Networks",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "max_size",
+      "min_size",
+      "offset",
+      "ordering",
+      "organization_id",
+      "pattern_type",
+      "q",
+      "risk_band",
+      "signal_type",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_network_membership_get",
+     "title": "Network Membership Get",
+     "type": "read",
+     "group": "Networks",
+     "required": [
+      "subject_id",
+      "subject_kind"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "subject_id",
+      "subject_kind"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_org_get_application",
+     "title": "Org Get Application",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [
       "application_id",
       "organization_id"
@@ -3779,9 +4620,9 @@
     },
     {
      "name": "didit_org_get_balance",
+     "title": "Org Get Balance",
      "type": "read",
      "group": "Account & Org",
-     "permission": "read:subscription",
      "required": [],
      "properties": [
       "organization_id"
@@ -3790,18 +4631,18 @@
     },
     {
      "name": "didit_org_list",
+     "title": "Org List",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [],
      "properties": [],
      "confirm": false
     },
     {
      "name": "didit_org_list_api_keys",
+     "title": "Org List Api Keys",
      "type": "read",
      "group": "Account & Org",
-     "permission": "read:applications",
      "required": [
       "application_id"
      ],
@@ -3813,9 +4654,9 @@
     },
     {
      "name": "didit_org_list_applications",
+     "title": "Org List Applications",
      "type": "read",
      "group": "Account & Org",
-     "permission": null,
      "required": [
       "organization_id"
      ],
@@ -3826,9 +4667,9 @@
     },
     {
      "name": "didit_org_list_members",
+     "title": "Org List Members",
      "type": "read",
      "group": "Account & Org",
-     "permission": "list:members",
      "required": [],
      "properties": [
       "organization_id"
@@ -3837,9 +4678,9 @@
     },
     {
      "name": "didit_org_list_roles",
+     "title": "Org List Roles",
      "type": "read",
      "group": "Account & Org",
-     "permission": "list:roles",
      "required": [],
      "properties": [
       "organization_id"
@@ -3848,9 +4689,9 @@
     },
     {
      "name": "didit_questionnaire_get",
+     "title": "Questionnaire Get",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:questionnaires",
      "required": [
       "questionnaire_id"
      ],
@@ -3864,9 +4705,9 @@
     },
     {
      "name": "didit_questionnaire_list",
+     "title": "Questionnaire List",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:questionnaires",
      "required": [],
      "properties": [
       "application_id",
@@ -3878,9 +4719,9 @@
     },
     {
      "name": "didit_report_get",
+     "title": "Report Get",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [
       "report_id"
      ],
@@ -3893,9 +4734,9 @@
     },
     {
      "name": "didit_report_get_download_url",
+     "title": "Report Get Download Url",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [
       "report_id"
      ],
@@ -3908,9 +4749,9 @@
     },
     {
      "name": "didit_report_list",
+     "title": "Report List",
      "type": "read",
      "group": "Reports & Audit",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3925,9 +4766,9 @@
     },
     {
      "name": "didit_session_explain_decision",
+     "title": "Session Explain Decision",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -3938,9 +4779,9 @@
     },
     {
      "name": "didit_session_get_decision",
+     "title": "Session Get Decision",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -3951,9 +4792,9 @@
     },
     {
      "name": "didit_session_get_import",
+     "title": "Session Get Import",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "import_id"
      ],
@@ -3966,9 +4807,9 @@
     },
     {
      "name": "didit_session_get_import_errors",
+     "title": "Session Get Import Errors",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [
       "import_id"
      ],
@@ -3981,9 +4822,9 @@
     },
     {
      "name": "didit_session_get_import_template",
+     "title": "Session Get Import Template",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -3993,9 +4834,9 @@
     },
     {
      "name": "didit_session_get_location_evidence",
+     "title": "Session Get Location Evidence",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -4006,9 +4847,9 @@
     },
     {
      "name": "didit_session_list",
+     "title": "Session List",
      "type": "read",
      "group": "Sessions",
-     "permission": "list:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -4027,9 +4868,9 @@
     },
     {
      "name": "didit_session_list_import_providers",
+     "title": "Session List Import Providers",
      "type": "read",
      "group": "Sessions",
-     "permission": null,
      "required": [],
      "properties": [
       "application_id",
@@ -4039,9 +4880,9 @@
     },
     {
      "name": "didit_session_list_reviews",
+     "title": "Session List Reviews",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -4056,9 +4897,9 @@
     },
     {
      "name": "didit_session_search",
+     "title": "Session Search",
      "type": "read",
      "group": "Sessions",
-     "permission": "list:sessions",
      "required": [],
      "properties": [
       "application_id",
@@ -4076,9 +4917,9 @@
     },
     {
      "name": "didit_session_webhooks",
+     "title": "Session Webhooks",
      "type": "read",
      "group": "Sessions",
-     "permission": "read:sessions",
      "required": [
       "session_id"
      ],
@@ -4090,9 +4931,9 @@
     },
     {
      "name": "didit_transaction_get",
+     "title": "Transaction Get",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [
       "transaction_id"
      ],
@@ -4105,9 +4946,9 @@
     },
     {
      "name": "didit_transaction_list",
+     "title": "Transaction List",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -4119,9 +4960,9 @@
     },
     {
      "name": "didit_transaction_rule_backtest",
+     "title": "Transaction Rule Backtest",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "aggregation",
@@ -4136,9 +4977,9 @@
     },
     {
      "name": "didit_transaction_rule_get",
+     "title": "Transaction Rule Get",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [
       "rule_uuid"
      ],
@@ -4151,9 +4992,9 @@
     },
     {
      "name": "didit_transaction_rule_library_list",
+     "title": "Transaction Rule Library List",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -4168,9 +5009,9 @@
     },
     {
      "name": "didit_transaction_rule_list",
+     "title": "Transaction Rule List",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -4188,9 +5029,9 @@
     },
     {
      "name": "didit_transaction_search",
+     "title": "Transaction Search",
      "type": "read",
      "group": "Transactions (AML)",
-     "permission": "list:transactions",
      "required": [],
      "properties": [
       "application_id",
@@ -4205,10 +5046,133 @@
      "confirm": false
     },
     {
+     "name": "didit_travel_rule_get_network_questionnaire",
+     "title": "Travel Rule Get Network Questionnaire",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_sandbox_scenarios",
+     "title": "Travel Rule Get Sandbox Scenarios",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_settings",
+     "title": "Travel Rule Get Settings",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_get_vasp",
+     "title": "Travel Rule Get Vasp",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [
+      "vasp_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "vasp_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_counterparty_contacts",
+     "title": "Travel Rule List Counterparty Contacts",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "vasp_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_messages",
+     "title": "Travel Rule List Messages",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_networks",
+     "title": "Travel Rule List Networks",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_list_wallet_addresses",
+     "title": "Travel Rule List Wallet Addresses",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_travel_rule_search_vasps",
+     "title": "Travel Rule Search Vasps",
+     "type": "read",
+     "group": "Travel Rule",
+     "required": [],
+     "properties": [
+      "application_id",
+      "jurisdiction",
+      "kind",
+      "limit",
+      "network",
+      "offset",
+      "organization_id",
+      "reachable",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
      "name": "didit_vendor_business_get",
+     "title": "Vendor Business Get",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "read:businesses",
      "required": [
       "vendor_data"
      ],
@@ -4221,9 +5185,9 @@
     },
     {
      "name": "didit_vendor_business_list",
+     "title": "Vendor Business List",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -4235,9 +5199,9 @@
     },
     {
      "name": "didit_vendor_business_search",
+     "title": "Vendor Business Search",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:businesses",
      "required": [],
      "properties": [
       "application_id",
@@ -4254,9 +5218,9 @@
     },
     {
      "name": "didit_vendor_user_get",
+     "title": "Vendor User Get",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "read:users",
      "required": [
       "vendor_data"
      ],
@@ -4269,9 +5233,9 @@
     },
     {
      "name": "didit_vendor_user_list",
+     "title": "Vendor User List",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:users",
      "required": [],
      "properties": [
       "application_id",
@@ -4283,9 +5247,9 @@
     },
     {
      "name": "didit_vendor_user_search",
+     "title": "Vendor User Search",
      "type": "read",
      "group": "Vendor Users & Businesses",
-     "permission": "list:users",
      "required": [],
      "properties": [
       "application_id",
@@ -4302,9 +5266,9 @@
     },
     {
      "name": "didit_webhook_get",
+     "title": "Webhook Get",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:webhooks",
      "required": [
       "destination_uuid"
      ],
@@ -4317,9 +5281,9 @@
     },
     {
      "name": "didit_webhook_list",
+     "title": "Webhook List",
      "type": "read",
      "group": "Webhooks & Alerts",
-     "permission": "read:webhooks",
      "required": [],
      "properties": [
       "application_id",
@@ -4329,9 +5293,9 @@
     },
     {
      "name": "didit_workflow_build_graph",
+     "title": "Workflow Build Graph",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -4348,9 +5312,9 @@
     },
     {
      "name": "didit_workflow_get",
+     "title": "Workflow Get",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -4363,9 +5327,9 @@
     },
     {
      "name": "didit_workflow_get_branch_fields",
+     "title": "Workflow Get Branch Fields",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "branch_node_id",
       "graph",
@@ -4382,9 +5346,9 @@
     },
     {
      "name": "didit_workflow_get_feature_config_schema",
+     "title": "Workflow Get Feature Config Schema",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": null,
      "required": [],
      "properties": [
       "feature"
@@ -4393,9 +5357,9 @@
     },
     {
      "name": "didit_workflow_get_field_definitions",
+     "title": "Workflow Get Field Definitions",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -4409,9 +5373,9 @@
     },
     {
      "name": "didit_workflow_get_graph",
+     "title": "Workflow Get Graph",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -4425,9 +5389,9 @@
     },
     {
      "name": "didit_workflow_get_id_verification_methods_catalog",
+     "title": "Workflow Get Id Verification Methods Catalog",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "workflow_id"
      ],
@@ -4441,9 +5405,9 @@
     },
     {
      "name": "didit_workflow_get_kyb_registry_catalog",
+     "title": "Workflow Get Kyb Registry Catalog",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": null,
      "required": [],
      "properties": [
       "countries"
@@ -4452,9 +5416,9 @@
     },
     {
      "name": "didit_workflow_list",
+     "title": "Workflow List",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -4467,9 +5431,9 @@
     },
     {
      "name": "didit_workflow_search",
+     "title": "Workflow Search",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [],
      "properties": [
       "application_id",
@@ -4482,9 +5446,9 @@
     },
     {
      "name": "didit_workflow_validate_graph",
+     "title": "Workflow Validate Graph",
      "type": "read",
      "group": "Workflows & Questionnaires",
-     "permission": "read:workflows",
      "required": [
       "graph"
      ],

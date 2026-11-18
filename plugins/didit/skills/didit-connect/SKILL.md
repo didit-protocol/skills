@@ -1,6 +1,6 @@
 ---
 name: didit-connect
-description: Used when someone starts working with their Didit account from chat, asks which organizations or applications they can use, wonders whether an application is sandbox or live, cannot find a Didit tool, hits a permission error, or asks how Didit works. Sets the rules every other Didit skill follows (sign-in, picking the application, confirmations, billable actions, tools that are not loaded) and sends the request to the right skill.
+description: Connects to the person's Didit account, picks the right organization and application, and sets the rules for every Didit action. Use when the user starts working with Didit from chat, asks "which apps do I have", "is this sandbox or live", "am I signed in to Didit", "do you need my API key", cannot find a Didit tool, gets a permission or read-only error, or asks how something works in Didit.
 ---
 
 # Didit: connect and route
@@ -31,6 +31,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
   - The connection is read-only. On a read-only connection that loads every toolset, no write tool and no discovery tool is listed. Tell the person to reconnect without `read_only` to make changes.
   - Their role lacks the permission. Tell them to ask an organization admin for a role that allows it.
 - In both cases never attempt a proxy call through another tool to get around it.
+- The hosted server also lists tool groups no skill here covers in depth: Travel Rule (23 tools, for example `didit_travel_rule_get_settings`), Compliance (9, for example `didit_compliance_requirements`), Marketplace (3, for example `didit_marketplace_list_catalog`) and Networks (3, for example `didit_network_list`). Call them by name when they are listed, or find them with `didit_tool_search`, and read each schema before the first call. The same rules apply: context first, agreement before any change.
 
 ## Confirmations
 
@@ -66,7 +67,7 @@ If the person wants backend code that calls the Didit REST API with an API key, 
 | Sessions in review, approve or decline, add notes, work cases | didit-review-queue |
 | One-off checks: AML, document, address, database, face, phone code (email through a session) | didit-run-checks |
 | Verify a company (KYB), look up existing business records | didit-verify-businesses |
-| Transactions, monitoring rules, back-tests, wallet screening | didit-monitor-transactions |
+| Transactions, monitoring rules, back-tests, wallet screening, Travel Rule | didit-monitor-transactions |
 | Analytics, balance, plan, exports | didit-reports |
 | Members, roles, webhooks, lists, branding, questionnaires | didit-workspace-admin |
 
