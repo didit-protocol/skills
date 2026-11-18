@@ -133,14 +133,25 @@ def collect_credentials(value) -> set:
     found = set()
     if isinstance(value, dict):
         for key, item in value.items():
-            if isinstance(item, str) and item and CREDENTIAL_KEY_RE.search(str(key)):
-                found.add(item)
+            if CREDENTIAL_KEY_RE.search(str(key)):
+                found |= _all_strings(item)
             else:
                 found |= collect_credentials(item)
     elif isinstance(value, list):
         for item in value:
             found |= collect_credentials(item)
     return found
+
+
+def _all_strings(value) -> set:
+    """Every non-empty string under a credential key, whatever the nesting (string, list or object)."""
+    if isinstance(value, str):
+        return {value} if value else set()
+    if isinstance(value, dict):
+        return set().union(*[_all_strings(item) for item in value.values()]) if value else set()
+    if isinstance(value, list):
+        return set().union(*[_all_strings(item) for item in value]) if value else set()
+    return set()
 
 
 def guard_display(text: str, credentials: set) -> str:

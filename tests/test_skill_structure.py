@@ -534,6 +534,12 @@ class SetupAccountSecretsTest(unittest.TestCase):
         self.assertEqual(self.mod.safe_uuid(VERIFY_RESPONSE["organization"]["uuid"]),
                          VERIFY_RESPONSE["organization"]["uuid"])
 
+    def test_credentials_inside_a_list_under_a_credential_key_are_collected(self):
+        found = self.mod.collect_credentials({"recovery_tokens": [FAKE_REFRESH, {"nested": "abc123secretvalue"}]})
+        self.assertIn(FAKE_REFRESH, found)
+        self.assertIn("abc123secretvalue", found)
+        self.assertEqual(self.mod.guard_display(FAKE_REFRESH, found), self.mod.HIDDEN)
+
     def test_uuid_shaped_credential_repeated_in_a_display_id_is_hidden(self):
         token = "2d9e4f1a-6b7c-4d8e-9f0a-1b2c3d4e5f60"
         response = dict(VERIFY_RESPONSE, refresh_token=token,

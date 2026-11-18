@@ -33,7 +33,7 @@ The Didit MCP server lets an MCP client call the Didit platform through tools. I
 - Two ways to connect:
   - **Log in with Didit** (OAuth 2.1 with PKCE, the default and recommended path): the server acts as the signed-in person, across every organization and application they belong to, with their console role permissions.
   - **Application API key** (headless agents and CI with no person present): the connection is that one application, with the key's own access. See Connect with an API key.
-- Tool results are processed, not raw endpoint JSON. A successful call returns compact JSON text plus `structuredContent` (an object as is; an array or a scalar wrapped as `{"value": ...}`). Redaction is per handler and covers only these fields: on applications `api_key`, `client_secret` and `secret` (replaced by `*_set` and a masked `*_preview`); on API key lists `api_key`, `key`, `secret`, `token` and `value` (the same); on webhook destinations the signing secret (`secret_shared_key`, `signing_secret`, `secret`, replaced by `secret_set`). Nothing else is redacted: webhook destination URLs (path and query included) and alert destinations from `didit_alert_list` (for Slack, the posting URL in `value`) are returned as stored, so mask them before showing them to anyone (host plus the last 4 characters, for example `hooks.slack.com/...a1B2`). On the hosted server `didit_org_create_api_key` also returns the new key's secret once, on purpose; a local server also returns credentials from `didit_org_reveal_application_api_key` (the raw key) and `didit_account_verify_email` (the new applications' API keys and an access token). Large payloads (for example workflow feature configs) are summarized. A failed call returns no `structuredContent`: an error raised by a tool handler is sanitized text with a code and a message, plus field, hint and allowed values when there are any, while a refusal by the server itself (for example a write on a read-only connection) is plain text with no code.
+- Tool results are processed, not raw endpoint JSON. A successful call returns compact JSON text plus `structuredContent` (an object as is; an array or a scalar wrapped as `{"value": ...}`). Redaction is per handler and covers only these fields: on applications `api_key`, `client_secret` and `secret` (replaced by `*_set` and a masked `*_preview`); on API key lists `api_key`, `key`, `secret`, `token` and `value` (the same); on webhook destinations the signing secret (`secret_shared_key`, `signing_secret`, `secret`, replaced by `secret_set`). Other handlers trim or redact further fields (for example provider credentials in import responses), so treat any credential-looking value in a result as sensitive. Webhook destination URLs (path and query included) and alert destinations from `didit_alert_list` (for Slack, the posting URL in `value`) are returned as stored, so mask them before showing them to anyone (host plus the last 4 characters, for example `hooks.slack.com/...a1B2`). On the hosted server `didit_org_create_api_key` also returns the new key's secret once, on purpose; a local server also returns credentials from `didit_org_reveal_application_api_key` (the raw key) and `didit_account_verify_email` (the new applications' API keys and an access token). Large payloads (for example workflow feature configs) are summarized. A failed call returns no `structuredContent`: an error raised by a tool handler is sanitized text with a code and a message, plus field, hint and allowed values when there are any, while a refusal by the server itself (for example a write on a read-only connection) is plain text with no code.
 - Open source (MIT): https://github.com/didit-protocol/mcp, published on npm as `@didit-protocol/mcp-server` (binary `didit-mcp-server`).
 
 **When to use the REST skills instead:** a backend integration that runs with an application API key in your own code (creating sessions for your users, receiving webhooks, submitting transactions) calls the REST API directly; see **didit-verification-management**, **didit-sdk-integration** and the standalone API skills.
@@ -70,11 +70,12 @@ The server advertises three scopes. Which resources each one covers is taken fro
 The local server's `logout` revokes this way: a form-encoded `POST` to the `revocation_endpoint` that `https://business.didit.me/.well-known/oauth-authorization-server` advertises, sent by the client that obtained the token.
 
 ```bash
-# The refresh token is read from stdin (here a file readable only by you), never from the arguments.
-curl -X POST "$REVOCATION_ENDPOINT" \
+# The refresh token is read from stdin, never from the arguments. `printf '%s'` is a shell builtin (not in
+# the process list) and sends the exact token with no trailing newline; a newline would revoke nothing.
+printf '%s' "$REFRESH_TOKEN" | curl -X POST "$REVOCATION_ENDPOINT" \
   --data-urlencode 'token@-' \
   --data-urlencode "token_type_hint=refresh_token" \
-  --data-urlencode "client_id=<your-client-id>" < refresh-token.txt
+  --data-urlencode "client_id=<your-client-id>"
 ```
 
 Under RFC 7009 a success answer does not tell you whether the token was still live.
@@ -93,7 +94,7 @@ Cursor (`${env:...}` syntax):
 {"mcpServers": {"didit": {"url": "https://mcp.didit.me/mcp", "headers": {"x-api-key": "${env:DIDIT_API_KEY}"}}}}
 ```
 
-Do not write `--header "x-api-key: $DIDIT_API_KEY"` on a command line: the shell expands `$DIDIT_API_KEY` before the client starts, so the full key sits in the process arguments (visible to other local users in the process list) and in shell history.
+Do not write `--header "x-api-key: $DIDIT_API_KEY"` on a command line: the shell expands `$DIDIT_API_KEY` before the client starts, so the full key sits in the process arguments (visible to other local users in the process list).
 
 - **One application.** The connection acts on the key's application; no ids to pass. `didit_context_get` reports `connection.type: "api_key"` and the app's `mode` when it is available. A call that names another organization or application is refused.
 - **The key's own access.** The key is forwarded to the Didit API as on a direct call; a restricted key reaches only what it was given. Give an agent a restricted key with an expiry.
