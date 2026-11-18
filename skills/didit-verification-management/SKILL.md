@@ -1,8 +1,9 @@
 ---
 name: didit-verification-management
 description: >
-  Use when writing backend or API-key integration code that manages the whole Didit identity
-  verification platform over the API: programmatic account and application setup, API keys,
+  Use when writing backend or API-key integration code that sets up and administers a Didit
+  account over the API (the hub for everything except running one user's KYC flow, which is
+  didit-kyc-onboarding): programmatic account and application setup, API keys,
   workflows, verification sessions (create, retrieve, list, approve, decline, resubmit, correct
   data, AML hit review, PDF, share, delete), bulk imports, questionnaires, block/allow lists,
   users (KYC) and businesses (KYB) with AML monitoring and biometric templates, KYB registry
@@ -96,11 +97,11 @@ Every request to `verification.didit.me` needs the `x-api-key` header. Use your 
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "<your-password>"}`
 2. **Check email** for a 6-character verification code
 3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
-**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link. Before calling it, confirm the amount with the person: the checkout link charges them that amount.
 
 **Zero to a live verification link in 4 calls:**
 
@@ -112,7 +113,7 @@ API = "https://verification.didit.me/v3"
 
 # 1. Register: emails a 6-character code (valid 10 minutes)
 requests.post(f"{AUTH}/programmatic/register/",
-              json={"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}).raise_for_status()
+              json={"email": "you@yourdomain.com", "password": "<your-password>"}).raise_for_status()
 
 # 2. Verify the code: the response carries the application's API key
 resp = requests.post(f"{AUTH}/programmatic/verify-email/",
@@ -365,6 +366,8 @@ GET /v3/sessions/
 
 ### 4. Delete Sessions
 
+Before running these calls, confirm that exact action with the person and tell them which sessions will be deleted (the session, its media and its extracted data); it cannot be undone.
+
 ```
 DELETE /v3/session/{sessionId}/delete/      # one KYC or KYB session (KYB also deletes its key-people verifications)
 POST   /v3/sessions/delete/                 # KYC sessions in bulk
@@ -607,6 +610,8 @@ Verified individuals keyed by your `vendor_data`. A user's `status` is a monitor
 | `GET` | `/v3/users/{vendor_data}/generate-pdf/` | PDF with the user's reportable KYC sessions (newest 20); `403` if none |
 | `POST` | `/v3/organization/{organization_id}/application/{application_id}/vendor-users/by-id/{didit_internal_id}/faces/upload/` | Attach a trusted face: `image` (base64 JPG/PNG, max 2 MB), `comment`. Indexed for duplicate detection and face search, not blocklisted. `201`. |
 
+Before calling `/v3/users/delete/`, confirm that exact action with the person and tell them which users will be deleted (`delete_all: true` deletes every user); it cannot be undone.
+
 **Create / update fields:** `vendor_data` (required on create), `full_name`, `display_name`, `date_of_birth` (`YYYY-MM-DD`), `status` (default `ACTIVE`), `metadata` (object), `approved_emails`, `approved_phones`, `issuing_states`.
 
 **List row fields:** `didit_internal_id`, `vendor_data`, `display_name`, `full_name`, `effective_name`, `date_of_birth`, `status`, `portrait_image_url`, `session_count`, `approved_count`, `declined_count`, `in_review_count`, `issuing_states`, `approved_emails`, `approved_phones`, `features`, `features_list`, `first_session_at`, `last_session_at`, `last_activity_at`, `tags`, `created_at`.
@@ -633,6 +638,8 @@ Image-free face templates an application keeps after deleting sessions (`retain_
 | `DELETE` | `/v3/biometric-templates/{template_uuid}/` | Purge: `{uuid, outcome}` (`purged` or `already_purged`) |
 | `POST` | `/v3/biometric-templates/delete/` | `template_uuids` or `delete_all: true` (plus the filters to narrow it): `{results: [{uuid, outcome}]}` |
 
+Before purging templates, confirm that exact action with the person and tell them which templates will be deleted (`delete_all: true` purges all that match); it cannot be undone.
+
 ---
 
 ## Businesses (KYB)
@@ -648,6 +655,8 @@ PATCH  /v3/businesses/{vendor_data}/update-status/  # status (required), optiona
 POST   /v3/businesses/delete/                       # vendor_data_list, didit_internal_id_list, or delete_all: true -> {deleted}
 POST   /v3/businesses/aml-monitoring/               # see AML Ongoing Monitoring above
 ```
+
+Before calling `/v3/businesses/delete/`, confirm that exact action with the person and tell them which businesses will be deleted (`delete_all: true` deletes every business); it cannot be undone.
 
 ### KYB Registry (no session)
 
@@ -685,7 +694,7 @@ GET   /v3/transactions/{uuid}/   # Didit's transaction uuid from the create resp
 | `GET /v3/billing/balance/` | - | `{"balance": "142.5000", "auto_refill_enabled": true, "auto_refill_amount": "100.0000", "auto_refill_threshold": "10.0000"}`; the auto-refill values are `null` when unset |
 | `POST /v3/billing/top-up/` | `amount_in_dollars` (required; limits as of 2026-11-18: see Pricing above), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
 
-Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Enterprise organizations cannot buy top-ups (as of 2026-11-18, see Pricing above): usage beyond their contract credit is invoiced as overage ([pricing](https://docs.didit.me/getting-started/pricing#credit-and-top-ups)).
+Before calling top-up, confirm the amount with the person: the checkout link charges them that amount. Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Enterprise organizations cannot buy top-ups (as of 2026-11-18, see Pricing above): usage beyond their contract credit is invoiced as overage ([pricing](https://docs.didit.me/getting-started/pricing#credit-and-top-ups)).
 
 ---
 
@@ -921,6 +930,8 @@ App B: POST /v3/session/import-shared/ {"share_token", "trust_review": true, "wo
 ```
 
 ### Data-Subject Erasure
+
+Before running these calls, confirm that exact action with the person and tell them which session and user records will be deleted; it cannot be undone.
 
 ```
 1. DELETE /v3/session/{id}/delete/ {"deletion_instruction": "privacy_erasure", "instruction_id": "ticket-123"}

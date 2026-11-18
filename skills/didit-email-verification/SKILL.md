@@ -8,7 +8,8 @@ description: >
   blocklisted addresses, look up an email's social footprint, or score email risk with POST
   /v3/email/risk/ using Didit. Supports fraud signals (IP, device, user agent), 4-8 character
   numeric or alphanumeric codes, 54 template languages, white-label branding, and per-call
-  DECLINE policies for risky emails.
+  DECLINE policies for risky emails. For one combined risk check across email, phone and IP, use
+  didit-fraud-check.
 version: 1.4.0
 metadata:
   openclaw:
@@ -60,11 +61,11 @@ Every request needs the `x-api-key` header. Use your application's API key from 
 
 If you don't have a Didit API key, create one in 2 API calls:
 
-1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "MyStr0ng!Pass"}`
+1. **Register:** `POST https://apx.didit.me/auth/v2/programmatic/register/` with `{"email": "you@yourdomain.com", "password": "<your-password>"}`
 2. **Check email** for a 6-character verification code
 3. **Verify:** `POST https://apx.didit.me/auth/v2/programmatic/verify-email/` with `{"email": "you@yourdomain.com", "code": "A3K9F2"}`. The key is in the response at `application.api_key`.
 
-**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link.
+**To add credits:** `GET /v3/billing/balance/` to check, `POST /v3/billing/top-up/` with `{"amount_in_dollars": 50}` for a Stripe checkout link. Before calling it, confirm the amount with the person: the checkout link charges them that amount.
 
 See the **didit-verification-management** skill for full platform management (workflows, sessions, users, billing).
 
