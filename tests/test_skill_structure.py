@@ -4,7 +4,7 @@
 Checks that each skill keeps the repository format (frontmatter, naming, Getting Started),
 that the README table and tree match the skills folder, that every script compiles and is
 referenced, that code examples parse, that API paths keep their trailing slash, that no
-supplier names or em dashes slip in, and that the documented webhook signature verifier
+withheld name or em dash slips in, and that the documented webhook signature verifier
 accepts signatures produced by Didit's signing algorithm.
 
 Usage:
@@ -39,13 +39,50 @@ SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[^\n]*\n(.*?)^```", re.S | re.M)
 # Didit API paths, e.g. /v3/session/{id}/decision/ or https://verification.didit.me/v1/events/
 API_PATH_RE = re.compile(r"(?<![\w.])/v[123]/[A-Za-z0-9_{}<>.\-/]*[A-Za-z0-9_{}<>\-/]")
-# Supplier names that must never be published (same guard as the public docs repository).
-SUPPLIER_RE = re.compile(
-    r"\b(prelude|monnai|ipqualityscore|twilio|vonage|sinch|telnyx|plivo|hibp|have.?i.?been.?pwned|"
-    r"haveibeenpwned|aml ?watcher|amlwatcher|maxmind|seon|ekata|ipdata|ipgeolocation|iproov|facetec|"
-    r"innovatrics|regula|endesa|opensanctions|dilisense|complyadvantage|google maps|mapbox)\b",
-    re.I,
-)
+# Names that must never be published are NOT listed in this repository: it is
+# public, and a list of them would publish them. `tests/data/withheld-names.digests`
+# holds keyed digests (HMAC-SHA256) of those names, one per line. The key is the
+# CI secret DIDIT_NAME_GUARD_KEY, so the digests cannot be turned back into names
+# by trying candidates. With the key, every run of one to four consecutive words
+# of every text file in the repository is compared, as whole words joined by one
+# space, so a name that is also two ordinary words written together is matched
+# only when it is written together; without it the check is
+# skipped (a fork's pull request has no secrets), and a push to main requires it.
+NAME_GUARD_DIGESTS = ROOT / "tests" / "data" / "withheld-names.digests"
+NAME_GUARD_KEY = os.environ.get("DIDIT_NAME_GUARD_KEY", "")
+NAME_GUARD_REQUIRED = os.environ.get("DIDIT_NAME_GUARD_REQUIRED", "") == "1"
+NAME_GUARD_WORD_RE = re.compile(r"[a-z0-9]+")
+NAME_GUARD_MAX_WORDS = 4
+BINARY_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".woff", ".woff2", ".zip"}
+
+
+def repository_text_files():
+    """Every text file a clone or a plugin install puts on someone's disk."""
+    files = []
+    for path in sorted(ROOT.rglob("*")):
+        if not path.is_file() or ".git" in path.relative_to(ROOT).parts:
+            continue
+        if path.suffix.lower() in BINARY_SUFFIXES or path == NAME_GUARD_DIGESTS:
+            continue
+        files.append(path)
+    return files
+
+
+def withheld_name_lines(text, key, digests, cache):
+    """Line numbers where a run of 1 to 4 words is a withheld name. Never the words."""
+    words = [(m.group(0), text.count("\n", 0, m.start()) + 1) for m in NAME_GUARD_WORD_RE.finditer(text.lower())]
+    lines = []
+    for size in range(1, NAME_GUARD_MAX_WORDS + 1):
+        for start in range(len(words) - size + 1):
+            joined = " ".join(word for word, _ in words[start : start + size])
+            hit = cache.get(joined)
+            if hit is None:
+                hit = hmac.new(key, joined.encode("utf-8"), hashlib.sha256).hexdigest() in digests
+                cache[joined] = hit
+            if hit:
+                lines.append(words[start][1])
+    return sorted(set(lines))
+
 
 # Webhook test vector. The signatures were produced by Didit's own signing functions
 # (generate_signature, generate_signature_v2 and generate_signature_simple) for this payload.
@@ -221,14 +258,32 @@ class ContentTest(unittest.TestCase):
                     self.assertNotIn(EM_DASH, line, "em dash")
                     self.assertNotIn(EN_DASH, line, "en dash")
 
-    def test_no_supplier_names_or_personal_emails(self):
+    def test_no_personal_emails(self):
         for path in public_files():
             if path.name == "test_skill_structure.py":
                 continue
             text = path.read_text(encoding="utf-8")
             with self.subTest(file=str(path.relative_to(ROOT))):
-                self.assertIsNone(SUPPLIER_RE.search(text), "supplier names must not be published")
                 self.assertNotIn("@gmail.com", text, "use you@yourdomain.com or user@example.com")
+
+    def test_no_withheld_names_anywhere_in_the_repository(self):
+        digests = {line.strip() for line in NAME_GUARD_DIGESTS.read_text(encoding="utf-8").splitlines() if line.strip()}
+        self.assertTrue(digests, "the digest file is empty")
+        for digest in digests:
+            self.assertRegex(digest, r"^[0-9a-f]{64}$", "the digest file holds digests only, never a name")
+        if not NAME_GUARD_KEY:
+            self.assertFalse(NAME_GUARD_REQUIRED, "DIDIT_NAME_GUARD_KEY is required on this run and is not set")
+            self.skipTest("name guard skipped: DIDIT_NAME_GUARD_KEY is not set (CI on the repository sets it)")
+        key = NAME_GUARD_KEY.encode("utf-8")
+        cache = {}
+        for path in repository_text_files():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            with self.subTest(file=str(path.relative_to(ROOT))):
+                # The message names the file and the lines, never the words found.
+                self.assertEqual(withheld_name_lines(text, key, digests, cache), [], "a withheld name is on these lines")
 
     def test_json_examples_parse(self):
         for skill in SKILLS:
