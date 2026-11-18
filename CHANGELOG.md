@@ -60,8 +60,12 @@ proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), tr
   message or exception text. Credentials in it (API key, access and refresh tokens, and the temporary token of a
   second-factor challenge) are masked to the first 4 and last 4 characters. A second-factor challenge or an
   SSO-only organization is reported as such and exits 1. HTTP, transport and decoding failures report the
-  status, a safe error code and fixed text only. `--write-env <path>` refuses symlinks and non-regular files,
-  reads the old file without following links, writes single-quoted values through a 0600 temporary file and
+  status, an error code from a known list (anything else prints `unknown_error`) and fixed text only. UUIDs are
+  echoed only in canonical 8-4-4-4-12 hex form and an email only when it equals the one supplied; success is
+  announced only when the expected fields are present, otherwise it exits 1 with "unexpected response".
+  `--write-env <path>` refuses symlinks and non-regular files and any credential with a character outside
+  `[A-Za-z0-9._~+/=-]`, reads the old file without following links, writes unquoted `KEY=value` lines through a
+  0600 temporary file and
   `os.replace`, and is checked before the single-use code is spent. `--show-secrets` prints full credentials
   only when spelled out in full (abbreviations are rejected on every parser).
 
@@ -77,8 +81,9 @@ proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), tr
 - Offline tests feed synthetic responses to `setup_account.py` and scan stdout and stderr separately: masked
   verify and login output, abbreviated `--show` rejected, non-JSON and JSON error bodies and transport
   exception text not echoed, a second-factor `temp_token` masked, SSO reported, a symlink `--write-env`
-  destination refused before the code is spent, the 0600 single-quoted file written, and unquotable values
-  rejected.
+  destination refused before the code is spent, the 0600 file written and parsed back with a minimal dotenv
+  reader to the same values, values with unsupported characters rejected, credentials returned in an error
+  code or a UUID field not echoed, and an empty success response refused.
 - Offline publication-filter regression verifies that every skill's Python helpers survive the ignore
   policies and that credential, cache and development files stay excluded.
 

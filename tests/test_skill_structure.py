@@ -313,8 +313,9 @@ FAKE_REFRESH = "rt_SYNTHETIC_refresh_token_value_0123456789abcdef"
 FAKE_PASSWORD = "Synthetic-Passw0rd!-not-real"
 VERIFY_RESPONSE = {
     "access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400,
-    "organization": {"uuid": "org-uuid", "name": "Example"},
-    "application": {"uuid": "app-uuid", "name": "Default", "client_id": "client-1", "api_key": FAKE_API_KEY},
+    "organization": {"uuid": "0b6f2c1e-3a4d-4e5f-9a8b-7c6d5e4f3a2b", "name": "Example"},
+    "application": {"uuid": "1c7a3d2f-4b5e-4f60-8b9c-8d7e6f5a4b3c", "name": "Default", "client_id": "client-1",
+                    "api_key": FAKE_API_KEY},
 }
 LOGIN_RESPONSE = {"access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400}
 FAKE_TEMP_TOKEN = "tt_SYNTHETIC_temp_token_value_0123456789abcdef"
@@ -460,9 +461,11 @@ class SetupAccountSecretsTest(unittest.TestCase):
             self.assertEqual(result[0], 0)
             self.assert_streams_clean(result)
             written = env_path.read_text(encoding="utf-8")
-            self.assertIn(f"DIDIT_API_KEY='{FAKE_API_KEY}'", written)
-            self.assertIn(f"DIDIT_REFRESH_TOKEN='{FAKE_REFRESH}'", written)
-            self.assertIn('OTHER="kept"', written)
+            parsed = read_dotenv(written)
+            self.assertEqual(parsed["DIDIT_API_KEY"], FAKE_API_KEY)
+            self.assertEqual(parsed["DIDIT_ACCESS_TOKEN"], FAKE_ACCESS)
+            self.assertEqual(parsed["DIDIT_REFRESH_TOKEN"], FAKE_REFRESH)
+            self.assertEqual(parsed["OTHER"], "kept")
             self.assertNotIn('DIDIT_API_KEY="old"', written)
             self.assertEqual(env_path.stat().st_mode & 0o777, 0o600)
             self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), [".env"])
@@ -484,15 +487,89 @@ class SetupAccountSecretsTest(unittest.TestCase):
                 self.mod.write_env(str(link), {"DIDIT_API_KEY": FAKE_API_KEY})
             self.assertNotIn(FAKE_API_KEY, real.read_text(encoding="utf-8"))
 
-    def test_write_env_rejects_values_that_cannot_be_single_quoted(self):
+    def test_write_env_rejects_unsupported_characters(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_path = Path(tmp) / ".env"
-            for bad in ("has'quote", "has\nnewline"):
+            for bad in ("has'quote", "has\nnewline", "a${HOME}b", "a\\\\b", "a b", 'a"b', "a#b", "a$b", "a`b", ""):
                 with self.subTest(value=bad), self.assertRaises(self.mod.SetupError):
                     self.mod.write_env(str(env_path), {"DIDIT_API_KEY": bad})
             self.assertFalse(env_path.exists())
-            self.mod.write_env(str(env_path), {"DIDIT_API_KEY": "a$b`c\"d"})
-            self.assertEqual(env_path.read_text(encoding="utf-8"), "DIDIT_API_KEY='a$b`c\"d'\n")
+
+    def test_write_env_round_trips_through_a_dotenv_reader(self):
+        values = {"DIDIT_API_KEY": "Ab9._~+/=-xyz", "DIDIT_ACCESS_TOKEN": FAKE_ACCESS, "DIDIT_REFRESH_TOKEN": "=lead"}
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text("export OTHER=1\n", encoding="utf-8")
+            self.mod.write_env(str(env_path), values)
+            parsed = read_dotenv(env_path.read_text(encoding="utf-8"))
+            for name, value in values.items():
+                self.assertEqual(parsed[name], value)
+            self.assertIn("DIDIT_API_KEY=Ab9._~+/=-xyz\n", env_path.read_text(encoding="utf-8"))
+
+    def test_bad_value_with_write_env_fails_before_success_is_announced(self):
+        response = dict(LOGIN_RESPONSE, access_token="bad token ${X}")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            result = self.run_main(["login", "user@example.com", "--write-env", str(env_path)], response)
+            self.assertEqual(result[0], 1)
+            self.assertNotIn("Login successful", result[1])
+            self.assertFalse(env_path.exists())
+
+    def test_credential_in_an_error_code_is_not_echoed(self):
+        body = {"code": FAKE_API_KEY}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(400, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result)
+        self.assertIn("unknown_error", result[2])
+
+    def test_credential_in_a_uuid_field_is_not_echoed(self):
+        response = dict(VERIFY_RESPONSE, organization={"uuid": FAKE_REFRESH})
+        result = self.run_main(["verify", "user@example.com", "--show-secrets"], response)
+        self.assertEqual(result[0], 1)
+        self.assertIn("unexpected response", result[2])
+        self.assertNotIn("Account ready", result[1])
+        self.assertEqual(self.mod.safe_uuid(FAKE_REFRESH), "(unavailable)")
+        self.assertEqual(self.mod.safe_uuid("org-uuid"), "(unavailable)")
+        self.assertEqual(self.mod.safe_uuid(VERIFY_RESPONSE["organization"]["uuid"]),
+                         VERIFY_RESPONSE["organization"]["uuid"])
+
+    def test_known_error_codes_only(self):
+        self.assertEqual(self.mod.safe_error_code("invalid_credentials"), "invalid_credentials")
+        for value in (FAKE_ACCESS, "some_new_code", None, 7):
+            self.assertEqual(self.mod.safe_error_code(value), "unknown_error")
+
+    def test_email_is_echoed_only_when_it_matches(self):
+        self.assertEqual(self.mod.safe_email("user@example.com", "user@example.com"), "user@example.com")
+        self.assertNotIn(FAKE_ACCESS, self.mod.safe_email(FAKE_ACCESS, "user@example.com"))
+
+    def test_empty_success_response_is_refused(self):
+        for command in ("login", "verify"):
+            for response in ({}, {"expires_in": 60}, {"access_token": FAKE_ACCESS}):
+                with self.subTest(command=command, response=response):
+                    result = self.run_main([command, "user@example.com"], response)
+                    self.assertEqual(result[0], 1)
+                    self.assertIn("unexpected response", result[2])
+                    self.assertNotIn("successful", result[1])
+                    self.assertNotIn("Account ready", result[1])
+                    self.assert_streams_clean(result)
+
+
+def read_dotenv(text):
+    """Minimal dotenv reader: KEY=value, optional `export `, matching outer quotes stripped, # comments skipped."""
+    values = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip().removeprefix("export ").strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        values[key] = value
+    return values
+
 
 if __name__ == "__main__":
     sys.exit(0 if unittest.main(exit=False, verbosity=1).result.wasSuccessful() else 1)

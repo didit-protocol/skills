@@ -951,15 +951,20 @@ python scripts/setup_account.py resend-otp you@yourdomain.com
 python scripts/setup_account.py login you@yourdomain.com --write-env .env
 ```
 
-Output is a fixed summary (status line, organization and application UUIDs, masked credentials). The
+Output is a fixed summary (status line, organization and application UUIDs, masked credentials). A value
+from a response is echoed only after a structural check: UUIDs must be canonical 8-4-4-4-12 hex, an error code
+must be one the script knows (anything else prints `unknown_error`), and an email is echoed only when it equals
+the one you passed. Success is announced only when the expected fields are present; otherwise the script prints
+"unexpected response" and exits 1. The
 script never prints a response body, a server message or exception text, and never prints a full API key,
 access token, refresh token, temporary second-factor token or password. Credentials are masked to the first
 4 and last 4 characters (for example `dk_t...cdef`); values under 12 characters show as `****`.
 To keep the full values:
 - `--write-env <path>` writes `DIDIT_API_KEY`, `DIDIT_ACCESS_TOKEN` and `DIDIT_REFRESH_TOKEN` to that file as
-  single-quoted literals, through a `0600` temporary file in the same directory that atomically replaces it;
+  unquoted `KEY=value` lines, through a `0600` temporary file in the same directory that atomically replaces it;
   other lines in the file are kept. It refuses a symlink or anything that is not a regular file, and it checks
-  the destination before the code is spent. Keep the file out of version control.
+  the destination before the code is spent. A credential with any character outside `[A-Za-z0-9._~+/=-]` is
+  refused, so no quoting is ever needed. Keep the file out of version control.
 - `--show-secrets` prints those credentials in full in the summary. Pass it only on purpose: terminals, shell
   recordings and agent logs keep what is printed.
 - Flags must be spelled out in full: an abbreviation such as `--show` is rejected.
