@@ -1,14 +1,14 @@
 ---
 name: didit-phone-verification
 description: >
-  Integrate the Didit Phone Verification standalone API to verify phone numbers with a one-time
-  code, and to risk-score a number without sending a code. Use when the user wants to send SMS,
-  WhatsApp, Telegram, voice, RCS, Viber or Zalo codes, check phone verification codes, detect
-  disposable or VoIP numbers, flag duplicate or blocklisted numbers, look up a number's carrier,
-  line type or social footprint, or score phone risk with POST /v3/phone/risk/ using Didit.
-  Supports automatic SMS fallback, branded SMS sender names, fraud signals, and per-call DECLINE
-  policies.
-version: 1.4.0
+  Use when writing backend or API-key integration code for Didit Phone Verification, the
+  standalone API that verifies phone numbers with a one-time code and risk-scores a number
+  without sending a code. Use when the user wants to send SMS, WhatsApp, Telegram, voice, RCS,
+  Viber or Zalo codes, check phone verification codes, detect disposable or VoIP numbers, flag
+  duplicate or blocklisted numbers, look up a number's carrier, line type or social footprint,
+  or score phone risk with POST /v3/phone/risk/ using Didit. Supports automatic SMS fallback,
+  branded SMS sender names, fraud signals, and per-call DECLINE policies.
+version: 1.5.0
 metadata:
   openclaw:
     requires:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Phone Verification API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -43,13 +45,13 @@ Three standalone endpoints:
 
 **Delivery channels:** `options.preferred_channel` is `whatsapp` (default), `sms`, `telegram`, `voice`, `rcs`, `viber` or `zalo` (availability varies by country). When the preferred channel is unavailable for the number, delivery falls back to SMS and the send still reports `"Success"`; the channel that delivered is in `phone.verification_method` and in the send events of `phone.lifecycle` (`details.actual_channel`).
 
-**Branding:** SMS codes carry your application's SMS sender name (set in the Business Console) at no extra cost. `options.sms_sender_name` signs one code with another name; `options.use_white_label_customization: true` uses your white-label public name when no sender name is set. WhatsApp codes use a fixed message and are not branded.
+**Branding:** SMS codes carry your application's SMS sender name (set in the Business Console) at no extra charge (see Pricing above). `options.sms_sender_name` signs one code with another name; `options.use_white_label_customization: true` uses your white-label public name when no sender name is set. WhatsApp codes use a fixed message and are not branded.
 
 **Capabilities:** carrier name and line type, VoIP/virtual and disposable numbers, duplicates across your sessions (`matches[]`), your phone blocklist/allowlist, anti-fraud blocking at send, optional social footprint (`enable_social`), fraud signals.
 
 **Sandbox:** sandbox API keys skip delivery, billing and persistence. Send returns a static `"Success"` with a random `request_id`; on check use code `123456` (any well-formed code returns a simplified `"Approved"` payload with a flat `phone` object). Risk returns deterministic approved data. Malformed input still returns `400`.
 
-**Pricing:** Phone Verification $0.04 + carrier fee per message sent, by destination country and the channel that delivers it ([price table](https://docs.didit.me/getting-started/phone-verification-pricing)); every send except `"Blocked"` is billed, including `"Retry"`; checks are free (apart from the optional social add-on); standalone calls have no free tier. No list price is published for `POST /v3/phone/risk/` (the docs say it is lower than Phone Verification) or for the social footprint add-on (`enable_social`, billed per request on top of the endpoint price, not billed when the lookup could not complete). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** Phone Verification is the carrier's price for the destination country, passed on at cost, plus a $0.02 Didit fee per message sent ([price table](https://docs.didit.me/getting-started/phone-verification-pricing)); every send except `"Blocked"` is billed, including `"Retry"`; checks are free (apart from the optional social add-on). Phone Risk (`POST /v3/phone/risk/`) is $0.04 per request, and the social footprint add-on is $0.05 per request on top of the endpoint price (not billed when the lookup could not complete). The Free plan's monthly credit does not pay for phone verification; top-ups and Growth or Scale credit do. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:** [Send Code](https://docs.didit.me/standalone-apis/phone-send) | [Check Code](https://docs.didit.me/standalone-apis/phone-check) | [Phone Risk](https://docs.didit.me/standalone-apis/phone-risk)
 **Feature Guide:** https://docs.didit.me/core-technology/phone-verification/overview
@@ -95,7 +97,7 @@ POST https://verification.didit.me/v3/phone/send/
 | `options.code_size` | integer | No | `6` | 4-8 | Number of digits |
 | `options.locale` | string | No | - | Max 5, BCP-47 (`^[a-z]{2,3}(-[A-Z]{2,3})?$`) | Message language, e.g. `en-US`, `fr`, `es` |
 | `options.preferred_channel` | string | No | `"whatsapp"` | `whatsapp`, `sms`, `telegram`, `voice`, `rcs`, `viber`, `zalo` | Preferred channel; falls back to SMS when unavailable |
-| `options.sms_sender_name` | string or null | No | your app's SMS sender name | 1-30 chars: letters, digits, spaces and `' & - !`, not only digits, single spaces | Name this code's SMS carries ("123456 is your verification code for Example Bank"). Invalid values return `400` and no code is sent. Each application can start using up to two new names per day (UTC); past that the app's name is used. Free |
+| `options.sms_sender_name` | string or null | No | your app's SMS sender name | 1-30 chars: letters, digits, spaces and `' & - !`, not only digits, single spaces | Name this code's SMS carries ("123456 is your verification code for Example Bank"). Invalid values return `400` and no code is sent. Each application can start using up to two new names per day (UTC); past that the app's name is used. No extra charge (see Pricing above) |
 | `options.use_white_label_customization` | boolean | No | `false` | - | Without an SMS sender name, sign the SMS with your white-label public name |
 | `signals.ip` | string | No | - | IPv4 or IPv6 | End user's IP for fraud detection |
 | `signals.device_id` | string | No | - | Max 255 | Android `ANDROID_ID`, iOS `identifierForVendor` |
@@ -157,7 +159,7 @@ const data = await response.json(); // { request_id, status, reason, vendor_data
 |---|---|---|
 | `"Success"` | Code sent for a new verification (possibly by SMS fallback) | Wait for the user's code, then call Check |
 | `"Retry"` | Second send inside the 5-minute window: code re-sent for the same pending verification, same `request_id` (billed) | Wait for the code, then call Check |
-| `"Blocked"` | The anti-fraud layer refused to send. `reason` says why (e.g. `suspicious`, `spam`). Not billed. The verification is finalized at once (`Declined` with `HIGH_RISK_PHONE_NUMBER`, or `In Review` for an allowlisted number), so a later check returns `"Expired or Not Found"` | Do not retry the same number; ask for another number or review |
+| `"Blocked"` | The anti-fraud layer refused to send. `reason` says why (e.g. `suspicious`, `spam`). Not billed (see Pricing above). The verification is finalized at once (`Declined` with `HIGH_RISK_PHONE_NUMBER`, or `In Review` for an allowlisted number), so a later check returns `"Expired or Not Found"` | Do not retry the same number; ask for another number or review |
 
 ### Error Responses
 
@@ -167,9 +169,9 @@ const data = await response.json(); // { request_id, status, reason, vendor_data
 | `401` | The API key has expired | Rotate it or create a new key in **Developers > API keys** |
 | `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
-| `502` | Phone provider temporarily unavailable: `{"detail": "...", "code": "phone_provider_unavailable"}` | Retry with a short backoff. Nothing billed, no attempt used |
+| `502` | Phone provider temporarily unavailable: `{"detail": "...", "code": "phone_provider_unavailable"}` | Retry with a short backoff. Nothing billed (see Pricing above), no attempt used |
 
-Phone-specific cases: `403` with a `detail` saying phone verification is disabled until your organization's first top-up (sandbox applications can still test it for free), and `403` with `error` when the balance cannot cover the destination's send price. A `429` for too many attempts on the same number (4 an hour) carries no `Retry-After` header: wait, or use a different number.
+Phone-specific cases: `403` with a `detail` saying phone verification is disabled until your organization's first top-up (sandbox applications can still test it; sandbox billing: see Pricing above), and `403` with `error` when the balance cannot cover the destination's send price. A `429` for too many attempts on the same number (4 an hour) carries no `Retry-After` header: wait, or use a different number.
 
 ---
 
@@ -285,7 +287,7 @@ A wrong code with attempts left returns `"status": "Failed"`, `"message": "The v
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 | `502` | Phone provider temporarily unavailable (`"code": "phone_provider_unavailable"`) | Retry with a short backoff. No attempt is used |
 
-Checks are free; the only credit check is for the `enable_social` add-on (`403` with `error` when the balance cannot cover it).
+Checks are not billed (see Pricing above); the only credit check is for the `enable_social` add-on (`403` with `error` when the balance cannot cover it).
 
 ---
 
@@ -437,7 +439,7 @@ On this API a `DECLINE` action gives log type `error`, `NO_ACTION` gives `inform
 
 ```
 1. POST /v3/phone/send/   -> {"phone_number": "+14155552671"}
-   If "Blocked"           -> ask for another number (nothing billed)
+   If "Blocked"           -> ask for another number (nothing billed, see Pricing above)
 2. Wait for the user to type the code (valid 5 minutes from the first send)
 3. POST /v3/phone/check/  -> {"phone_number": "+14155552671", "code": "123456"}
 4. If "Approved"             -> phone verified

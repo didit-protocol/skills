@@ -1,14 +1,14 @@
 ---
 name: didit-liveness-detection
 description: >
-  Runs Didit's standalone passive liveness check on a single selfie image
-  (POST /v3/passive-liveness/). Use when checking that a person is physically present,
-  detecting spoofing or presentation attacks (printed photos, screen replays, masks,
-  deepfakes), adding anti-spoofing to a selfie step, or screening a selfie against the
-  face blocklist and earlier approved faces. Returns a 0-100 liveness score, an
-  Approved/Declined status against a configurable decline threshold, face quality and
-  luminance, and blocklist and duplicate-face warnings.
-version: 1.3.0
+  Use when writing backend or API-key integration code for Didit's standalone passive liveness
+  check on a single selfie image (POST /v3/passive-liveness/). Use when checking that a person
+  is physically present, detecting spoofing or presentation attacks (printed photos, screen
+  replays, masks, deepfakes), adding anti-spoofing to a selfie step, or screening a selfie
+  against the face blocklist and earlier approved faces. Returns a 0-100 liveness score, an
+  Approved/Declined status against a configurable decline threshold, face quality and luminance,
+  and blocklist and duplicate-face warnings.
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -21,6 +21,8 @@ metadata:
 
 # Didit Passive Liveness API
 
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
+
 ## Overview
 
 Verifies that a user is physically present by analyzing a single captured image. No video, movement or user interaction is required.
@@ -31,7 +33,7 @@ Verifies that a user is physically present by analyzing a single captured image.
 - One clearly visible face. With several faces the largest one is scored and `MULTIPLE_FACES_DETECTED` is added
 - Original real-time capture (no screenshots, prints or photos of screens)
 
-**Pricing:** $0.05 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.05 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Accuracy:** 99.9% liveness detection accuracy, <0.1% false acceptance rate (FAR).
 
@@ -41,7 +43,7 @@ Verifies that a user is physically present by analyzing a single captured image.
 
 **Saving and enrollment (`save_api_request`, default `true`):** the call is saved as an API session (Business Console, `GET /v3/session/{request_id}/decision/`, `status.updated` webhook), the image and face crop are stored, and the face is **enrolled into your face search index** so later Face Search calls and duplicate checks can match it. With `false` nothing is stored, the face is not enrolled and `request_id` cannot be looked up.
 
-**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed.
+**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed (see Pricing above).
 
 **Liveness methods:** this endpoint always uses `PASSIVE` (single-frame CNN). Hosted workflows can also use `ACTIVE_3D` (3D Action & Flash, highest security) and `FLASHING` (3D Flash, high security) through the `face_liveness_method` workflow setting.
 

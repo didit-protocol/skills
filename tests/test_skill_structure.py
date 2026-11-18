@@ -11,16 +11,22 @@ Usage:
     python3 tests/test_skill_structure.py
 """
 
+import contextlib
 import hashlib
 import hmac
+import importlib.util
+import io
 import json
+import os
 import py_compile
 import re
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = ROOT / "skills"
@@ -148,7 +154,7 @@ class SkillFormatTest(unittest.TestCase):
 
     def test_readme_counts_match(self):
         count = len(SKILLS)
-        self.assertTrue(re.search(rf"\b{count} production-ready skills\b", README), f"README intro must say {count} skills")
+        self.assertTrue(re.search(rf"\b{count} skills that teach AI agents\b", README), f"README intro must say {count} skills")
         self.assertTrue(re.search(rf"← {count} skills", README), f"README tree must say {count} skills")
 
 
@@ -287,6 +293,317 @@ class WebhookSignatureTest(unittest.TestCase):
     def test_vector_matches_the_documented_algorithm(self):
         expected = hmac.new(WEBHOOK_SECRET.encode(), WEBHOOK_RAW_BODY.encode(), hashlib.sha256).hexdigest()
         self.assertEqual(expected, WEBHOOK_HEADERS["X-Signature"])
+
+
+def load_setup_account():
+    """Import setup_account.py without the network. A stub stands in for requests when it is missing."""
+    path = SKILLS_DIR / "didit-verification-management" / "scripts" / "setup_account.py"
+    stub = {} if importlib.util.find_spec("requests") else {"requests": types.ModuleType("requests")}
+    with mock.patch.dict(sys.modules, stub):
+        spec = importlib.util.spec_from_file_location("setup_account_under_test", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    return module
+
+
+# Synthetic credentials: long, distinctive values that are not real secrets.
+FAKE_API_KEY = "dk_test_SYNTHETIC_api_key_value_0123456789abcdef"
+FAKE_ACCESS = "eyJSYNTHETIC.access.token.value.0123456789abcdef"
+FAKE_REFRESH = "rt_SYNTHETIC_refresh_token_value_0123456789abcdef"
+FAKE_PASSWORD = "Synthetic-Passw0rd!-not-real"
+VERIFY_RESPONSE = {
+    "access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400,
+    "organization": {"uuid": "0b6f2c1e-3a4d-4e5f-9a8b-7c6d5e4f3a2b", "name": "Example"},
+    "application": {"uuid": "1c7a3d2f-4b5e-4f60-8b9c-8d7e6f5a4b3c", "name": "Default", "client_id": "client-1",
+                    "api_key": FAKE_API_KEY},
+}
+LOGIN_RESPONSE = {"access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400}
+FAKE_TEMP_TOKEN = "tt_SYNTHETIC_temp_token_value_0123456789abcdef"
+SECRETS = (FAKE_API_KEY, FAKE_ACCESS, FAKE_REFRESH, FAKE_PASSWORD, FAKE_TEMP_TOKEN)
+
+
+class SetupAccountSecretsTest(unittest.TestCase):
+    """setup_account.py never prints a full credential unless --show-secrets is passed."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_setup_account()
+
+    def assert_no_secret(self, text):
+        for secret in SECRETS:
+            self.assertNotIn(secret, text, "a full credential appeared in normal output")
+
+    def test_masked_form_is_first_and_last_four(self):
+        self.assertEqual(self.mod.mask_secret(FAKE_API_KEY), "dk_t...cdef")
+        self.assertEqual(self.mod.mask_secret("short"), "****")
+
+    def test_format_result_masks_every_command(self):
+        cases = {
+            "verify": VERIFY_RESPONSE,
+            "login": LOGIN_RESPONSE,
+            "register": {"message": "code sent", "password": FAKE_PASSWORD},
+            "resend-otp": {"message": "code sent", "access_token": FAKE_ACCESS},
+        }
+        for command, response in cases.items():
+            with self.subTest(command=command):
+                output = self.mod.format_result(command, response, "user@example.com")
+                self.assert_no_secret(output)
+        self.assertIn("dk_t...cdef", self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com"))
+
+    def test_show_secrets_prints_the_full_values(self):
+        output = self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com", show_secrets=True)
+        self.assertIn(FAKE_API_KEY, output)
+
+    def run_main(self, argv, response=None, post=None):
+        """Run main() with a mocked handler (or a mocked requests.post). Returns (exit code, stdout, stderr)."""
+        out, err = io.StringIO(), io.StringIO()
+        handler = {"verify": "verify_email", "login": "login", "register": "register"}.get(argv[0], "resend_otp")
+        env = {"DIDIT_PASSWORD": FAKE_PASSWORD, "DIDIT_VERIFICATION_CODE": "A3K9F2"}
+        patches = [mock.patch.object(sys, "argv", ["setup_account.py", *argv]),
+                   mock.patch.dict(os.environ, env)]
+        if post is not None:
+            patches.append(mock.patch.object(self.mod, "requests", types.SimpleNamespace(post=post)))
+        else:
+            self.handler_mock = mock.MagicMock(return_value=response)
+            patches.append(mock.patch.object(self.mod, handler, self.handler_mock))
+        code = None
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            stack.enter_context(contextlib.redirect_stdout(out))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            try:
+                self.mod.main()
+            except SystemExit as exc:
+                code = exc.code
+        return code, out.getvalue(), err.getvalue()
+
+    def assert_streams_clean(self, result, *extra):
+        """Both stdout and stderr are scanned, separately."""
+        _, out, err = result
+        for stream in (out, err):
+            self.assert_no_secret(stream)
+            for value in extra:
+                self.assertNotIn(value, stream)
+
+    def test_main_output_is_masked(self):
+        result = self.run_main(["verify", "user@example.com"], VERIFY_RESPONSE)
+        self.assertEqual(result[0], 0)
+        self.assert_streams_clean(result)
+        self.assertIn("dk_t...cdef", result[1])
+        self.assert_streams_clean(self.run_main(["login", "user@example.com"], LOGIN_RESPONSE))
+
+    def test_abbreviated_show_secrets_is_rejected(self):
+        for flag in ("--show", "--show-s", "--sh"):
+            with self.subTest(flag=flag):
+                result = self.run_main(["login", "user@example.com", flag], LOGIN_RESPONSE)
+                self.assertEqual(result[0], 2)
+                self.assert_streams_clean(result)
+        full = self.run_main(["login", "user@example.com", "--show-secrets"], LOGIN_RESPONSE)
+        self.assertIn(FAKE_ACCESS, full[1])
+
+    def fake_response(self, status, body=None, text=""):
+        response = mock.MagicMock()
+        response.status_code = status
+        response.text = text
+        if body is None:
+            response.json.side_effect = ValueError("not json: " + text)
+        else:
+            response.json.return_value = body
+        return response
+
+    def test_non_json_error_body_is_not_echoed(self):
+        body = f"<html>upstream failed {FAKE_ACCESS} trace-marker-123</html>"
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(502, text=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "trace-marker-123", "<html>")
+        self.assertIn("HTTP 502", result[2])
+
+    def test_json_error_message_is_not_echoed(self):
+        body = {"code": "invalid_credentials", "detail": f"bad password {FAKE_PASSWORD} detail-marker"}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(401, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "detail-marker")
+        self.assertIn("invalid_credentials", result[2])
+
+    def test_transport_exception_text_is_not_echoed(self):
+        post = mock.MagicMock(side_effect=OSError(f"proxy said {FAKE_REFRESH} exc-marker"))
+        result = self.run_main(["register", "user@example.com"], post=post)
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "exc-marker")
+
+    def test_second_factor_temp_token_is_masked(self):
+        challenge = {"2fa_required": True, "has_authenticator": True, "temp_token": FAKE_TEMP_TOKEN}
+        for command in ("verify", "login"):
+            for extra in ([], ["--show-secrets"]):
+                with self.subTest(command=command, extra=extra):
+                    result = self.run_main([command, "user@example.com", *extra], challenge)
+                    self.assertEqual(result[0], 1)
+                    self.assert_streams_clean(result, FAKE_TEMP_TOKEN)
+                    self.assertIn("Second factor required", result[2])
+                    self.assertNotIn("Account ready", result[1] + result[2])
+
+    def test_sso_required_is_reported(self):
+        body = {"code": "sso_required", "organization": {"name": "org-name-marker"}}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(403, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assertIn("SSO required", result[2])
+        self.assert_streams_clean(result, "org-name-marker")
+
+    def test_write_env_stores_full_values_with_mode_0600(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text('OTHER="kept"\nDIDIT_API_KEY="old"\n', encoding="utf-8")
+            result = self.run_main(["verify", "user@example.com", "--write-env", str(env_path)], VERIFY_RESPONSE)
+            self.assertEqual(result[0], 0)
+            self.assert_streams_clean(result)
+            written = env_path.read_text(encoding="utf-8")
+            parsed = read_dotenv(written)
+            self.assertEqual(parsed["DIDIT_API_KEY"], FAKE_API_KEY)
+            self.assertEqual(parsed["DIDIT_ACCESS_TOKEN"], FAKE_ACCESS)
+            self.assertEqual(parsed["DIDIT_REFRESH_TOKEN"], FAKE_REFRESH)
+            self.assertEqual(parsed["OTHER"], "kept")
+            self.assertNotIn('DIDIT_API_KEY="old"', written)
+            self.assertEqual(env_path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), [".env"])
+
+    def test_write_env_refuses_a_symlink_before_spending_the_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real = Path(tmp) / "real.env"
+            real.write_text("UNTOUCHED=1\n", encoding="utf-8")
+            link = Path(tmp) / ".env"
+            link.symlink_to(real)
+            result = self.run_main(["verify", "user@example.com", "--write-env", str(link)], VERIFY_RESPONSE)
+            self.assertEqual(result[0], 1)
+            self.assertIn("symlink", result[2])
+            self.handler_mock.assert_not_called()
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(real.read_text(encoding="utf-8"), "UNTOUCHED=1\n")
+            self.assert_streams_clean(result)
+            with self.assertRaises(self.mod.SetupError):
+                self.mod.write_env(str(link), {"DIDIT_API_KEY": FAKE_API_KEY})
+            self.assertNotIn(FAKE_API_KEY, real.read_text(encoding="utf-8"))
+
+    def test_write_env_rejects_unsupported_characters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            for bad in ("has'quote", "has\nnewline", "a${HOME}b", "a\\\\b", "a b", 'a"b', "a#b", "a$b", "a`b", ""):
+                with self.subTest(value=bad), self.assertRaises(self.mod.SetupError):
+                    self.mod.write_env(str(env_path), {"DIDIT_API_KEY": bad})
+            self.assertFalse(env_path.exists())
+
+    def test_write_env_round_trips_through_a_dotenv_reader(self):
+        values = {"DIDIT_API_KEY": "Ab9._~+/=-xyz", "DIDIT_ACCESS_TOKEN": FAKE_ACCESS, "DIDIT_REFRESH_TOKEN": "=lead"}
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text("export OTHER=1\n", encoding="utf-8")
+            self.mod.write_env(str(env_path), values)
+            parsed = read_dotenv(env_path.read_text(encoding="utf-8"))
+            for name, value in values.items():
+                self.assertEqual(parsed[name], value)
+            self.assertIn("DIDIT_API_KEY=Ab9._~+/=-xyz\n", env_path.read_text(encoding="utf-8"))
+
+    def test_bad_value_with_write_env_fails_before_success_is_announced(self):
+        response = dict(LOGIN_RESPONSE, access_token="bad token ${X}")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            result = self.run_main(["login", "user@example.com", "--write-env", str(env_path)], response)
+            self.assertEqual(result[0], 1)
+            self.assertNotIn("Login successful", result[1])
+            self.assertFalse(env_path.exists())
+
+    def test_credential_in_an_error_code_is_not_echoed(self):
+        body = {"code": FAKE_API_KEY}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(400, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result)
+        self.assertIn("unknown_error", result[2])
+
+    def test_credential_in_a_uuid_field_is_not_echoed(self):
+        response = dict(VERIFY_RESPONSE, organization={"uuid": FAKE_REFRESH})
+        result = self.run_main(["verify", "user@example.com", "--show-secrets"], response)
+        self.assertEqual(result[0], 1)
+        self.assertIn("unexpected response", result[2])
+        self.assertNotIn("Account ready", result[1])
+        self.assertEqual(self.mod.safe_uuid(FAKE_REFRESH), "(unavailable)")
+        self.assertEqual(self.mod.safe_uuid("org-uuid"), "(unavailable)")
+        self.assertEqual(self.mod.safe_uuid(VERIFY_RESPONSE["organization"]["uuid"]),
+                         VERIFY_RESPONSE["organization"]["uuid"])
+
+    def test_credentials_inside_a_list_under_a_credential_key_are_collected(self):
+        found = self.mod.collect_credentials({"recovery_tokens": [FAKE_REFRESH, {"nested": "abc123secretvalue"}]})
+        self.assertIn(FAKE_REFRESH, found)
+        self.assertIn("abc123secretvalue", found)
+        self.assertEqual(self.mod.guard_display(FAKE_REFRESH, found), self.mod.HIDDEN)
+
+    def test_uuid_shaped_credential_repeated_in_a_display_id_is_hidden(self):
+        token = "2d9e4f1a-6b7c-4d8e-9f0a-1b2c3d4e5f60"
+        response = dict(VERIFY_RESPONSE, refresh_token=token,
+                        organization={"uuid": token, "name": "Example"})
+        result = self.run_main(["verify", "user@example.com"], response)
+        self.assertEqual(result[0], 0)
+        self.assert_streams_clean(result, token)
+        self.assertIn("Organization UUID: [hidden]", result[1])
+        self.assertIn(VERIFY_RESPONSE["application"]["uuid"], result[1])
+        nested = dict(VERIFY_RESPONSE, extra={"deep": [{"client_secret": token}]},
+                      organization={"uuid": token})
+        output = self.mod.format_result("verify", nested, "user@example.com")
+        self.assertNotIn(token, output)
+        self.assertIn("Organization UUID: [hidden]", output)
+        self.assertEqual(self.mod.guard_display("prefix-" + token, {token}), "[hidden]")
+
+    def test_trailing_newline_is_rejected(self):
+        uuid = VERIFY_RESPONSE["organization"]["uuid"]
+        self.assertEqual(self.mod.safe_uuid(uuid + "\n"), "(unavailable)")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            with self.assertRaises(self.mod.SetupError):
+                self.mod.write_env(str(env_path), {"DIDIT_API_KEY": FAKE_API_KEY + "\n"})
+            self.assertFalse(env_path.exists())
+        response = dict(VERIFY_RESPONSE, organization={"uuid": uuid + "\n"})
+        result = self.run_main(["verify", "user@example.com"], response)
+        self.assertEqual(result[0], 1)
+        self.assertIn("unexpected response", result[2])
+
+    def test_known_error_codes_only(self):
+        self.assertEqual(self.mod.safe_error_code("invalid_credentials"), "invalid_credentials")
+        for value in (FAKE_ACCESS, "some_new_code", None, 7):
+            self.assertEqual(self.mod.safe_error_code(value), "unknown_error")
+
+    def test_email_is_echoed_only_when_it_matches(self):
+        self.assertEqual(self.mod.safe_email("user@example.com", "user@example.com"), "user@example.com")
+        self.assertNotIn(FAKE_ACCESS, self.mod.safe_email(FAKE_ACCESS, "user@example.com"))
+
+    def test_empty_success_response_is_refused(self):
+        for command in ("login", "verify"):
+            for response in ({}, {"expires_in": 60}, {"access_token": FAKE_ACCESS}):
+                with self.subTest(command=command, response=response):
+                    result = self.run_main([command, "user@example.com"], response)
+                    self.assertEqual(result[0], 1)
+                    self.assertIn("unexpected response", result[2])
+                    self.assertNotIn("successful", result[1])
+                    self.assertNotIn("Account ready", result[1])
+                    self.assert_streams_clean(result)
+
+
+def read_dotenv(text):
+    """Minimal dotenv reader: KEY=value, optional `export `, matching outer quotes stripped, # comments skipped."""
+    values = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip().removeprefix("export ").strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        values[key] = value
+    return values
 
 
 if __name__ == "__main__":

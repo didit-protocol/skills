@@ -1,13 +1,14 @@
 ---
 name: didit-face-match
 description: >
-  Compares two face images 1:1 with Didit's standalone Face Match API (POST /v3/face-match/).
-  Use when checking that a selfie matches an ID document portrait or a previously enrolled
-  photo, verifying that two photos show the same person, or adding selfie-to-document
-  biometric comparison. Returns a 0-100 similarity score and an Approved/Declined status
-  against a configurable decline threshold (default 30), with optional image rotation.
-  Does not enroll faces or run blocklist or duplicate checks.
-version: 1.5.0
+  Use when writing backend or API-key integration code for Didit Face Match (POST
+  /v3/face-match/), the standalone API that compares two face images 1:1. Use when checking that
+  a selfie matches an ID document portrait or a previously enrolled photo, verifying that two
+  photos show the same person, or adding selfie-to-document biometric comparison. Returns a
+  0-100 similarity score and an Approved/Declined status against a configurable decline
+  threshold (default 30), with optional image rotation. Does not enroll faces or run blocklist
+  or duplicate checks.
+version: 1.6.0
 metadata:
   openclaw:
     requires:
@@ -20,6 +21,8 @@ metadata:
 
 # Didit Face Match API
 
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
+
 ## Overview
 
 Compares two facial images to determine whether they show the same person. Returns a similarity score (0-100) and an `Approved` / `Declined` status.
@@ -30,7 +33,7 @@ Compares two facial images to determine whether they show the same person. Retur
 - Both `user_image` and `ref_image` are **required**
 - Submit one clear, front-facing, well-lit face per image for best results
 
-**Pricing:** $0.05 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.05 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Decision:** `Approved` only when the score is **strictly above** `face_match_score_decline_threshold` (default `30`). A score at or below it returns `Declined` with `LOW_FACE_MATCH_SIMILARITY`. If no face pair can be scored, the call still returns HTTP `200` with `Declined` and `NO_REFERENCE_IMAGE`. There is no `In Review` on this endpoint; only the threshold is configurable.
 
@@ -38,7 +41,7 @@ Compares two facial images to determine whether they show the same person. Retur
 
 **Saving (`save_api_request`, default `true`):** the call is saved as an API session (Business Console, `GET /v3/session/{request_id}/decision/`, `status.updated` webhook) and both images are stored as the session's face-match source and target images. With `false` nothing is stored and `request_id` cannot be looked up.
 
-**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed.
+**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed (see Pricing above).
 
 **Capabilities:** similarity scoring, configurable decline threshold, face bounding boxes with model-estimated age and gender per face (informational), optional rotation for non-upright faces.
 

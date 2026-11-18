@@ -1,0 +1,29 @@
+{
+  "name": "didit-authentication",
+  "displayName": "Didit Authentication",
+  "version": "1.0.0",
+  "description": "Guidance for adding Didit end-user sign-in (hosted pages, passkeys, codes, social, SSO) to your app, with Didit documentation search. Configuration stays in the Didit console.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "homepage": "https://docs.didit.me/authentication/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "keywords": [
+    "authentication",
+    "sign-in",
+    "passkeys",
+    "oauth",
+    "pkce",
+    "jwt",
+    "mcp"
+  ],
+  "icon": "./assets/didit-icon.png",
+  "documentationUrl": "https://docs.didit.me/authentication/overview",
+  "supportUrl": "https://help.didit.me",
+  "privacyPolicyUrl": "https://didit.me/terms/privacy-policy",
+  "termsOfServiceUrl": "https://didit.me/terms",
+  "mcpServers": "./.mcp.json"
+}

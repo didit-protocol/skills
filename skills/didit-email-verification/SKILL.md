@@ -1,14 +1,15 @@
 ---
 name: didit-email-verification
 description: >
-  Integrate the Didit Email Verification standalone API to verify email addresses with a one-time
-  code, and to risk-score an address without sending a code. Use when the user wants to send email
-  OTP codes, check email verification codes, detect breached, disposable or undeliverable emails,
-  flag duplicate or blocklisted addresses, look up an email's social footprint, or score email risk
-  with POST /v3/email/risk/ using Didit. Supports fraud signals (IP, device, user agent), 4-8
-  character numeric or alphanumeric codes, 54 template languages, white-label branding, and
-  per-call DECLINE policies for risky emails.
-version: 1.3.0
+  Use when writing backend or API-key integration code for Didit Email Verification, the
+  standalone API that verifies email addresses with a one-time code and risk-scores an address
+  without sending a code. Use when the user wants to send email OTP codes, check email
+  verification codes, detect breached, disposable or undeliverable emails, flag duplicate or
+  blocklisted addresses, look up an email's social footprint, or score email risk with POST
+  /v3/email/risk/ using Didit. Supports fraud signals (IP, device, user agent), 4-8 character
+  numeric or alphanumeric codes, 54 template languages, white-label branding, and per-call
+  DECLINE policies for risky emails.
+version: 1.4.0
 metadata:
   openclaw:
     requires:
@@ -20,6 +21,8 @@ metadata:
 ---
 
 # Didit Email Verification API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -42,7 +45,7 @@ Three standalone endpoints:
 
 **Sandbox:** sandbox API keys skip delivery, billing and persistence. Send returns a static `"Success"` with a random `request_id`; on check use code `123456` (any well-formed code returns a simplified `"Approved"` payload). Risk returns deterministic approved data. Malformed input still returns `400`.
 
-**Pricing:** Email Verification $0.03 per successful send (`"Success"`); `"Retry"` and `"Undeliverable"` sends and checks are free (apart from the optional social add-on); standalone calls have no free tier. No list price is published for `POST /v3/email/risk/` (the docs say it is lower than Email Verification) or for the social footprint add-on (`enable_social`, billed per request on top of the endpoint price, not billed when the lookup could not complete). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** Email Verification $0.02 per successful send (`"Success"`); `"Retry"` and `"Undeliverable"` sends and checks are free (apart from the optional social add-on). Email Risk (`POST /v3/email/risk/`) is $0.04 per request, and the social footprint add-on is $0.05 per request on top of the endpoint price (not billed when the lookup could not complete). Calls are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:** [Send Code](https://docs.didit.me/standalone-apis/email-send) | [Check Code](https://docs.didit.me/standalone-apis/email-check) | [Email Risk](https://docs.didit.me/standalone-apis/email-risk)
 **Feature Guide:** https://docs.didit.me/core-technology/email-verification/overview
@@ -149,8 +152,8 @@ const data = await response.json(); // { request_id, status, reason, vendor_data
 | Status | Meaning | Action |
 |---|---|---|
 | `"Success"` | Code emailed for a new verification (billed) | Wait for the user's code, then call Check |
-| `"Retry"` | Second send inside the 5-minute window: fresh code for the same verification, same `request_id`, previous code invalid (free) | Wait for the new code, then call Check |
-| `"Undeliverable"` | The address failed syntax or DNS/MX validation, or the email could not be sent. `reason` is `"email_can_not_be_delivered"`. No email sent, nothing billed, the verification is already finalized as `Declined` (a check returns `"Expired or Not Found"`) | Ask the user for a different address |
+| `"Retry"` | Second send inside the 5-minute window: fresh code for the same verification, same `request_id`, previous code invalid (not billed, see Pricing above) | Wait for the new code, then call Check |
+| `"Undeliverable"` | The address failed syntax or DNS/MX validation, or the email could not be sent. `reason` is `"email_can_not_be_delivered"`. No email sent, nothing billed (see Pricing above), the verification is already finalized as `Declined` (a check returns `"Expired or Not Found"`) | Ask the user for a different address |
 
 ### Error Responses
 
@@ -252,6 +255,8 @@ const result = await response.json(); // inspect result.status, not the HTTP cod
 }
 ```
 
+Historical example from June 2026: `fee` is the amount billed for each lifecycle step at the price that applied then ($0.03 per send at the time). For the current send price, see Pricing above.
+
 A wrong code with attempts left:
 
 ```json
@@ -284,7 +289,7 @@ A wrong code with attempts left:
 | `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 
-Checks are free; the only credit check is for the `enable_social` add-on (`403` with `error` when the balance cannot cover it).
+Checks are not billed (see Pricing above); the only credit check is for the `enable_social` add-on (`403` with `error` when the balance cannot cover it).
 
 ---
 
@@ -445,7 +450,7 @@ At most one of `EMAIL_IN_BLOCKLIST`, `DUPLICATED_EMAIL` and `EMAIL_IN_ALLOWLIST`
 
 ```
 1. POST /v3/email/send/   -> {"email": "user@example.com"}
-   If "Undeliverable"     -> ask for another address (nothing billed)
+   If "Undeliverable"     -> ask for another address (nothing billed, see Pricing above)
 2. Wait for the user to type the code (valid 5 minutes from the first send)
 3. POST /v3/email/check/  -> {"email": "user@example.com", "code": "123456"}
 4. If "Approved"             -> email verified

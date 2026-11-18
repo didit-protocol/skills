@@ -1,17 +1,17 @@
 ---
 name: didit-event-monitoring
 description: >
-  Integrate Didit Event Monitoring: send non-monetary activity events to the same rule engine
-  that scores transactions. Use when the user wants to send logins, signups, failed logins,
-  sessions, page views, gameplay rounds, bets, P2P settlements, bonus claims, affiliate
-  attributions, deposit or withdrawal events, chargebacks and disputes, password or MFA
-  changes, or self-exclusion registry checks to Didit; batch up to 500 events; capture events
-  from a browser or mobile app with a scoped monitoring token instead of an API key; list,
-  filter or read events and a user's event timeline; delete an event; or write velocity,
-  ratio, sequence and correlation rules over events to detect account takeover, bonus abuse,
-  multi-accounting, chip dumping, opposite betting, minimal-play laundering, friendly fraud
-  and bot play using Didit.
-version: 1.0.0
+  Use when writing backend or API-key integration code for Didit Event Monitoring, which sends
+  non-monetary activity events to the same rule engine that scores transactions. Use when the
+  user wants to send logins, signups, failed logins, sessions, page views, gameplay rounds,
+  bets, P2P settlements, bonus claims, affiliate attributions, deposit or withdrawal events,
+  chargebacks and disputes, password or MFA changes, or self-exclusion registry checks to Didit;
+  batch up to 500 events; capture events from a browser or mobile app with a scoped monitoring
+  token instead of an API key; list, filter or read events and a user's event timeline; delete
+  an event; or write velocity, ratio, sequence and correlation rules over events to detect
+  account takeover, bonus abuse, multi-accounting, chip dumping, opposite betting, minimal-play
+  laundering, friendly fraud and bot play using Didit.
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -23,6 +23,8 @@ metadata:
 ---
 
 # Didit Event Monitoring API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -36,7 +38,7 @@ Events are everything your platform knows besides money movement: the login befo
 - No webhooks fire for events: read the response or the list endpoints.
 - Money movement itself goes to `POST /v3/transactions/` (see the **didit-transaction-monitoring** skill).
 
-**Pricing:** No list price is published for events; check [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for events. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Guides:** https://docs.didit.me/transaction-monitoring/events | https://docs.didit.me/transaction-monitoring/sdk-event-submission | https://docs.didit.me/transaction-monitoring/event-rules | https://docs.didit.me/transaction-monitoring/rules-library
 

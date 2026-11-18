@@ -1,0 +1,44 @@
+{
+  "name": "didit-transaction-monitoring",
+  "version": "1.0.0",
+  "description": "Transaction monitoring from chat: search transactions, build and back-test rules, screen wallets, work alerts and cases, and review the AI Investigator queue in your Didit account.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "homepage": "https://docs.didit.me/integration/mcp/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "keywords": [
+    "transaction-monitoring",
+    "aml",
+    "fraud",
+    "compliance",
+    "cases",
+    "wallet-screening",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Didit Transaction Monitoring",
+    "shortDescription": "Transaction monitoring, rules and cases",
+    "longDescription": "Sign in with your Didit account to search monitored transactions, back-test and manage rules, screen crypto wallets, work alerts and cases, and review the AI Investigator queue, all from Codex.",
+    "developerName": "Didit",
+    "category": "Business & Operations",
+    "capabilities": [],
+    "websiteURL": "https://didit.me",
+    "supportURL": "https://help.didit.me",
+    "privacyPolicyURL": "https://didit.me/terms/privacy-policy",
+    "termsOfServiceURL": "https://didit.me/terms",
+    "defaultPrompt": [
+      "Which transactions were flagged in the last 7 days?",
+      "Back-test a rule for daily outbound transfers over 10,000",
+      "Show me the Investigator reports that are ready to accept"
+    ],
+    "composerIcon": "./assets/didit-icon.png",
+    "logo": "./assets/didit-icon.png",
+    "screenshots": []
+  }
+}

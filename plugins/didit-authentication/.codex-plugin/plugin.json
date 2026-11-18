@@ -1,0 +1,44 @@
+{
+  "name": "didit-authentication",
+  "version": "1.0.0",
+  "description": "Guidance for adding Didit end-user sign-in (hosted pages, passkeys, codes, social, SSO) to your app, with Didit documentation search. Configuration stays in the Didit console.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "homepage": "https://docs.didit.me/authentication/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "keywords": [
+    "authentication",
+    "sign-in",
+    "passkeys",
+    "oauth",
+    "pkce",
+    "jwt",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Didit Authentication",
+    "shortDescription": "Add Didit end-user sign-in to your app",
+    "longDescription": "Sign in with your Didit account to plan a Didit Authentication integration: choose sign-in methods, run the hosted flow with PKCE, validate tokens the way the docs specify and handle auth webhooks, with answers from the Didit documentation.",
+    "developerName": "Didit",
+    "category": "Business & Operations",
+    "capabilities": [],
+    "websiteURL": "https://didit.me",
+    "supportURL": "https://help.didit.me",
+    "privacyPolicyURL": "https://didit.me/terms/privacy-policy",
+    "termsOfServiceURL": "https://didit.me/terms",
+    "defaultPrompt": [
+      "How do I add Didit sign-in with passkeys to my Next.js app?",
+      "How should my backend verify a Didit access token?",
+      "Which webhooks tell me about a sign-in from a new device?"
+    ],
+    "composerIcon": "./assets/didit-icon.png",
+    "logo": "./assets/didit-icon.png",
+    "screenshots": []
+  }
+}

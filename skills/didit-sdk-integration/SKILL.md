@@ -1,17 +1,18 @@
 ---
 name: didit-sdk-integration
 description: >
-  Integrate the Didit client SDKs into web and mobile apps. Use when the user wants to launch
-  a Didit verification session in a web page (redirect, iframe, or the JavaScript SDK
-  @didit-protocol/sdk-web), an iOS app (DiditSDK, Swift), an Android app (me.didit:didit-sdk,
-  Kotlin), a React Native or Expo app (@didit-protocol/sdk-react-native) or a Flutter app
-  (didit_sdk); create the session on a backend and hand the url or session_token to the
-  client; handle SDK results, callbacks and errors; submit monitored transactions from the
-  device with a transaction SDK token (submitTransaction, wallet ownership, step-up
-  verification); or send monitoring events from a device with a monitoring token. Keeps the
-  API key on the backend. Also use for any combination of Identity verification,
-  Transaction monitoring and end-user Authentication, checking release availability first.
-version: 1.1.0
+  Use when writing app, backend or API-key integration code for the Didit client SDKs in web and
+  mobile apps. Use when the user wants to launch a Didit verification session in a web page
+  (redirect, iframe, or the JavaScript SDK @didit-protocol/sdk-web), an iOS app (DiditSDK,
+  Swift), an Android app (me.didit:didit-sdk, Kotlin), a React Native or Expo app
+  (@didit-protocol/sdk-react-native) or a Flutter app (didit_sdk); create the session on a
+  backend and hand the url or session_token to the client; handle SDK results, callbacks and
+  errors; submit monitored transactions from the device with a transaction SDK token
+  (submitTransaction, wallet ownership, step-up verification); or send monitoring events from a
+  device with a monitoring token. Keeps the API key on the backend. Also use for any combination
+  of Identity verification, Transaction monitoring and end-user Authentication, checking release
+  availability first.
+version: 1.2.0
 metadata:
   openclaw:
     requires:
@@ -22,6 +23,8 @@ metadata:
 ---
 
 # Didit SDK Integration (Web, iOS, Android, React Native, Flutter)
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -41,7 +44,7 @@ Choose Identity verification, Transaction monitoring, Authentication, or any com
 
 **Verification/transaction versions documented here:** Web SDK 0.4.0, iOS 4.9.1, Android 4.9.1, React Native 4.9.1, Flutter 4.9.1. These versions do not establish availability of Authentication or `@didit-protocol/signals`.
 
-**Pricing:** The SDKs have no list price of their own. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one ($0.02 Transaction Screening). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for the SDKs. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one, as Transaction Screening (allowance and price: the Pricing note in **didit-transaction-monitoring**). Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Docs:** https://docs.didit.me/integration/sdks · Web: https://docs.didit.me/integration/web-sdks/javascript-sdk · Native: https://docs.didit.me/integration/native-sdks/overview · Transactions from the device: https://docs.didit.me/transaction-monitoring/sdk-transaction-submission · Events from the device: https://docs.didit.me/transaction-monitoring/sdk-event-submission
 
@@ -150,19 +153,22 @@ Developer account registration is not end-user sign-up. Confirm the application'
 runtime URL and exact registered redirects/origins. The documented early-access
 hosted sign-in/ flow uses random state and S256 PKCE, handles configured sign-up,
 login, reset and MFA, and returns a code. Check callback state, then exchange the
-code at token/ with the original verifier and redirect URI. Validate the resulting
-opaque access token via GET session/; do not decode it as a JWT or invent JWKS.
+code at token/ with the original verifier and redirect URI. The access token format
+depends on the application's Authentication runtime as documented: read the current
+tokens page before choosing. An opaque token is validated via GET session/ (never
+decoded as a JWT); an ES256 JWT is verified against the issuer's published JWKS.
 Serialize refreshes through token/ and replace both tokens together: replay of a
 consumed refresh token revokes the session. Do not blindly retry uncertain refreshes.
-DELETE session/ revokes logout; clear local user state and report revocation failures.
+DELETE session/ asks the server to revoke the session. Clear local user state, and report
+server revocation as confirmed only on success; after 429/503 it is not confirmed.
 Use secure HttpOnly cookies with CSRF protection for server sessions, and protected
 native token storage. Authentication-only must not create verification workflows
 or mint transaction/monitoring tokens. Never fabricate a step-up or event subscription.
 Read https://docs.didit.me/authentication/tokens-and-jwks and
 https://docs.didit.me/authentication/events-and-webhooks for the release gates.
-When JWTs become available, use a trusted configured issuer/JWKS, validate signature,
-algorithm, issuer, audience and time claims, and use a live session check when immediate
-revocation matters. An ID token is not an API access token.
+For a JWT runtime, use a trusted configured issuer/JWKS, validate signature, algorithm,
+issuer, audience and time claims, and use a live session check when immediate
+revocation matters. Never invent a JWKS URL. An ID token is not an API access token.
 
 Test the selected products alone and together using one server-resolved vendor_data.
 Cover cross-user/application rejection, callback state/replay, expiry, refresh races,

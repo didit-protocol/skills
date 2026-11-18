@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Skill structure (offline)
+        run: python3 tests/test_skill_structure.py
+      - name: Plugin bundle (offline)
+        run: python3 tests/test_plugin_bundle.py
+
+  plugin-validate:
+    runs-on: ubuntu-latest
+    env:
+      CLAUDE_CODE_VERSION: "2.1.327"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Claude Code CLI (pinned)
+        run: npm i -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+      - name: Require the CLI
+        run: |
+          command -v claude >/dev/null || { echo "claude CLI is missing"; exit 1; }
+          claude --version
+      - name: Validate marketplace
+        run: claude plugin validate .
+      - name: Validate every plugin for the directory
+        run: |
+          for dir in plugins/*/; do
+            echo "== ${dir}"
+            claude plugin validate "${dir%/}" --profile directory --strict --json
+          done

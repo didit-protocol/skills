@@ -1,14 +1,14 @@
 ---
 name: didit-kyc-onboarding
 description: >
-  End-to-end KYC (Know Your Customer) identity verification for onboarding real users through a
-  hosted Didit verification link. Use when someone needs to perform KYC, onboard users with ID
-  scan + selfie + face match, create a KYC workflow or a verification session for a user, add
-  AML screening, NFC chip reading, phone or email verification, active liveness, non-document
-  lookup or digital ID wallets to the flow, poll or receive the decision, or approve, decline or
-  request resubmission of a session. Creates the workflow, generates the verification URL and
-  reads the decision.
-version: 1.2.0
+  Use when writing backend or API-key integration code for end-to-end KYC (Know Your Customer)
+  onboarding of real users through a hosted Didit verification link. Use when someone needs to
+  perform KYC, onboard users with ID scan + selfie + face match, create a KYC workflow or a
+  verification session for a user, add AML screening, NFC chip reading, phone or email
+  verification, active liveness, non-document lookup or digital ID wallets to the flow, poll or
+  receive the decision, or approve, decline or request resubmission of a session. Creates the
+  workflow, generates the verification URL and reads the decision.
+version: 1.3.0
 metadata:
   openclaw:
     requires:
@@ -21,6 +21,8 @@ metadata:
 
 # Running KYC with Didit
 
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
+
 End-to-end Know Your Customer (KYC) verification. This skill creates a KYC workflow, generates a session URL where a real user completes ID scan + selfie + face match, and retrieves the verification decision.
 
 **What the user experiences:**
@@ -30,7 +32,7 @@ End-to-end Know Your Customer (KYC) verification. This skill creates a KYC workf
 4. The selfie is matched to the document portrait
 5. Gets approved, declined, or flagged for review
 
-**Pricing:** in a workflow you pay per feature that completes: ID Verification (document capture) $0.15, Passive Liveness $0.10 and Face Match $0.05, each with 500 free checks a month per organization; Active liveness (`ACTIVE_3D` or `FLASHING`) $0.15, NFC $0.15, AML Screening $0.20, Email Verification $0.03, Phone Verification $0.04 + carrier fee. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing (workflow list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** in a workflow you pay per feature that completes: ID Verification (document capture) $0.15, Passive Liveness $0.10, Face Match $0.05, Device & IP Analysis $0.03 (the four together are a $0.33 full ID check), Active liveness (`ACTIVE_3D` or `FLASHING`) $0.15, NFC $0.15. AML, email and phone verification prices: the Pricing notes in **didit-aml-screening**, **didit-email-verification** and **didit-phone-verification**. Checks are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:**
 - Workflows: https://docs.didit.me/management-api/workflows/create
@@ -149,7 +151,7 @@ The body accepts only these keys; any other key (including `workflow_type`) retu
 | `feature` | Config | Notes |
 |---|---|---|
 | `OCR` | `documents_allowed`, `methods`, `duplicated_user_action`, age and risk actions | ID document capture. Put it first so later steps can use its data |
-| `LIVENESS` | `face_liveness_method`: `PASSIVE`, `ACTIVE_3D` (3D action and flash) or `FLASHING` (3D flash) | Active methods bill as Active Liveness ($0.15) |
+| `LIVENESS` | `face_liveness_method`: `PASSIVE`, `ACTIVE_3D` (3D action and flash) or `FLASHING` (3D flash) | Active methods bill as Active Liveness (price: see Pricing above) |
 | `FACE_MATCH` | `face_match_score_decline_threshold`, `face_match_score_review_threshold` (0-100) | Must come after `OCR` |
 | `NFC` | `allow_nfc_skip`, `skip_nfc_action`, `unverified_chip_action` | Must come after `OCR`; chip read by the native iOS/Android SDK, skipped in web browsers |
 | `AML` | `aml_score_review_threshold`, `aml_score_approve_threshold` | Needs `OCR` before it |
@@ -494,7 +496,7 @@ requests.post(f"{BASE}/workflows/", headers=headers, json={
 | `<ISO3>.wallet.providers` | `[]` | Catalog wallet ids accepted in that country, e.g. `["mitid"]` (an accept-list, not a ranking) |
 | `<ISO3>.wallet.on_failure` | `fallback_to_document` | or `decline` |
 
-Lookups are priced per country and wallets per completed verification, outside the 500 free document checks. See https://docs.didit.me/core-technology/id-verification/non-doc-lookup and https://docs.didit.me/core-technology/id-verification/digital-id-wallets.
+Lookups are priced per country and wallets per completed verification, separately from document capture ([pricing](https://docs.didit.me/getting-started/pricing)). See https://docs.didit.me/core-technology/id-verification/non-doc-lookup and https://docs.didit.me/core-technology/id-verification/digital-id-wallets.
 
 ---
 

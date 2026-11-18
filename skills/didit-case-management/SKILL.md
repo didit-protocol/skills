@@ -1,16 +1,16 @@
 ---
 name: didit-case-management
 description: >
-  Integrate Didit Case Management through the API: open, triage, assign, resolve and audit
-  compliance investigation cases, and file FIU regulatory reports. Use when the user wants to
-  list or search cases, create a case for a user, business, session or transaction, assign or
-  bulk-assign cases, resolve cases as false positive or valid threat, run 4-eyes
-  (maker/checker) approval, add notes and attachments, work case checklists, escalate or
-  transfer cases, configure case blueprints (review policies), presets, review teams and
-  routing rules, pull case analytics and SLA metrics, or create, validate, finalize and
-  download goAML SAR/STR reports using Didit. Cases come from AML screening hits,
-  transaction rules, workflow builder nodes, or manual creation.
-version: 1.0.0
+  Use when writing backend or API-key integration code for Didit Case Management: open, triage,
+  assign, resolve and audit compliance investigation cases, and file FIU regulatory reports. Use
+  when the user wants to list or search cases, create a case for a user, business, session or
+  transaction, assign or bulk-assign cases, resolve cases as false positive or valid threat, run
+  4-eyes (maker/checker) approval, add notes and attachments, work case checklists, escalate or
+  transfer cases, configure case blueprints (review policies), presets, review teams and routing
+  rules, pull case analytics and SLA metrics, or create, validate, finalize and download goAML
+  SAR/STR reports using Didit. Cases come from AML screening hits, transaction rules, workflow
+  builder nodes, or manual creation.
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -22,6 +22,8 @@ metadata:
 ---
 
 # Didit Case Management API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
@@ -35,7 +37,7 @@ A **case** is a compliance investigation anchored to exactly one subject: one us
 - Every endpoint is scoped to one organization and one application: `https://verification.didit.me/v3/organization/{organization_id}/application/{application_id}/...`
 - Actions taken with an API key have no person attached: `actor_email` and `actor_name` on events and notes, and `resolved_by_email`, are `null`.
 
-**Pricing:** No list price is published for these endpoints; check [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for these endpoints. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/management-api/cases/list
 **Feature guides:** https://docs.didit.me/console/case-management/cases | https://docs.didit.me/console/case-management/blueprints | https://docs.didit.me/console/case-management/four-eyes | https://docs.didit.me/console/case-management/fiu-reports
