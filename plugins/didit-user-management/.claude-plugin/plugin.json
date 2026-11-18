@@ -1,0 +1,29 @@
+{
+  "name": "didit-user-management",
+  "displayName": "Didit User Management",
+  "version": "1.0.0",
+  "description": "Manage the people and companies you verify, your blocklist and custom lists, and your Didit workspace members, roles and API keys from chat.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "homepage": "https://docs.didit.me/integration/mcp/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "keywords": [
+    "user-management",
+    "kyc",
+    "kyb",
+    "blocklist",
+    "team",
+    "compliance",
+    "mcp"
+  ],
+  "icon": "./assets/didit-icon.png",
+  "documentationUrl": "https://docs.didit.me/integration/mcp/overview",
+  "supportUrl": "https://help.didit.me",
+  "privacyPolicyUrl": "https://didit.me/terms/privacy-policy",
+  "termsOfServiceUrl": "https://didit.me/terms",
+  "mcpServers": "./.mcp.json"
+}

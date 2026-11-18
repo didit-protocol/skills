@@ -38,5 +38,9 @@ jobs:
           claude --version
       - name: Validate marketplace
         run: claude plugin validate .
-      - name: Validate plugin for the directory
-        run: claude plugin validate plugins/didit --profile directory --strict --json
+      - name: Validate every plugin for the directory
+        run: |
+          for dir in plugins/*/; do
+            echo "== ${dir}"
+            claude plugin validate "${dir%/}" --profile directory --strict --json
+          done

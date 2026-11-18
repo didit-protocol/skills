@@ -1,0 +1,44 @@
+{
+  "name": "didit-user-management",
+  "version": "1.0.0",
+  "description": "Manage the people and companies you verify, your blocklist and custom lists, and your Didit workspace members, roles and API keys from chat.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "homepage": "https://docs.didit.me/integration/mcp/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "keywords": [
+    "user-management",
+    "kyc",
+    "kyb",
+    "blocklist",
+    "team",
+    "compliance",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Didit User Management",
+    "shortDescription": "Verified users, lists and your team",
+    "longDescription": "Sign in with your Didit account to find and update the people and companies you verify, manage the blocklist and custom lists, and manage workspace members, roles and API keys, all from Codex.",
+    "developerName": "Didit",
+    "category": "Business & Operations",
+    "capabilities": [],
+    "websiteURL": "https://didit.me",
+    "supportURL": "https://help.didit.me",
+    "privacyPolicyURL": "https://didit.me/terms/privacy-policy",
+    "termsOfServiceURL": "https://didit.me/terms",
+    "defaultPrompt": [
+      "Find the customer with vendor data user-4821 and show their status",
+      "Which faces and emails are on our blocklist?",
+      "Who are the members of our Didit organization and what roles do they have?"
+    ],
+    "composerIcon": "./assets/didit-icon.png",
+    "logo": "./assets/didit-icon.png",
+    "screenshots": []
+  }
+}

@@ -15,6 +15,42 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Business & Operations"
+    },
+    {
+      "name": "didit-transaction-monitoring",
+      "source": {
+        "source": "local",
+        "path": "./plugins/didit-transaction-monitoring"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Business & Operations"
+    },
+    {
+      "name": "didit-user-management",
+      "source": {
+        "source": "local",
+        "path": "./plugins/didit-user-management"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Business & Operations"
+    },
+    {
+      "name": "didit-authentication",
+      "source": {
+        "source": "local",
+        "path": "./plugins/didit-authentication"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Business & Operations"
     }
   ]
 }

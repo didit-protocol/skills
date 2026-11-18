@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Offline checks for the `didit` plugin bundle and the repo's plugin marketplaces.
+"""Offline checks for every plugin bundle under plugins/ and the repo's plugin marketplaces.
 
-Stdlib only. Runs on the working tree and, when git is available and HEAD contains the
-plugin, on `git archive HEAD:plugins/didit` (what a directory submission would receive).
+Stdlib only. Runs on the working tree and, when git is available and HEAD contains a
+plugin, on `git archive HEAD:plugins/<name>` (what a directory submission would receive).
+Every generic check runs on every plugin folder; the `didit`-specific ones stay pinned to it.
 
     python3 tests/test_plugin_bundle.py
 """
@@ -21,7 +22,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PLUGIN = ROOT / "plugins" / "didit"
+PLUGINS_DIR = ROOT / "plugins"
+PLUGIN = PLUGINS_DIR / "didit"
 REST_SKILLS = ROOT / "skills"
 CATALOG = PLUGIN / "tests" / "tool-catalog.json"
 PROMPTS = PLUGIN / "tests" / "prompts.md"
@@ -36,6 +38,39 @@ PLUGIN_SKILLS = [
     "didit-reports",
     "didit-workspace-admin",
 ]
+
+# Every plugin folder and its exact skill set. A new folder under plugins/ must be added here.
+EXPECTED_SKILLS = {
+    "didit": PLUGIN_SKILLS,
+    "didit-transaction-monitoring": [
+        "didit-tm-start",
+        "didit-tm-transactions",
+        "didit-tm-rules",
+        "didit-tm-wallet-screening",
+        "didit-tm-alerts-cases",
+        "didit-tm-investigator",
+    ],
+    "didit-user-management": [
+        "didit-users-start",
+        "didit-users-records",
+        "didit-users-businesses",
+        "didit-users-lists",
+        "didit-users-team",
+    ],
+    "didit-authentication": [
+        "didit-auth-start",
+        "didit-auth-sign-in-methods",
+        "didit-auth-integrate",
+        "didit-auth-events",
+    ],
+}
+FOCUSED = [name for name in EXPECTED_SKILLS if name != "didit"]
+START_SKILL = {
+    "didit-transaction-monitoring": "didit-tm-start",
+    "didit-user-management": "didit-users-start",
+    "didit-authentication": "didit-auth-start",
+}
+WHICH_HEADING = "## Which Didit plugin should I install?"
 
 MAX_FILES = 512
 MAX_BYTES = 256 * 1024
@@ -60,6 +95,8 @@ EM_DASH = chr(0x2014)
 CONFIRM_WORDS = re.compile(r"\b(confirm\w*|agree\w*)\b", re.IGNORECASE)
 TOOL_TOKEN = re.compile(r"\bdidit_[a-z0-9_]+\b")
 DISCOVERY = {"didit_tool_search", "didit_tool_describe", "didit_tool_call_read", "didit_tool_call_write"}
+# Tokens that look like tool names but are not: a record field and the Flutter Authentication package.
+NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth"}
 
 
 def load_json(path: Path):
@@ -204,12 +241,30 @@ class CatalogMixin:
         return tools
 
 
+def plugin_dirs() -> list[Path]:
+    return sorted(p for p in PLUGINS_DIR.iterdir() if p.is_dir())
+
+
+def skill_texts(base: Path) -> list[tuple[str, str]]:
+    """(where, text) for every SKILL.md and the prompts file of one plugin."""
+    out = []
+    for name in EXPECTED_SKILLS[base.name]:
+        out.append((f"{base.name}/skills/{name}/SKILL.md", (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")))
+    out.append((f"{base.name}/tests/prompts.md", (base / "tests" / "prompts.md").read_text(encoding="utf-8")))
+    return out
+
+
+class LayoutTests(unittest.TestCase):
+    def test_plugin_folders_are_known(self):
+        self.assertEqual([p.name for p in plugin_dirs()], sorted(EXPECTED_SKILLS))
+
+
 class ManifestTests(unittest.TestCase):
     def test_every_manifest_is_valid_json(self):
         paths = [
             ROOT / ".claude-plugin" / "marketplace.json",
             ROOT / ".agents" / "plugins" / "marketplace.json",
-            *PLUGIN.rglob("*.json"),
+            *PLUGINS_DIR.rglob("*.json"),
         ]
         for path in paths:
             with self.subTest(path=path.relative_to(ROOT).as_posix()):
@@ -219,31 +274,47 @@ class ManifestTests(unittest.TestCase):
         self.assertFalse((ROOT / ".claude-plugin" / "plugin.json").exists())
 
     def test_host_manifests_agree(self):
-        claude = load_json(PLUGIN / ".claude-plugin" / "plugin.json")
-        codex = load_json(PLUGIN / ".codex-plugin" / "plugin.json")
-        cursor = load_json(PLUGIN / ".cursor-plugin" / "plugin.json")
-        for key in ("name", "version", "description"):
-            with self.subTest(key=key):
-                self.assertEqual(claude[key], codex[key])
-                self.assertEqual(claude[key], cursor[key])
-        self.assertEqual(claude["name"], "didit")
-        self.assertEqual(claude["version"], "1.0.0")
-        self.assertLessEqual(len(claude["description"]), 200)
-        self.assertEqual(claude["license"], "MIT")
-        self.assertEqual(claude["mcpServers"], "./.mcp.json")
-        self.assertTrue((PLUGIN / claude["icon"]).is_file())
-        for host in (codex, cursor):
-            self.assertTrue((PLUGIN / host["skills"]).is_dir())
-            self.assertTrue((PLUGIN / host["mcpServers"]).is_file())
+        didit = load_json(PLUGIN / ".claude-plugin" / "plugin.json")
+        for base in plugin_dirs():
+            with self.subTest(plugin=base.name):
+                claude = load_json(base / ".claude-plugin" / "plugin.json")
+                codex = load_json(base / ".codex-plugin" / "plugin.json")
+                cursor = load_json(base / ".cursor-plugin" / "plugin.json")
+                for key in ("name", "version", "description"):
+                    self.assertEqual(claude[key], codex[key], key)
+                    self.assertEqual(claude[key], cursor[key], key)
+                self.assertEqual(claude["name"], base.name)
+                self.assertEqual(claude["version"], "1.0.0")
+                self.assertTrue(claude.get("displayName"))
+                self.assertLessEqual(len(claude["description"]), 200)
+                self.assertEqual(claude["license"], "MIT")
+                self.assertEqual(claude["mcpServers"], "./.mcp.json")
+                self.assertTrue((base / claude["icon"]).is_file())
+                for key in ("author", "repository", "icon", "supportUrl", "privacyPolicyUrl", "termsOfServiceUrl"):
+                    self.assertEqual(claude[key], didit[key], key)
+                for host in (codex, cursor):
+                    self.assertTrue((base / host["skills"]).is_dir())
+                    self.assertTrue((base / host["mcpServers"]).is_file())
+                for key in ("composerIcon", "logo"):
+                    self.assertTrue((base / codex["interface"][key]).is_file(), key)
+                self.assertTrue((base / cursor["logo"]).is_file())
 
     def test_claude_marketplace_resolves(self):
         market = load_json(ROOT / ".claude-plugin" / "marketplace.json")
         self.assertEqual(market["name"], "didit")
         entries = {entry["name"]: entry for entry in market["plugins"]}
-        self.assertEqual(set(entries), {"didit", "didit-api"})
+        self.assertEqual(set(entries), set(EXPECTED_SKILLS) | {"didit-api"})
         for entry in entries.values():
             self.assertTrue((ROOT / entry["source"]).is_dir(), entry["source"])
-        self.assertEqual(entries["didit"]["source"], "./plugins/didit")
+        for name in EXPECTED_SKILLS:
+            with self.subTest(plugin=name):
+                entry = entries[name]
+                self.assertEqual(entry["source"], f"./plugins/{name}")
+                self.assertEqual(entry["version"], "1.0.0")
+                manifest = load_json(PLUGINS_DIR / name / ".claude-plugin" / "plugin.json")
+                self.assertEqual(entry["description"], manifest["description"])
+                self.assertTrue(entry.get("category"))
+                self.assertTrue(entry.get("keywords"))
         api = entries["didit-api"]
         self.assertEqual(api["source"], "./")
         self.assertIs(api["strict"], False)
@@ -258,11 +329,20 @@ class ManifestTests(unittest.TestCase):
         market = load_json(ROOT / ".agents" / "plugins" / "marketplace.json")
         self.assertEqual(market["name"], "didit")
         entries = {entry["name"]: entry for entry in market["plugins"]}
-        self.assertEqual(entries["didit"]["source"], {"source": "local", "path": "./plugins/didit"})
-        self.assertTrue((ROOT / entries["didit"]["source"]["path"]).is_dir())
+        self.assertEqual(set(entries), set(EXPECTED_SKILLS))
+        shape = {key: value for key, value in entries["didit"].items() if key not in {"name", "source"}}
+        for name, entry in entries.items():
+            with self.subTest(plugin=name):
+                self.assertEqual(entry["source"], {"source": "local", "path": f"./plugins/{name}"})
+                self.assertTrue((ROOT / entry["source"]["path"]).is_dir())
+                self.assertEqual({k: v for k, v in entry.items() if k not in {"name", "source"}}, shape)
 
     def test_mcp_server_entry(self):
-        self.assertEqual(mcp_problems(PLUGIN), [])
+        reference = (PLUGIN / ".mcp.json").read_bytes()
+        for base in plugin_dirs():
+            with self.subTest(plugin=base.name):
+                self.assertEqual(mcp_problems(base), [])
+                self.assertEqual((base / ".mcp.json").read_bytes(), reference, "must be identical to plugins/didit/.mcp.json")
 
     def test_no_empty_gitmodules(self):
         self.assertFalse((ROOT / ".gitmodules").exists())
@@ -270,47 +350,66 @@ class ManifestTests(unittest.TestCase):
 
 class SkillTests(CatalogMixin, unittest.TestCase):
     def test_skill_set_and_frontmatter(self):
-        found = sorted(p.name for p in (PLUGIN / "skills").iterdir() if p.is_dir())
-        self.assertEqual(found, sorted(PLUGIN_SKILLS))
-        for name in PLUGIN_SKILLS:
-            path = PLUGIN / "skills" / name / "SKILL.md"
-            with self.subTest(skill=name):
-                text = path.read_text(encoding="utf-8")
-                fields, _ = parse_frontmatter(text, name)
-                self.assertEqual(fields["name"], name)
-                self.assertLessEqual(len(fields["description"]), 600)
-                self.assertNotIn("<", fields["description"])
-                self.assertNotIn("$", fields["description"])
-                self.assertLessEqual(len(text.rstrip("\n").split("\n")), 200)
-                self.assertIn("## What good output looks like", text)
-                self.assertIn("## Do not", text)
-                self.assertIn("https://didit.me/pricing", text)
+        for base in plugin_dirs():
+            skills = EXPECTED_SKILLS[base.name]
+            found = sorted(p.name for p in (base / "skills").iterdir() if p.is_dir())
+            self.assertEqual(found, sorted(skills), base.name)
+            for name in skills:
+                path = base / "skills" / name / "SKILL.md"
+                with self.subTest(plugin=base.name, skill=name):
+                    text = path.read_text(encoding="utf-8")
+                    fields, _ = parse_frontmatter(text, name)
+                    self.assertEqual(fields["name"], name)
+                    self.assertLessEqual(len(fields["description"]), 600)
+                    self.assertNotIn("<", fields["description"])
+                    self.assertNotIn("$", fields["description"])
+                    self.assertLessEqual(len(text.rstrip("\n").split("\n")), 200)
+                    self.assertIn("## What good output looks like", text)
+                    self.assertIn("## Do not", text)
+                    self.assertIn("https://didit.me/pricing", text)
+
+    def test_didit_has_eight_skills(self):
+        self.assertEqual(len(PLUGIN_SKILLS), 8)
+
+    def test_skill_names_unique_across_repo(self):
+        rest = {p.parent.name for p in REST_SKILLS.glob("*/SKILL.md")}
+        self.assertEqual(len(rest), 20)
+        seen: dict[str, str] = {}
+        for plugin, skills in EXPECTED_SKILLS.items():
+            for name in skills:
+                with self.subTest(skill=name):
+                    self.assertNotIn(name, seen, f"{name} is in {seen.get(name)} and {plugin}")
+                    self.assertNotIn(name, rest, f"{name} collides with a REST skill")
+                    seen[name] = plugin
 
     def test_no_collision_with_rest_skills(self):
         rest = {p.parent.name for p in REST_SKILLS.glob("*/SKILL.md")}
-        self.assertEqual(len(rest), 20)
         self.assertEqual(set(PLUGIN_SKILLS) & rest, set())
-
-    def tool_texts(self):
-        for name in PLUGIN_SKILLS:
-            yield f"skills/{name}/SKILL.md", (PLUGIN / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
-        yield "tests/prompts.md", PROMPTS.read_text(encoding="utf-8")
 
     def test_every_tool_exists_in_catalog(self):
         known = self.known_tools()
-        for where, text in self.tool_texts():
-            for token in sorted(set(TOOL_TOKEN.findall(text))):
-                with self.subTest(file=where, tool=token):
-                    self.assertIn(token, known)
+        for base in plugin_dirs():
+            for where, text in skill_texts(base):
+                for token in sorted(set(TOOL_TOKEN.findall(text)) - NOT_TOOLS):
+                    with self.subTest(file=where, tool=token):
+                        self.assertIn(token, known)
 
     def test_confirm_tools_are_confirmed(self):
         confirm_tools = {name for name, tool in self.known_tools().items() if tool["confirm"]}
-        for where, text in self.tool_texts():
-            for section in sections(text):
-                used = confirm_tools & set(TOOL_TOKEN.findall(section))
-                if used:
-                    with self.subTest(file=where, section=section.split("\n", 1)[0]):
-                        self.assertRegex(section, CONFIRM_WORDS, f"{sorted(used)} without a confirmation sentence")
+        for base in plugin_dirs():
+            for where, text in skill_texts(base):
+                for section in sections(text):
+                    used = confirm_tools & set(TOOL_TOKEN.findall(section))
+                    if used:
+                        with self.subTest(file=where, section=section.split("\n", 1)[0]):
+                            self.assertRegex(section, CONFIRM_WORDS, f"{sorted(used)} without a confirmation sentence")
+
+    def test_focused_plugins_skip_business_update(self):
+        # No recipe uses it (its route does not exist as coded); prompts.md may list it as forbidden.
+        for name in FOCUSED:
+            for where, text in skill_texts(PLUGINS_DIR / name)[:-1]:
+                with self.subTest(file=where):
+                    self.assertNotRegex(text, r"\bdidit_vendor_business_update\b(?!_)")
 
     def test_read_only_and_discovery_wording(self):
         profiles = self.catalog()["profiles"]
@@ -340,41 +439,96 @@ class SkillTests(CatalogMixin, unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, connect)
 
+    def test_focused_start_skills_restate_the_rules(self):
+        for plugin, start in START_SKILL.items():
+            text = (PLUGINS_DIR / plugin / "skills" / start / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=start):
+                self.assertLessEqual(len(text.rstrip("\n").split("\n")), 60)
+                for phrase in (
+                    "Call `didit_context_get` first",
+                    "Never decide it from an application's name",
+                    "only when they are themselves in your tool list",
+                    "proxy call",
+                    "`confirm: true`",
+                    "Never ask for a password, an API key or a one-time code",
+                    "`didit_docs_search`",
+                    "https://didit.me/pricing",
+                ):
+                    self.assertIn(phrase, text)
+                for skill in EXPECTED_SKILLS[plugin]:
+                    if skill != start:
+                        self.assertIn(skill, text, f"{start} must route to {skill}")
+
+    def test_authentication_has_no_configuration_tools(self):
+        known = self.known_tools()
+        # The catalog has no tool that configures Authentication in this build.
+        for name, tool in known.items():
+            with self.subTest(tool=name):
+                self.assertNotIn("authentication", tool.get("permission") or "")
+                self.assertNotRegex(name, r"^didit_(auth|sign_?in|sso|passkey|jwks)")
+        core = {tool["name"] for tool in self.catalog()["profiles"]["core"]["tools"]}
+        for where, text in skill_texts(PLUGINS_DIR / "didit-authentication"):
+            for token in set(TOOL_TOKEN.findall(text)) - NOT_TOOLS:
+                with self.subTest(file=where, tool=token):
+                    self.assertIn(token, core, "Authentication skills only use core tools")
+        readme = (PLUGINS_DIR / "didit-authentication" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("this plugin is guidance + documentation search; configuration happens in the didit console", readme.lower())
+
     def test_prompts_cover_every_skill_twice(self):
-        text = PROMPTS.read_text(encoding="utf-8")
-        blocks = [s for s in sections(text) if s.startswith("## ")]
-        self.assertEqual(len(blocks), 16)
-        counts = {name: 0 for name in PLUGIN_SKILLS}
-        for block in blocks:
-            prompt = re.search(r'- Prompt: "(.+)"', block)
-            expected = re.search(r"- Expected skill: (\S+)", block)
-            self.assertTrue(prompt and expected, block.split("\n", 1)[0])
-            self.assertIn("- Tools the answer must name:", block)
-            self.assertIn("- Forbidden:", block)
-            for name in PLUGIN_SKILLS:
-                self.assertNotIn(name, prompt.group(1))
-            counts[expected.group(1)] += 1
-        self.assertEqual(set(counts.values()), {2}, counts)
+        for base in plugin_dirs():
+            skills = EXPECTED_SKILLS[base.name]
+            text = (base / "tests" / "prompts.md").read_text(encoding="utf-8")
+            blocks = [s for s in sections(text) if s.startswith("## ")]
+            with self.subTest(plugin=base.name):
+                self.assertEqual(len(blocks), 2 * len(skills))
+                counts = {name: 0 for name in skills}
+                for block in blocks:
+                    prompt = re.search(r'- Prompt: "(.+)"', block)
+                    expected = re.search(r"- Expected skill: (\S+)", block)
+                    self.assertTrue(prompt and expected, block.split("\n", 1)[0])
+                    self.assertIn("- Tools the answer must name:", block)
+                    self.assertIn("- Forbidden:", block)
+                    for name in skills:
+                        self.assertNotIn(name, prompt.group(1))
+                    counts[expected.group(1)] += 1
+                self.assertEqual(set(counts.values()), {2}, counts)
+        self.assertEqual(len([s for s in sections(PROMPTS.read_text(encoding="utf-8")) if s.startswith("## ")]), 16)
 
 
 class BundleTests(unittest.TestCase):
     def test_working_tree_bundle(self):
-        self.assertEqual(bundle_problems(PLUGIN), [])
+        for base in plugin_dirs():
+            with self.subTest(plugin=base.name):
+                self.assertEqual(bundle_problems(base), [])
 
     def test_readme_and_license(self):
-        readme = (PLUGIN / "README.md").read_text(encoding="utf-8")
-        self.assertGreaterEqual(words_outside_fences(readme), 40)
-        license_text = (PLUGIN / "LICENSE").read_text(encoding="utf-8")
-        self.assertIn("MIT License", license_text)
-        for heading in ("What this plugin does on your machine and where data goes", "Requirements", "Disconnect"):
-            self.assertIn(heading, readme)
+        for base in plugin_dirs():
+            with self.subTest(plugin=base.name):
+                readme = (base / "README.md").read_text(encoding="utf-8")
+                self.assertGreaterEqual(words_outside_fences(readme), 40)
+                license_text = (base / "LICENSE").read_text(encoding="utf-8")
+                self.assertIn("MIT License", license_text)
+                for heading in ("What this plugin does on your machine and where data goes", "Requirements", "Disconnect"):
+                    self.assertIn(heading, readme)
+                if base.name != "didit":
+                    self.assertIn(WHICH_HEADING, readme)
+                    for other in EXPECTED_SKILLS:
+                        self.assertIn(f"`{other}`", readme)
+                    self.assertIn(f"/plugin install {base.name} --marketplace didit-protocol/skills", readme)
+                    self.assertIn("?toolsets=", readme)
+                    for skill in EXPECTED_SKILLS[base.name]:
+                        self.assertIn(skill, readme)
 
     def test_only_one_binary(self):
-        binaries = sorted(p.relative_to(PLUGIN).as_posix() for p in PLUGIN.rglob("*.png"))
-        self.assertEqual(binaries, ["assets/didit-icon.png"])
-        data = (PLUGIN / "assets" / "didit-icon.png").read_bytes()
-        width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
-        self.assertEqual((width, height), (400, 400))
+        reference = (PLUGIN / "assets" / "didit-icon.png").read_bytes()
+        for base in plugin_dirs():
+            with self.subTest(plugin=base.name):
+                binaries = sorted(p.relative_to(base).as_posix() for p in base.rglob("*.png"))
+                self.assertEqual(binaries, ["assets/didit-icon.png"])
+                data = (base / "assets" / "didit-icon.png").read_bytes()
+                width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+                self.assertEqual((width, height), (400, 400))
+                self.assertEqual(data, reference)
 
     def _git(self, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True)
@@ -382,26 +536,33 @@ class BundleTests(unittest.TestCase):
     def test_committed_bundle(self):
         if shutil.which("git") is None:
             self.skipTest("git not available")
-        if self._git("rev-parse", "--verify", "HEAD:plugins/didit").returncode != 0:
-            self.skipTest("HEAD does not contain plugins/didit yet")
-        tree = self._git("ls-tree", "-r", "HEAD", "plugins/didit")
-        self.assertEqual(tree.returncode, 0)
-        for line in tree.stdout.decode().splitlines():
-            mode = line.split()[0]
-            self.assertNotIn(mode, {"160000", "120000"}, f"gitlink or symlink: {line}")
-        archive = self._git("archive", "--format=tar", "HEAD:plugins/didit")
-        self.assertEqual(archive.returncode, 0, archive.stderr.decode())
-        with tempfile.TemporaryDirectory() as tmp:
-            with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
-                for member in tar.getmembers():
-                    self.assertFalse(member.issym() or member.islnk(), member.name)
-                tar.extractall(tmp)
-            base = Path(tmp)
-            self.assertEqual(bundle_problems(base), [])
-            self.assertEqual(mcp_problems(base), [])
-            self.assertTrue((base / ".claude-plugin" / "plugin.json").is_file())
-            self.assertTrue((base / "LICENSE").is_file())
-            self.assertGreaterEqual(words_outside_fences((base / "README.md").read_text(encoding="utf-8")), 40)
+        checked = 0
+        for name in EXPECTED_SKILLS:
+            rel = f"plugins/{name}"
+            if self._git("rev-parse", "--verify", f"HEAD:{rel}").returncode != 0:
+                continue
+            checked += 1
+            with self.subTest(plugin=name):
+                tree = self._git("ls-tree", "-r", "HEAD", rel)
+                self.assertEqual(tree.returncode, 0)
+                for line in tree.stdout.decode().splitlines():
+                    mode = line.split()[0]
+                    self.assertNotIn(mode, {"160000", "120000"}, f"gitlink or symlink: {line}")
+                archive = self._git("archive", "--format=tar", f"HEAD:{rel}")
+                self.assertEqual(archive.returncode, 0, archive.stderr.decode())
+                with tempfile.TemporaryDirectory() as tmp:
+                    with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+                        for member in tar.getmembers():
+                            self.assertFalse(member.issym() or member.islnk(), member.name)
+                        tar.extractall(tmp)
+                    base = Path(tmp)
+                    self.assertEqual(bundle_problems(base), [])
+                    self.assertEqual(mcp_problems(base), [])
+                    self.assertTrue((base / ".claude-plugin" / "plugin.json").is_file())
+                    self.assertTrue((base / "LICENSE").is_file())
+                    self.assertGreaterEqual(words_outside_fences((base / "README.md").read_text(encoding="utf-8")), 40)
+        if checked == 0:
+            self.skipTest("HEAD does not contain any plugin yet")
 
 
 if __name__ == "__main__":

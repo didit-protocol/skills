@@ -64,12 +64,23 @@ Agents can go from nothing to a live verification link in **5 API calls**:
 
 The `didit` plugin connects your assistant to Didit's hosted MCP server and adds eight skills for working in your Didit account from chat: verification links and decisions, the review queue and cases, one-off checks, KYB, transaction monitoring, reports and workspace admin. You sign in with your Didit account (OAuth); no API key is needed. See [plugins/didit](plugins/didit/).
 
-- **Claude Code** (2.1.275+): `/plugin install didit --marketplace didit-protocol/skills`, or `/plugin marketplace add didit-protocol/skills` then `/plugin install didit@didit`. Then run `/mcp` to sign in.
-- **claude.ai and Cowork** (manual marketplace; directory listing pending): Customize > Plugins > Add marketplace `didit-protocol/skills`, install Didit, then connect "didit" on the plugin's Connectors tab.
-- **Codex:** `codex plugin marketplace add didit-protocol/skills` then `codex plugin add didit@didit`.
-- **Cursor:** use the Cursor plugin of [didit-protocol/mcp](https://github.com/didit-protocol/mcp), or this repo's [plugins/didit/.cursor-plugin/plugin.json](plugins/didit/.cursor-plugin/plugin.json).
+Want only one Didit product? Install a focused plugin instead. All of them use the same `didit` server, so installing several keeps one connection.
 
-Already added the Didit server by hand (custom connector or `claude mcp add`)? Keep it: the plugin uses the same server name `didit` and URL.
+| Plugin | What it covers | Install (Claude Code 2.1.275+) |
+|---|---|---|
+| [`didit`](plugins/didit/) | Everything in your Didit account | `/plugin install didit --marketplace didit-protocol/skills` |
+| [`didit-transaction-monitoring`](plugins/didit-transaction-monitoring/) | Transactions, rules, wallet screening, alerts, cases, AI Investigator | `/plugin install didit-transaction-monitoring --marketplace didit-protocol/skills` |
+| [`didit-user-management`](plugins/didit-user-management/) | People and companies you verify, lists, team and API keys | `/plugin install didit-user-management --marketplace didit-protocol/skills` |
+| [`didit-authentication`](plugins/didit-authentication/) | Guidance for adding Didit end-user sign-in to your app | `/plugin install didit-authentication --marketplace didit-protocol/skills` |
+| `didit-api` | Developer skills for the REST API (below) | `/plugin install didit-api --marketplace didit-protocol/skills` |
+
+Then run `/mcp` to sign in to the `didit` server.
+
+- **claude.ai and Cowork** (manual marketplace; directory listing pending): Customize > Plugins > Add marketplace `didit-protocol/skills`, install the plugin, then connect "didit" on the plugin's Connectors tab.
+- **Codex:** `codex plugin marketplace add didit-protocol/skills` then `codex plugin add <name>@didit`.
+- **Cursor:** use the Cursor plugin of [didit-protocol/mcp](https://github.com/didit-protocol/mcp), or the `.cursor-plugin/plugin.json` in each plugin folder.
+
+Already added the Didit server by hand (custom connector or `claude mcp add`)? Keep it: the plugins use the same server name `didit` and URL.
 
 ### Developer skills for the REST API
 
@@ -227,8 +238,11 @@ Each live check passes only when the endpoint answers with the documented status
 ## Repo Structure
 
 ```
-.claude-plugin/marketplace.json      ← Claude marketplace "didit": plugins didit and didit-api
-.agents/plugins/marketplace.json     ← Codex marketplace "didit"
+.claude-plugin/marketplace.json      ← Claude marketplace "didit": didit, the three focused plugins, didit-api
+.agents/plugins/marketplace.json     ← Codex marketplace "didit": didit and the three focused plugins
+plugins/didit-transaction-monitoring/ ← focused plugin: 6 skills (didit-tm-*), same MCP server
+plugins/didit-user-management/       ← focused plugin: 5 skills (didit-users-*), same MCP server
+plugins/didit-authentication/        ← focused plugin: 4 guidance skills (didit-auth-*), same MCP server
 plugins/didit/                       ← the didit plugin: hosted MCP server + 8 skills
 ├── .claude-plugin/plugin.json        (also .codex-plugin/ and .cursor-plugin/)
 ├── .mcp.json                         https://mcp.didit.me/mcp
@@ -257,7 +271,7 @@ skills/                              ← 20 skills (1 hub + 1 KYC recipe + 18 pr
 ├── didit-sdk-integration/            SKILL.md + scripts/mint_sdk_tokens.py
 └── didit-mcp-server/                 SKILL.md
 tests/test_skill_structure.py        ← offline checks
-tests/test_plugin_bundle.py          ← offline checks of the didit plugin
+tests/test_plugin_bundle.py          ← offline checks of every plugin under plugins/
 tests/test_all_skills.py             ← live endpoint checks
 ```
 

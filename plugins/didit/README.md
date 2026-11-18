@@ -34,6 +34,10 @@ codex plugin add didit@didit
 
 Already added the Didit server by hand (a custom connector or `claude mcp add`)? Keep it. The plugin uses the same server name, `didit`, and the same URL.
 
+## Focused plugins
+
+Need only one product? The same marketplace has `didit-transaction-monitoring`, `didit-user-management` and `didit-authentication`. Install either `didit` or the focused plugin for your product, not both. If both are installed nothing breaks: they use the same server and different skill names.
+
 ## Skills
 
 | Skill | Use it to |

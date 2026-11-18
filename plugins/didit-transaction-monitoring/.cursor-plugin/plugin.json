@@ -1,0 +1,25 @@
+{
+  "name": "didit-transaction-monitoring",
+  "displayName": "Didit Transaction Monitoring",
+  "version": "1.0.0",
+  "description": "Transaction monitoring from chat: search transactions, build and back-test rules, screen wallets, work alerts and cases, and review the AI Investigator queue in your Didit account.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me"
+  },
+  "homepage": "https://docs.didit.me/integration/mcp/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "logo": "assets/didit-icon.png",
+  "keywords": [
+    "transaction-monitoring",
+    "aml",
+    "fraud",
+    "compliance",
+    "cases",
+    "wallet-screening",
+    "mcp"
+  ],
+  "skills": "skills/",
+  "mcpServers": ".mcp.json"
+}
