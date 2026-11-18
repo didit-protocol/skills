@@ -1,6 +1,6 @@
 {
   "name": "didit-user-management",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Manage the people and companies you verify, your blocklist and custom lists, and your Didit workspace members, roles and API keys from chat.",
   "author": {
     "name": "Didit",
