@@ -336,7 +336,7 @@ class NameGuardTest(unittest.TestCase):
         self.assertEqual(code, 1, output)
         self.assertIn("notes.txt: line 2", output)
 
-    def test_symbolic_links_and_git_folders_are_never_read(self):
+    def test_a_symbolic_link_is_never_followed_and_git_folders_are_never_read(self):
         outside = self.tree.parent / (self.tree.name + ".outside")
         outside.write_text("zorvex\n", encoding="utf-8")
         self.addCleanup(outside.unlink)
@@ -345,8 +345,35 @@ class NameGuardTest(unittest.TestCase):
         (self.tree / ".git" / "packed.txt").write_text("zorvex\n", encoding="utf-8")
         (self.tree / "plain.txt").write_text("nothing\n", encoding="utf-8")
         code, output = self.run_guard()
+        # The file the link points at holds a name, and it is outside the tree: it is not opened.
         self.assertEqual(code, 0, output)
-        self.assertIn("1 files checked", output)
+        self.assertIn("2 files checked", output)
+
+    def test_a_symbolic_link_is_checked_by_its_name_and_its_stored_target(self):
+        (self.tree / "real").mkdir()
+        (self.tree / "real" / "page.md").write_text("clean\n", encoding="utf-8")
+        (self.tree / "zorvex-link.md").symlink_to("real/page.md")
+        (self.tree / "alias.md").symlink_to("../elsewhere/Quill-Harbor/page.md")
+        (self.tree / "folder-alias").symlink_to("/opt/zorvex/docs", target_is_directory=True)
+        (self.tree / "honest.md").symlink_to("real/page.md")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        lines = output.splitlines()
+        self.assertIn("  <withheld>: in its path", lines, output)
+        self.assertIn("  alias.md: in its link target", lines, output)
+        self.assertIn("  folder-alias: in its link target", lines, output)
+        self.assertIn("a withheld name is in 3 of 5 files", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "a link target that holds a name is never printed")
+
+    def test_an_empty_folder_is_checked_by_its_name(self):
+        (self.tree / "docs" / "zorvex").mkdir(parents=True)
+        (self.tree / "docs" / "empty-but-fine").mkdir()
+        (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  docs/<withheld>/: in its path", output.splitlines(), output)
+        self.assertNotIn("zorvex", output.lower())
 
     def test_a_name_in_a_file_or_folder_name_fails_and_the_report_hides_that_part(self):
         (self.tree / "zorvex-notes.md").write_text("nothing here\n", encoding="utf-8")

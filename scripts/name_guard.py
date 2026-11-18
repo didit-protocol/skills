@@ -12,7 +12,8 @@ together is therefore matched only when it is written together. What is
 compared:
 
 - the text of every file;
-- the path of every file, because a file or folder name is published too;
+- the path of every file and of every empty folder, because a name is published too;
+- the name and the stored target of every symbolic link (the link is never followed);
 - the raw bytes of images and fonts, where a caption or a comment can sit.
 
 A file whose text the guard cannot read (a PDF, an archive, an office document,
@@ -22,6 +23,9 @@ published here.
 The script reads the tree it is given as DATA. It never imports or runs anything
 from it, never follows a symbolic link, and its report never contains a word it
 found: it gives line numbers, and a path with the offending part replaced.
+
+It checks a tree. Commit messages, branch names and the text of a pull request
+are not part of a tree and are outside this check.
 
     python3 -I scripts/name_guard.py <tree> [--digests <file>]
 
@@ -64,18 +68,32 @@ def load_digests(path):
     return frozenset(lines)
 
 
-def tree_files(root):
-    """Every regular file under `root`, sorted. No symbolic link is followed or read."""
+def tree_entries(root):
+    """(regular files, symbolic links, empty folders) under `root`, each sorted. No link is followed."""
     root = Path(root)
-    found = []
+    files, links, empty = [], [], []
     for folder, folders, names in os.walk(root, followlinks=False):
-        folders[:] = sorted(name for name in folders if name != ".git" and not (Path(folder) / name).is_symlink())
+        here = Path(folder)
+        kept = []
+        for name in sorted(folders):
+            if (here / name).is_symlink():
+                links.append(here / name)
+            elif name != ".git":
+                kept.append(name)
+        folders[:] = kept
+        entries = 0
         for name in sorted(names):
-            path = Path(folder) / name
-            if path.is_symlink() or not path.is_file():
+            path = here / name
+            if path.is_symlink():
+                links.append(path)
+            elif path.is_file():
+                files.append(path)
+            else:
                 continue
-            found.append(path)
-    return found
+            entries += 1
+        if here != root and not kept and not entries and not any((here / name).is_symlink() for name in os.listdir(here)):
+            empty.append(here)
+    return sorted(files), sorted(links), sorted(empty)
 
 
 def withheld_runs(words, key, digests, cache):
@@ -123,14 +141,14 @@ def cannot_be_read(path, data):
 
 
 def scan(root, key, digests):
-    """(files seen, [(shown path, where the name is)], [shown paths of files that cannot be checked]).
+    """(entries seen, [(shown path, where the name is)], [shown paths of files that cannot be checked]).
 
     A shown path never contains a withheld name: the part that holds one is replaced.
     """
     root = Path(root)
     cache = {}
     found, unreadable = [], []
-    files = tree_files(root)
+    files, links, empty = tree_entries(root)
     for path in files:
         shown, in_path = masked_path(path.relative_to(root).parts, key, digests, cache)
         where = ["in its path"] if in_path else []
@@ -146,7 +164,19 @@ def scan(root, key, digests):
                 where.append("line " + ", ".join(str(line) for line in lines))
         if where:
             found.append((shown, "; ".join(where)))
-    return len(files), found, unreadable
+    for path in links:
+        # Git publishes a link's name and the target it stores. Both are compared; the target is never opened.
+        shown, in_path = masked_path(path.relative_to(root).parts, key, digests, cache)
+        where = ["in its path"] if in_path else []
+        if withheld_name_lines(os.readlink(path), key, digests, cache):
+            where.append("in its link target")
+        if where:
+            found.append((shown, "; ".join(where)))
+    for path in empty:
+        shown, in_path = masked_path(path.relative_to(root).parts, key, digests, cache)
+        if in_path:
+            found.append((shown + "/", "in its path"))
+    return len(files) + len(links) + len(empty), sorted(found), unreadable
 
 
 def main(argv=None):
