@@ -20,11 +20,13 @@ import json
 import os
 import py_compile
 import re
+import struct
 import subprocess
 import sys
 import tempfile
 import types
 import unittest
+import zlib
 from pathlib import Path
 from unittest import mock
 
@@ -272,7 +274,7 @@ class ContentTest(unittest.TestCase):
             _, found, unreadable = name_guard.scan(folder, NAME_GUARD_KEY.encode("utf-8"), digests)
         # The message says where a name is, never what it is.
         self.assertEqual(found, [], "a withheld name is in these places")
-        self.assertEqual(unreadable, [], "these files cannot be read as text, so they cannot be checked")
+        self.assertEqual(unreadable, [], "these files cannot be inspected in full, so they cannot be checked")
 
 
 class NameGuardTest(unittest.TestCase):
@@ -404,21 +406,83 @@ class NameGuardTest(unittest.TestCase):
         (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
         code, output = self.run_guard()
         self.assertEqual(code, 1, output)
-        self.assertIn("4 of 5 files cannot be read as text", output)
+        self.assertIn("4 of 5 files cannot be inspected in full", output)
         for shown in ("  guide.pdf", "  renamed.txt", "  blob.bin", "  <withheld>"):
             self.assertIn(shown, output.splitlines(), output)
         self.assertNotIn("zorvex", output.lower())
 
-    def test_images_and_fonts_are_allowed_and_their_bytes_are_compared(self):
-        png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01"
-        (self.tree / "icon.png").write_bytes(png)
+    @staticmethod
+    def png(*chunks, tail=b""):
+        """A PNG file made of the given (type, body) chunks between a header and an end marker."""
+        def chunk(kind, body):
+            return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+        header = chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0))
+        pixels = chunk(b"IDAT", zlib.compress(b"\x00\x00"))
+        return b"\x89PNG\r\n\x1a\n" + header + b"".join(chunk(k, b) for k, b in chunks) + pixels + chunk(b"IEND", b"") + tail
+
+    def test_a_png_is_the_one_binary_allowed_and_a_clean_one_passes(self):
+        (self.tree / "icon.png").write_bytes(self.png((b"sRGB", b"\x00"), (b"tEXt", b"Software\x00an editor")))
         code, output = self.run_guard()
         self.assertEqual(code, 0, output)
-        (self.tree / "captioned.png").write_bytes(png + b"\x00\x00\x00\x13tEXtComment\x00by Zorvex\x00")
+
+    def test_a_name_in_any_text_a_png_carries_is_found(self):
+        utf16 = "by Zorvex".encode("utf-16-le")
+        cases = {
+            "plain.png": (b"tEXt", b"Comment\x00made with Zorvex"),
+            "compressed.png": (b"zTXt", b"Comment\x00\x00" + zlib.compress(b"made with Zorvex")),
+            "international.png": (b"iTXt", b"Title\x00\x01\x00en\x00\x00" + zlib.compress("Quill Harbor".encode())),
+            "international-plain.png": (b"iTXt", b"Title\x00\x00\x00en\x00\x00" + "Quill Harbor".encode()),
+            "profile.png": (b"iCCP", b"zorvex\x00\x00" + zlib.compress(b"profile bytes")),
+            "profile-body.png": (b"iCCP", b"sRGB\x00\x00" + zlib.compress(b"desc" + "Zorvex".encode("utf-16-be"))),
+            "exif.png": (b"eXIf", b"MM\x00*\x00\x00\x00\x08" + utf16),
+            "exif-odd-offset.png": (b"eXIf", b"II*\x00\x08\x00\x00\x00\x00" + utf16),
+        }
+        for name, chunk in cases.items():
+            (self.tree / name).write_bytes(self.png(chunk))
         code, output = self.run_guard()
         self.assertEqual(code, 1, output)
-        self.assertIn("  captioned.png: in its bytes", output)
+        for name in cases:
+            self.assertIn(f"  {name}: in its metadata", output.splitlines(), output)
+        self.assertNotIn("cannot be inspected", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower())
+
+    def test_a_png_the_guard_cannot_inspect_in_full_is_refused(self):
+        good = self.png()
+        broken_crc = bytearray(self.png((b"tEXt", b"Comment\x00fine")))
+        broken_crc[-20] ^= 0xFF
+        cases = {
+            "unknown-chunk.png": self.png((b"prVt", b"zorvex")),
+            "after-the-end.png": self.png(tail=b"zorvex"),
+            "bad-checksum.png": bytes(broken_crc),
+            "cut-short.png": good[:-6],
+            "bad-compression.png": self.png((b"zTXt", b"Comment\x00\x00not zlib")),
+        }
+        for name, data in cases.items():
+            (self.tree / name).write_bytes(data)
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("5 of 5 files cannot be inspected in full", output)
+        for name in cases:
+            self.assertIn(f"  {name}", output.splitlines(), output)
         self.assertNotIn("zorvex", output.lower())
+
+    def test_other_images_and_fonts_are_refused_whatever_they_are_called(self):
+        cases = {
+            "photo.jpg": b"\xff\xd8\xff\xe0\x00\x10JFIF",
+            "anim.gif": b"GIF89a\x01\x00\x01\x00",
+            "picture.webp": b"RIFF\x24\x00\x00\x00WEBPVP8 ",
+            "font.otf": b"OTTO\x00\x0b\x00\x80",
+            "font.woff2": b"wOF2\x00\x01\x00\x00",
+            "truetype.ttf": b"\x00\x01\x00\x00\x00\x0f",
+            "renamed.md": b"GIF89a plain looking",
+        }
+        for name, data in cases.items():
+            (self.tree / name).write_bytes(data)
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("7 of 7 files cannot be inspected in full", output)
 
     def test_without_a_key_nothing_is_reported_as_checked(self):
         (self.tree / "a.txt").write_text("zorvex\n", encoding="utf-8")
