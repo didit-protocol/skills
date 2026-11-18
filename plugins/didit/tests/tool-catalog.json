@@ -1,0 +1,4504 @@
+{
+ "source": {
+  "repo": "https://github.com/didit-protocol/mcp",
+  "commit": "c46249f",
+  "generated_on": "2026-11-18"
+ },
+ "server_version": "5.1.67",
+ "profiles": {
+  "all": {
+   "options": {},
+   "total": 167,
+   "instructions": "Didit is an identity verification platform: KYC, KYB, AML screening, transaction monitoring, document and biometric checks. This server acts as the signed-in person, with their role's permissions. Start with didit_context_get: it returns the organizations and applications you can use, their ids, and whether each application is sandbox or live.\n\norganization_id and application_id are optional on every tool: they default to the person's only organization and application. Pass them when didit_context_get shows several.\n\nBuild and test in a sandbox application: checks there are free and didit_session_simulate finishes a session with the outcome you choose. Use a live application for real verifications only.\n\nThis connection loads every toolset.\n\nTools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation. Sign-in is handled by OAuth: never ask the person for a password, an API key or a one-time code.\n\nFor how Didit works or how to integrate it, use didit_docs_search instead of answering from memory.",
+   "tools": [
+    {
+     "name": "didit_alert_configure",
+     "type": "write",
+     "group": "Webhooks & Alerts",
+     "permission": "write:applications",
+     "required": [
+      "alert_type"
+     ],
+     "properties": [
+      "alert_type",
+      "application_id",
+      "data",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_alert_list",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:applications",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_allowlist_add",
+     "type": "write",
+     "group": "Lists & Blocklist",
+     "permission": "write:blocklist",
+     "required": [
+      "allowlist_phone",
+      "session_id"
+     ],
+     "properties": [
+      "allowlist_phone",
+      "application_id",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_analytics",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": "read:analytics",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "include_timeseries",
+      "last_n_days",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_audit_log_list",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": "read:audit-logs",
+     "required": [],
+     "properties": [
+      "action_category",
+      "actor_type",
+      "application_id",
+      "created_at_end",
+      "created_at_start",
+      "organization_id",
+      "page",
+      "page_size",
+      "search",
+      "target_id",
+      "target_type"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_get_details",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_get_plan",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_list_payment_methods",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_list_receipts",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_quote_plan",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [
+      "plan"
+     ],
+     "properties": [
+      "billing_interval",
+      "organization_id",
+      "plan"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_update_details",
+     "type": "write",
+     "group": "Billing",
+     "permission": "write:subscription",
+     "required": [],
+     "properties": [
+      "address",
+      "billing_emails",
+      "legal_name",
+      "organization_id",
+      "po_number",
+      "tax_id",
+      "tax_id_type"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_blocklist_add",
+     "type": "write",
+     "group": "Lists & Blocklist",
+     "permission": "write:blocklist",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "blocklist_document",
+      "blocklist_email",
+      "blocklist_face",
+      "blocklist_phone",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_blocklist_get",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:blocklist",
+     "required": [],
+     "properties": [
+      "application_id",
+      "item_type",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_blocklist_remove",
+     "type": "destructive",
+     "group": "Lists & Blocklist",
+     "permission": "write:blocklist",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "session_id",
+      "unblock_document",
+      "unblock_email",
+      "unblock_face",
+      "unblock_phone"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_branding_get",
+     "type": "read",
+     "group": "Branding",
+     "permission": "read:customization",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_branding_update",
+     "type": "write",
+     "group": "Branding",
+     "permission": "write:customization",
+     "required": [],
+     "properties": [
+      "application_id",
+      "image_favicon_base64",
+      "image_favicon_path",
+      "image_rectangular_base64",
+      "image_rectangular_path",
+      "image_square_base64",
+      "image_square_path",
+      "organization_id",
+      "sms_sender_name"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_create",
+     "type": "write",
+     "group": "Cases",
+     "permission": "write:cases",
+     "required": [
+      "title"
+     ],
+     "properties": [
+      "application_id",
+      "assigned_to",
+      "blueprint",
+      "due_at",
+      "links",
+      "organization_id",
+      "priority",
+      "review_duplicates",
+      "separate_incident_reason",
+      "subject",
+      "tags",
+      "title"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_get",
+     "type": "read",
+     "group": "Cases",
+     "permission": "read:cases",
+     "required": [
+      "case_id"
+     ],
+     "properties": [
+      "application_id",
+      "case_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_list",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "cursor",
+      "organization_id",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_manage",
+     "type": "destructive",
+     "group": "Cases",
+     "permission": "write:cases",
+     "required": [
+      "action",
+      "case_id"
+     ],
+     "properties": [
+      "action",
+      "application_id",
+      "case_id",
+      "confirm",
+      "data",
+      "organization_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_case_search",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_statistics",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "assigned_to",
+      "blueprint",
+      "date_from",
+      "date_to",
+      "organization_id",
+      "priority",
+      "scope",
+      "source",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_context_get",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_docs_search",
+     "type": "read",
+     "group": "Documentation",
+     "permission": null,
+     "required": [
+      "query"
+     ],
+     "properties": [
+      "language",
+      "limit",
+      "query"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_accept",
+     "type": "destructive",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "confirm",
+      "run_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "narrative",
+      "organization_id",
+      "run_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_investigator_activity_list",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "actor",
+      "application_id",
+      "group",
+      "limit",
+      "offset",
+      "organization_id",
+      "scope",
+      "since",
+      "until"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_add_note",
+     "type": "write",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "note",
+      "run_id"
+     ],
+     "properties": [
+      "application_id",
+      "note",
+      "organization_id",
+      "run_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_backtest_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "backtest_id"
+     ],
+     "properties": [
+      "application_id",
+      "backtest_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_backtest_start",
+     "type": "write",
+     "group": "Investigator",
+     "permission": "write:applications",
+     "required": [
+      "queues"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "period_days",
+      "queues",
+      "source"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_batch_accept",
+     "type": "destructive",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "confirm",
+      "run_ids"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "organization_id",
+      "run_ids"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_investigator_dashboard_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "scope"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_override",
+     "type": "destructive",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "action",
+      "category",
+      "confirm",
+      "reason",
+      "run_id"
+     ],
+     "properties": [
+      "action",
+      "application_id",
+      "category",
+      "confirm",
+      "organization_id",
+      "reason",
+      "run_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_investigator_performance_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "period",
+      "scope"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_question_answer",
+     "type": "destructive",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "answer",
+      "confirm",
+      "question_id"
+     ],
+     "properties": [
+      "answer",
+      "application_id",
+      "confirm",
+      "detail",
+      "organization_id",
+      "question_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_investigator_question_dismiss",
+     "type": "destructive",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "confirm",
+      "question_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "organization_id",
+      "question_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_investigator_question_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "question_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "question_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_question_list",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_queue_list",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "confidence",
+      "kind",
+      "limit",
+      "offset",
+      "organization_id",
+      "queue",
+      "ready",
+      "recommendation",
+      "scope",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_record_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "session_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_report_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "run_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "run_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_rereview",
+     "type": "destructive",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "confirm",
+      "run_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "note",
+      "organization_id",
+      "run_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_lists_create",
+     "type": "write",
+     "group": "Lists & Blocklist",
+     "permission": "create:lists",
+     "required": [
+      "entry_type",
+      "list_type",
+      "name"
+     ],
+     "properties": [
+      "application_id",
+      "description",
+      "entry_type",
+      "list_type",
+      "name",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_delete",
+     "type": "destructive",
+     "group": "Lists & Blocklist",
+     "permission": "delete:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "list_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_entries_list",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "limit",
+      "list_uuid",
+      "offset",
+      "organization_id",
+      "reference_session_id",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_entry_create",
+     "type": "write",
+     "group": "Lists & Blocklist",
+     "permission": "create:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "comment",
+      "display_label",
+      "face_image_source",
+      "list_uuid",
+      "metadata",
+      "organization_id",
+      "reference_node_id",
+      "reference_object_uuid",
+      "reference_session_id",
+      "value"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_entry_delete",
+     "type": "destructive",
+     "group": "Lists & Blocklist",
+     "permission": "delete:lists",
+     "required": [
+      "entry_uuid",
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "entry_uuid",
+      "list_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_entry_upload_face",
+     "type": "write",
+     "group": "Lists & Blocklist",
+     "permission": "create:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "comment",
+      "display_label",
+      "image_base64",
+      "image_path",
+      "list_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_get",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "list_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_list",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:lists",
+     "required": [],
+     "properties": [
+      "application_id",
+      "entry_type",
+      "limit",
+      "list_type",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_update",
+     "type": "write",
+     "group": "Lists & Blocklist",
+     "permission": "write:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "description",
+      "list_uuid",
+      "name",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_create_api_key",
+     "type": "destructive",
+     "group": "Account & Org",
+     "permission": "write:api-keys",
+     "required": [
+      "application_id",
+      "confirm",
+      "organization_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "expires_at",
+      "label",
+      "organization_id",
+      "scopes",
+      "workflow_ids"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_org_get_application",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [
+      "application_id",
+      "organization_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_get_balance",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_invite_member",
+     "type": "write",
+     "group": "Account & Org",
+     "permission": "write:members",
+     "required": [
+      "app_ids",
+      "emails",
+      "role"
+     ],
+     "properties": [
+      "app_ids",
+      "emails",
+      "organization_id",
+      "role"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_api_keys",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "read:applications",
+     "required": [
+      "application_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_applications",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [
+      "organization_id"
+     ],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_members",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "list:members",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_roles",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "list:roles",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_remove_member",
+     "type": "destructive",
+     "group": "Account & Org",
+     "permission": "delete:members",
+     "required": [
+      "member_id"
+     ],
+     "properties": [
+      "member_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_update_member",
+     "type": "write",
+     "group": "Account & Org",
+     "permission": "write:members",
+     "required": [
+      "accessible_applications",
+      "member_id",
+      "role"
+     ],
+     "properties": [
+      "accessible_applications",
+      "member_id",
+      "organization_id",
+      "role"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_append_choices",
+     "type": "write",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:questionnaires",
+     "required": [
+      "choices",
+      "questionnaire_id"
+     ],
+     "properties": [
+      "application_id",
+      "choices",
+      "node_id",
+      "organization_id",
+      "publish",
+      "questionnaire_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_create",
+     "type": "write",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:questionnaires",
+     "required": [
+      "form_elements",
+      "title"
+     ],
+     "properties": [
+      "application_id",
+      "default_language",
+      "description",
+      "form_elements",
+      "languages",
+      "organization_id",
+      "status",
+      "title"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_delete",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:questionnaires",
+     "required": [
+      "questionnaire_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "questionnaire_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_get",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:questionnaires",
+     "required": [
+      "questionnaire_id"
+     ],
+     "properties": [
+      "application_id",
+      "include_translations",
+      "organization_id",
+      "questionnaire_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_list",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:questionnaires",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_update",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:questionnaires",
+     "required": [
+      "questionnaire_id"
+     ],
+     "properties": [
+      "application_id",
+      "default_language",
+      "description",
+      "form_elements",
+      "languages",
+      "organization_id",
+      "questionnaire_id",
+      "status",
+      "title"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_export",
+     "type": "write",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [
+      "kind"
+     ],
+     "properties": [
+      "application_id",
+      "data",
+      "kind",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_get",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [
+      "report_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "report_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_get_download_url",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [
+      "report_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "report_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_list",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "q",
+      "report_type",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_add_review",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "comment",
+      "new_status",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_batch_delete",
+     "type": "destructive",
+     "group": "Sessions",
+     "permission": "delete:sessions",
+     "required": [
+      "confirm"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "delete_all",
+      "organization_id",
+      "session_numbers"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_session_check_import_provider",
+     "type": "write",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "credentials",
+      "provider"
+     ],
+     "properties": [
+      "application_id",
+      "credentials",
+      "options",
+      "organization_id",
+      "provider",
+      "record_ids"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_create",
+     "type": "write",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "callback",
+      "callback_method",
+      "contact_details",
+      "expected_details",
+      "language",
+      "metadata",
+      "organization_id",
+      "portrait_image",
+      "sandbox_scenario",
+      "vendor_data",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_create_import",
+     "type": "write",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "source_file_url"
+     ],
+     "properties": [
+      "application_id",
+      "credentials",
+      "dry_run",
+      "face_templates",
+      "import_type",
+      "lawful_basis_confirmed",
+      "options",
+      "organization_id",
+      "provider",
+      "source",
+      "source_file_url",
+      "source_format",
+      "status_mapping",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_delete",
+     "type": "destructive",
+     "group": "Sessions",
+     "permission": "delete:sessions",
+     "required": [
+      "confirm",
+      "session_id"
+     ],
+     "properties": [
+      "confirm",
+      "session_id"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_session_explain_decision",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_generate_pdf",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_decision",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_import",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "import_id"
+     ],
+     "properties": [
+      "application_id",
+      "import_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_import_errors",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "import_id"
+     ],
+     "properties": [
+      "application_id",
+      "import_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_import_template",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_location_evidence",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_signature_evidence",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "node_id",
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "node_id",
+      "organization_id",
+      "session_id",
+      "signature_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_signature_field_image",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "field_id",
+      "node_id",
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "field_id",
+      "node_id",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_signed_document",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "document_id",
+      "node_id",
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "document_id",
+      "node_id",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_import_shared",
+     "type": "write",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "share_token"
+     ],
+     "properties": [
+      "share_token"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_list",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "list:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "offset",
+      "organization_id",
+      "search",
+      "session_kind",
+      "status",
+      "vendor_data",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_list_import_providers",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_list_reviews",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_manage_import",
+     "type": "write",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "action",
+      "import_id"
+     ],
+     "properties": [
+      "action",
+      "application_id",
+      "data",
+      "import_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_search",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "list:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "session_kind",
+      "status",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_share",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "partner_client_id",
+      "session_id"
+     ],
+     "properties": [
+      "partner_client_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_simulate",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "comment",
+      "new_status",
+      "organization_id",
+      "risk",
+      "scenario",
+      "send_webhooks",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_update_data",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "address",
+      "date_of_birth",
+      "date_of_issue",
+      "document_number",
+      "document_subtype",
+      "document_type",
+      "expiration_date",
+      "extra_fields",
+      "first_name",
+      "gender",
+      "issuing_state",
+      "last_name",
+      "marital_status",
+      "nationality",
+      "parsed_address",
+      "personal_number",
+      "place_of_birth",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_update_poa_data",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "document_language",
+      "document_type",
+      "extra_fields",
+      "issue_date",
+      "issuer",
+      "issuing_state",
+      "name_on_document",
+      "poa_address",
+      "poa_parsed_address",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_update_status",
+     "type": "destructive",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "new_status",
+      "session_id"
+     ],
+     "properties": [
+      "comment",
+      "email_address",
+      "email_language",
+      "new_status",
+      "nodes_to_resubmit",
+      "send_email",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_validate_signatures",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "node_id",
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "node_id",
+      "organization_id",
+      "session_id",
+      "signature_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_webhook_resend",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "create:sessions",
+     "required": [
+      "session_id",
+      "webhook_id"
+     ],
+     "properties": [
+      "session_id",
+      "webhook_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_webhooks",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id",
+      "wait_seconds"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_create",
+     "type": "write",
+     "group": "Transactions (AML)",
+     "permission": "create:transactions",
+     "required": [
+      "subject",
+      "transaction_category",
+      "transaction_details",
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "counterparty",
+      "custom_properties",
+      "include_crypto_screening",
+      "network_snapshot",
+      "organization_id",
+      "subject",
+      "time_zone",
+      "transaction_at",
+      "transaction_category",
+      "transaction_details",
+      "transaction_id",
+      "travel_rule_details"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_get",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_list",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_backtest",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "aggregation",
+      "application_id",
+      "conditions",
+      "evaluation_mode",
+      "organization_id",
+      "period_days",
+      "scope"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_create",
+     "type": "write",
+     "group": "Transactions (AML)",
+     "permission": "write:transactions",
+     "required": [
+      "actions",
+      "category",
+      "mode",
+      "title"
+     ],
+     "properties": [
+      "actions",
+      "aggregation",
+      "application_id",
+      "category",
+      "conditions",
+      "description",
+      "evaluation_mode",
+      "metadata",
+      "mode",
+      "organization_id",
+      "scope",
+      "title"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_delete",
+     "type": "destructive",
+     "group": "Transactions (AML)",
+     "permission": "write:transactions",
+     "required": [
+      "rule_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "rule_uuid"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_get",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [
+      "rule_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "rule_uuid"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_install",
+     "type": "write",
+     "group": "Transactions (AML)",
+     "permission": "write:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "bundle",
+      "library_keys",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_library_list",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "bundle",
+      "category",
+      "limit",
+      "offset",
+      "organization_id",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_list",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "bundle",
+      "category",
+      "limit",
+      "mode",
+      "offset",
+      "ordering",
+      "organization_id",
+      "search",
+      "source"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_uninstall",
+     "type": "destructive",
+     "group": "Transactions (AML)",
+     "permission": "write:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "bundle",
+      "library_keys",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_update",
+     "type": "write",
+     "group": "Transactions (AML)",
+     "permission": "write:transactions",
+     "required": [
+      "rule_uuid"
+     ],
+     "properties": [
+      "actions",
+      "aggregation",
+      "application_id",
+      "category",
+      "conditions",
+      "description",
+      "evaluation_mode",
+      "metadata",
+      "mode",
+      "organization_id",
+      "rule_uuid",
+      "scope",
+      "title"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_screen_wallet",
+     "type": "write",
+     "group": "Transactions (AML)",
+     "permission": "create:transactions",
+     "required": [
+      "blockchain",
+      "wallet_address"
+     ],
+     "properties": [
+      "application_id",
+      "blockchain",
+      "direction",
+      "organization_id",
+      "wallet_address"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_search",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_create",
+     "type": "write",
+     "group": "Vendor Users & Businesses",
+     "permission": "create:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "country_code",
+      "display_name",
+      "legal_name",
+      "metadata",
+      "organization_id",
+      "registration_number",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_delete",
+     "type": "destructive",
+     "group": "Vendor Users & Businesses",
+     "permission": "delete:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "confirm",
+      "delete_all",
+      "didit_internal_id_list",
+      "organization_id",
+      "vendor_data_list"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_vendor_business_get",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "read:businesses",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_list",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_search",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_update",
+     "type": "write",
+     "group": "Vendor Users & Businesses",
+     "permission": null,
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "country_code",
+      "display_name",
+      "legal_name",
+      "metadata",
+      "organization_id",
+      "registration_number",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_update_status",
+     "type": "write",
+     "group": "Vendor Users & Businesses",
+     "permission": "write:businesses",
+     "required": [
+      "status",
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_create",
+     "type": "write",
+     "group": "Vendor Users & Businesses",
+     "permission": "create:users",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "approved_emails",
+      "approved_phones",
+      "date_of_birth",
+      "display_name",
+      "full_name",
+      "issuing_states",
+      "metadata",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_delete",
+     "type": "destructive",
+     "group": "Vendor Users & Businesses",
+     "permission": "delete:users",
+     "required": [],
+     "properties": [
+      "application_id",
+      "confirm",
+      "delete_all",
+      "organization_id",
+      "vendor_data_list"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_vendor_user_get",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "read:users",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_list",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:users",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_search",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:users",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_update",
+     "type": "write",
+     "group": "Vendor Users & Businesses",
+     "permission": "write:users",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "approved_emails",
+      "approved_phones",
+      "date_of_birth",
+      "display_name",
+      "full_name",
+      "issuing_states",
+      "metadata",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_update_status",
+     "type": "write",
+     "group": "Vendor Users & Businesses",
+     "permission": "write:users",
+     "required": [
+      "status",
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_account_check",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "account",
+      "country",
+      "holder"
+     ],
+     "properties": [
+      "account",
+      "application_id",
+      "consent",
+      "country",
+      "holder",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_age",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "image_base64",
+      "image_path",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_aml",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "full_name"
+     ],
+     "properties": [
+      "application_id",
+      "date_of_birth",
+      "document_number",
+      "entity_type",
+      "full_name",
+      "include_adverse_media",
+      "include_ongoing_monitoring",
+      "metadata",
+      "nationality",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_database",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "issuing_state"
+     ],
+     "properties": [
+      "application_id",
+      "date_of_birth",
+      "document_number",
+      "document_type",
+      "first_name",
+      "full_name",
+      "gender",
+      "issuing_state",
+      "last_name",
+      "metadata",
+      "middle_name",
+      "nationality",
+      "no_match_action",
+      "organization_id",
+      "partial_match_action",
+      "personal_number",
+      "services",
+      "tax_number",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_email_check",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": null,
+     "required": [
+      "code",
+      "email"
+     ],
+     "properties": [
+      "application_id",
+      "code",
+      "email",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_email_send",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": null,
+     "required": [
+      "email"
+     ],
+     "properties": [
+      "application_id",
+      "email",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_face_match",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "image_1_base64",
+      "image_1_path",
+      "image_2_base64",
+      "image_2_path",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_face_search",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "image_base64",
+      "image_path",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_id",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "back_image_base64",
+      "back_image_path",
+      "front_image_base64",
+      "front_image_path",
+      "minimum_age",
+      "organization_id",
+      "perform_document_liveness",
+      "preferred_characters",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_kyb_search",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "country_code"
+     ],
+     "properties": [
+      "application_id",
+      "country_code",
+      "metadata",
+      "name",
+      "organization_id",
+      "registration_number",
+      "search_type",
+      "vendor_data",
+      "webhook_url"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_kyb_select",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "kyb_response_id"
+     ],
+     "properties": [
+      "application_id",
+      "kyb_response_id",
+      "metadata",
+      "organization_id",
+      "save_api_request",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_passive_liveness",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "image_base64",
+      "image_path",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_phone_check",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "code",
+      "phone_number"
+     ],
+     "properties": [
+      "application_id",
+      "code",
+      "organization_id",
+      "phone_number"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_phone_send",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [
+      "phone_number"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "phone_number"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_verify_poa",
+     "type": "write",
+     "group": "Verification APIs",
+     "permission": "create:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "document_image_base64",
+      "document_image_path",
+      "expected_address",
+      "expected_country",
+      "expected_first_name",
+      "expected_last_name",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_create",
+     "type": "write",
+     "group": "Webhooks & Alerts",
+     "permission": "write:webhooks",
+     "required": [
+      "label",
+      "url"
+     ],
+     "properties": [
+      "application_id",
+      "enabled",
+      "label",
+      "organization_id",
+      "subscribed_events",
+      "url",
+      "webhook_version"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_delete",
+     "type": "destructive",
+     "group": "Webhooks & Alerts",
+     "permission": "write:webhooks",
+     "required": [
+      "destination_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "destination_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_get",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:webhooks",
+     "required": [
+      "destination_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "destination_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_list",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:webhooks",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_update",
+     "type": "destructive",
+     "group": "Webhooks & Alerts",
+     "permission": "write:webhooks",
+     "required": [
+      "destination_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "destination_uuid",
+      "enabled",
+      "label",
+      "organization_id",
+      "subscribed_events",
+      "url",
+      "webhook_version"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_build_graph",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "branches",
+      "countries",
+      "document_rules",
+      "features",
+      "include_graph",
+      "organization_id",
+      "per_feature_config",
+      "subject"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_create",
+     "type": "write",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "features"
+     ],
+     "properties": [
+      "application_id",
+      "features",
+      "is_default",
+      "is_desktop_allowed",
+      "is_session_reference_enabled",
+      "is_white_label_enabled",
+      "max_retry_attempts",
+      "organization_id",
+      "retry_window_days",
+      "session_expiration_time",
+      "status",
+      "workflow_label"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_create_draft",
+     "type": "write",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_delete",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_edit_graph",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "operations",
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "operations",
+      "organization_id",
+      "publish",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_branch_fields",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "branch_node_id",
+      "graph",
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "branch_node_id",
+      "graph",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_feature_config_schema",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "feature"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_field_definitions",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "feature",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_graph",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "include_config",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_id_verification_methods_catalog",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "country",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_kyb_registry_catalog",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "countries"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_list",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "include_age_assurance",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_publish",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_search",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "organization_id",
+      "search",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_set_graph",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "graph",
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "graph",
+      "organization_id",
+      "publish",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_update",
+     "type": "destructive",
+     "group": "Workflows & Questionnaires",
+     "permission": "write:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "is_default",
+      "is_desktop_allowed",
+      "is_session_reference_enabled",
+      "is_white_label_enabled",
+      "max_retry_attempts",
+      "organization_id",
+      "retry_window_days",
+      "session_expiration_time",
+      "status",
+      "workflow_id",
+      "workflow_label"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_validate_graph",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "graph"
+     ],
+     "properties": [
+      "application_id",
+      "graph",
+      "include_config",
+      "organization_id",
+      "workflow_id",
+      "workflow_type"
+     ],
+     "confirm": false
+    }
+   ]
+  },
+  "core": {
+   "options": {
+    "selection": {
+     "toolsets": {},
+     "readOnly": false,
+     "unknown": []
+    }
+   },
+   "total": 29,
+   "instructions": "Didit is an identity verification platform: KYC, KYB, AML screening, transaction monitoring, document and biometric checks. This server acts as the signed-in person, with their role's permissions. Start with didit_context_get: it returns the organizations and applications you can use, their ids, and whether each application is sandbox or live.\n\norganization_id and application_id are optional on every tool: they default to the person's only organization and application. Pass them when didit_context_get shows several.\n\nBuild and test in a sandbox application: checks there are free and didit_session_simulate finishes a session with the outcome you choose. Use a live application for real verifications only.\n\nThis connection loads these toolsets: core. More tools exist in: account, billing, sessions, workflows, lists, vendors, transactions, cases, investigator, webhooks, reports, branding, verification. They are not in your tool list: find one with didit_tool_search, then run it with didit_tool_call_read or didit_tool_call_write. To load a toolset directly, the person can add `?toolsets=<ids>` (comma separated, or `toolsets=all`) to the server URL.\n\nTools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation. Sign-in is handled by OAuth: never ask the person for a password, an API key or a one-time code.\n\nFor how Didit works or how to integrate it, use didit_docs_search instead of answering from memory.",
+   "tools": [
+    {
+     "name": "didit_analytics",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": "read:analytics",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "include_timeseries",
+      "last_n_days",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_get",
+     "type": "read",
+     "group": "Cases",
+     "permission": "read:cases",
+     "required": [
+      "case_id"
+     ],
+     "properties": [
+      "application_id",
+      "case_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_search",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_context_get",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_docs_search",
+     "type": "read",
+     "group": "Documentation",
+     "permission": null,
+     "required": [
+      "query"
+     ],
+     "properties": [
+      "language",
+      "limit",
+      "query"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_create_api_key",
+     "type": "destructive",
+     "group": "Account & Org",
+     "permission": "write:api-keys",
+     "required": [
+      "application_id",
+      "confirm",
+      "organization_id"
+     ],
+     "properties": [
+      "application_id",
+      "confirm",
+      "expires_at",
+      "label",
+      "organization_id",
+      "scopes",
+      "workflow_ids"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_org_get_application",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [
+      "application_id",
+      "organization_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_get_balance",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_api_keys",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "read:applications",
+     "required": [
+      "application_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_create",
+     "type": "write",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "callback",
+      "callback_method",
+      "contact_details",
+      "expected_details",
+      "language",
+      "metadata",
+      "organization_id",
+      "portrait_image",
+      "sandbox_scenario",
+      "vendor_data",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_explain_decision",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_decision",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_search",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "list:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "session_kind",
+      "status",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_simulate",
+     "type": "write",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "comment",
+      "new_status",
+      "organization_id",
+      "risk",
+      "scenario",
+      "send_webhooks",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_update_status",
+     "type": "destructive",
+     "group": "Sessions",
+     "permission": "write:sessions",
+     "required": [
+      "new_status",
+      "session_id"
+     ],
+     "properties": [
+      "comment",
+      "email_address",
+      "email_language",
+      "new_status",
+      "nodes_to_resubmit",
+      "send_email",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_webhooks",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id",
+      "wait_seconds"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_tool_call_read",
+     "type": "read",
+     "group": "Tool Discovery",
+     "permission": null,
+     "required": [
+      "name"
+     ],
+     "properties": [
+      "arguments",
+      "name"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_tool_call_write",
+     "type": "destructive",
+     "group": "Tool Discovery",
+     "permission": null,
+     "required": [
+      "name"
+     ],
+     "properties": [
+      "arguments",
+      "name"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_tool_describe",
+     "type": "read",
+     "group": "Tool Discovery",
+     "permission": null,
+     "required": [
+      "names"
+     ],
+     "properties": [
+      "names"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_tool_search",
+     "type": "read",
+     "group": "Tool Discovery",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "limit",
+      "query",
+      "toolset"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_get",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_search",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_search",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_search",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:users",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_create",
+     "type": "write",
+     "group": "Webhooks & Alerts",
+     "permission": "write:webhooks",
+     "required": [
+      "label",
+      "url"
+     ],
+     "properties": [
+      "application_id",
+      "enabled",
+      "label",
+      "organization_id",
+      "subscribed_events",
+      "url",
+      "webhook_version"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_list",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:webhooks",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_update",
+     "type": "destructive",
+     "group": "Webhooks & Alerts",
+     "permission": "write:webhooks",
+     "required": [
+      "destination_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "destination_uuid",
+      "enabled",
+      "label",
+      "organization_id",
+      "subscribed_events",
+      "url",
+      "webhook_version"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_search",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "organization_id",
+      "search",
+      "workflow_id"
+     ],
+     "confirm": false
+    }
+   ]
+  },
+  "all_read_only": {
+   "options": {
+    "selection": {
+     "toolsets": "all",
+     "readOnly": true,
+     "unknown": []
+    }
+   },
+   "total": 77,
+   "instructions": "Didit is an identity verification platform: KYC, KYB, AML screening, transaction monitoring, document and biometric checks. This server acts as the signed-in person, with their role's permissions. Start with didit_context_get: it returns the organizations and applications you can use, their ids, and whether each application is sandbox or live.\n\norganization_id and application_id are optional on every tool: they default to the person's only organization and application. Pass them when didit_context_get shows several.\n\nBuild and test in a sandbox application: checks there are free and didit_session_simulate finishes a session with the outcome you choose. Use a live application for real verifications only.\n\nThis connection loads every toolset. It is read-only: tools that change data are not available, and the person reconnects without read-only to allow changes.\n\nTools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation. Sign-in is handled by OAuth: never ask the person for a password, an API key or a one-time code.\n\nFor how Didit works or how to integrate it, use didit_docs_search instead of answering from memory.",
+   "tools": [
+    {
+     "name": "didit_alert_list",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:applications",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_analytics",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": "read:analytics",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "include_timeseries",
+      "last_n_days",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_audit_log_list",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": "read:audit-logs",
+     "required": [],
+     "properties": [
+      "action_category",
+      "actor_type",
+      "application_id",
+      "created_at_end",
+      "created_at_start",
+      "organization_id",
+      "page",
+      "page_size",
+      "search",
+      "target_id",
+      "target_type"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_get_details",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_get_plan",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_list_payment_methods",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_list_receipts",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_billing_quote_plan",
+     "type": "read",
+     "group": "Billing",
+     "permission": "read:subscription",
+     "required": [
+      "plan"
+     ],
+     "properties": [
+      "billing_interval",
+      "organization_id",
+      "plan"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_blocklist_get",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:blocklist",
+     "required": [],
+     "properties": [
+      "application_id",
+      "item_type",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_branding_get",
+     "type": "read",
+     "group": "Branding",
+     "permission": "read:customization",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_get",
+     "type": "read",
+     "group": "Cases",
+     "permission": "read:cases",
+     "required": [
+      "case_id"
+     ],
+     "properties": [
+      "application_id",
+      "case_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_list",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "cursor",
+      "organization_id",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_search",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_case_statistics",
+     "type": "read",
+     "group": "Cases",
+     "permission": "list:cases",
+     "required": [],
+     "properties": [
+      "application_id",
+      "assigned_to",
+      "blueprint",
+      "date_from",
+      "date_to",
+      "organization_id",
+      "priority",
+      "scope",
+      "source",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_context_get",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_docs_search",
+     "type": "read",
+     "group": "Documentation",
+     "permission": null,
+     "required": [
+      "query"
+     ],
+     "properties": [
+      "language",
+      "limit",
+      "query"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_activity_list",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "actor",
+      "application_id",
+      "group",
+      "limit",
+      "offset",
+      "organization_id",
+      "scope",
+      "since",
+      "until"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_backtest_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "backtest_id"
+     ],
+     "properties": [
+      "application_id",
+      "backtest_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_dashboard_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "scope"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_performance_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "period",
+      "scope"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_question_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "question_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "question_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_question_list",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_queue_list",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "confidence",
+      "kind",
+      "limit",
+      "offset",
+      "organization_id",
+      "queue",
+      "ready",
+      "recommendation",
+      "scope",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_record_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "session_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_investigator_report_get",
+     "type": "read",
+     "group": "Investigator",
+     "permission": null,
+     "required": [
+      "run_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "run_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_entries_list",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "limit",
+      "list_uuid",
+      "offset",
+      "organization_id",
+      "reference_session_id",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_get",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:lists",
+     "required": [
+      "list_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "list_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_lists_list",
+     "type": "read",
+     "group": "Lists & Blocklist",
+     "permission": "read:lists",
+     "required": [],
+     "properties": [
+      "application_id",
+      "entry_type",
+      "limit",
+      "list_type",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_get_application",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [
+      "application_id",
+      "organization_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_get_balance",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "read:subscription",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [],
+     "properties": [],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_api_keys",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "read:applications",
+     "required": [
+      "application_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_applications",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": null,
+     "required": [
+      "organization_id"
+     ],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_members",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "list:members",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_org_list_roles",
+     "type": "read",
+     "group": "Account & Org",
+     "permission": "list:roles",
+     "required": [],
+     "properties": [
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_get",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:questionnaires",
+     "required": [
+      "questionnaire_id"
+     ],
+     "properties": [
+      "application_id",
+      "include_translations",
+      "organization_id",
+      "questionnaire_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_questionnaire_list",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:questionnaires",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_get",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [
+      "report_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "report_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_get_download_url",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [
+      "report_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "report_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_report_list",
+     "type": "read",
+     "group": "Reports & Audit",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "q",
+      "report_type",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_explain_decision",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_decision",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_import",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "import_id"
+     ],
+     "properties": [
+      "application_id",
+      "import_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_import_errors",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [
+      "import_id"
+     ],
+     "properties": [
+      "application_id",
+      "import_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_import_template",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_get_location_evidence",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_list",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "list:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "offset",
+      "organization_id",
+      "search",
+      "session_kind",
+      "status",
+      "vendor_data",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_list_import_providers",
+     "type": "read",
+     "group": "Sessions",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_list_reviews",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id",
+      "session_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_search",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "list:sessions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "session_kind",
+      "status",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_session_webhooks",
+     "type": "read",
+     "group": "Sessions",
+     "permission": "read:sessions",
+     "required": [
+      "session_id"
+     ],
+     "properties": [
+      "session_id",
+      "wait_seconds"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_get",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [
+      "transaction_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "transaction_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_list",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_backtest",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "aggregation",
+      "application_id",
+      "conditions",
+      "evaluation_mode",
+      "organization_id",
+      "period_days",
+      "scope"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_get",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [
+      "rule_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "rule_uuid"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_library_list",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "bundle",
+      "category",
+      "limit",
+      "offset",
+      "organization_id",
+      "search"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_rule_list",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "bundle",
+      "category",
+      "limit",
+      "mode",
+      "offset",
+      "ordering",
+      "organization_id",
+      "search",
+      "source"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_transaction_search",
+     "type": "read",
+     "group": "Transactions (AML)",
+     "permission": "list:transactions",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_get",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "read:businesses",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_list",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_business_search",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:businesses",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_get",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "read:users",
+     "required": [
+      "vendor_data"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_list",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:users",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_vendor_user_search",
+     "type": "read",
+     "group": "Vendor Users & Businesses",
+     "permission": "list:users",
+     "required": [],
+     "properties": [
+      "application_id",
+      "date_from",
+      "date_to",
+      "last_n_days",
+      "limit",
+      "organization_id",
+      "search",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_get",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:webhooks",
+     "required": [
+      "destination_uuid"
+     ],
+     "properties": [
+      "application_id",
+      "destination_uuid",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_webhook_list",
+     "type": "read",
+     "group": "Webhooks & Alerts",
+     "permission": "read:webhooks",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_build_graph",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "branches",
+      "countries",
+      "document_rules",
+      "features",
+      "include_graph",
+      "organization_id",
+      "per_feature_config",
+      "subject"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_branch_fields",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "branch_node_id",
+      "graph",
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "branch_node_id",
+      "graph",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_feature_config_schema",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "feature"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_field_definitions",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "feature",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_graph",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "include_config",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_id_verification_methods_catalog",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "workflow_id"
+     ],
+     "properties": [
+      "application_id",
+      "country",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_get_kyb_registry_catalog",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": null,
+     "required": [],
+     "properties": [
+      "countries"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_list",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "include_age_assurance",
+      "limit",
+      "offset",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_search",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [],
+     "properties": [
+      "application_id",
+      "limit",
+      "organization_id",
+      "search",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_workflow_validate_graph",
+     "type": "read",
+     "group": "Workflows & Questionnaires",
+     "permission": "read:workflows",
+     "required": [
+      "graph"
+     ],
+     "properties": [
+      "application_id",
+      "graph",
+      "include_config",
+      "organization_id",
+      "workflow_id",
+      "workflow_type"
+     ],
+     "confirm": false
+    }
+   ]
+  }
+ }
+}

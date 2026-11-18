@@ -1,0 +1,36 @@
+{
+  "name": "didit",
+  "version": "1.0.0",
+  "description": "Run identity checks from chat: verify people and businesses, review sessions and cases, screen names and wallets, monitor transactions and read reports in your Didit account.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "homepage": "https://docs.didit.me/integration/mcp/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "keywords": ["identity-verification", "kyc", "kyb", "aml", "transaction-monitoring", "fraud", "compliance", "mcp"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Didit",
+    "shortDescription": "Identity verification and compliance",
+    "longDescription": "Sign in with your Didit account to create verification links, review sessions and cases, run AML and document checks, verify businesses, monitor transactions and read reports, all from Codex.",
+    "developerName": "Didit",
+    "category": "Business & Operations",
+    "capabilities": [],
+    "websiteURL": "https://didit.me",
+    "supportURL": "https://help.didit.me",
+    "privacyPolicyURL": "https://didit.me/terms/privacy-policy",
+    "termsOfServiceURL": "https://didit.me/terms",
+    "defaultPrompt": [
+      "Which Didit applications can I use, and which are sandbox?",
+      "Create a verification link for a new customer",
+      "Show me the sessions waiting for review"
+    ],
+    "composerIcon": "./assets/didit-icon.png",
+    "logo": "./assets/didit-icon.png",
+    "screenshots": []
+  }
+}

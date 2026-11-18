@@ -1,0 +1,47 @@
+---
+name: didit-reports
+description: Used when someone asks how many verifications ran, how many were approved or declined, where people drop off in the flow, how the numbers compare with the previous period, how many credits are left, which plan the organization is on, or wants to export sessions, transactions or business records to a file.
+---
+
+# Reports, analytics and billing
+
+Follow the rules of didit-connect first: call `didit_context_get`. Everything here is read-only except starting an export.
+
+## 1. Analytics
+
+`didit_analytics` aggregates verification numbers across applications in one call:
+
+- Window: `last_n_days`, or `date_from` and `date_to` (YYYY-MM-DD). `include_timeseries: true` adds per-day series.
+- It returns status counts, a funnel of how many sessions reached each step (OCR, LIVENESS, FACE_MATCH, AML and others), warnings by risk code, the previous period's counts, per-workflow totals and a conversion rate.
+- Leave out `organization_id` and `application_id` to cover everything; pass them to narrow.
+
+Answer the question asked first (for example "312 sessions, 81% approved"), then the comparison with the previous period, then the biggest drop-off step.
+
+## 2. Balance and plan
+
+- `didit_org_get_balance` returns the credit balance, auto-refill settings and the monthly credit the organization receives. Answer from its fields. If a field is missing, say you could not read it.
+- `didit_billing_get_plan` returns the plan, its status, the next charge, the last payment and any unpaid invoice. `next_steps.plans_url` is where the person changes plan.
+
+Report balances and plan details only as the tools return them. For list prices, link https://didit.me/pricing.
+
+## 3. Exports
+
+1. `didit_report_list` shows existing reports, newest first (`status`, `report_type`, `q`, `limit`, `offset`). Check here before starting a new one.
+2. `didit_report_export` starts an export job. `kind` is `sessions`, `transactions`, `businesses`, `vendor-users` or `vendor-businesses`, and `data` holds filters and `columns`. If a column is wrong, the error lists the allowed columns: retry from that list instead of guessing.
+3. `didit_report_get` with `report_id` shows its status (`PENDING`, `PROCESSING`, `READY`, `FAILED`).
+4. When it is `READY`, `didit_report_get_download_url` with `report_id` returns a signed link. Give the person the link; do not try to download or paste the file.
+
+Starting an export is a write. Tell the person what will be exported (kind, filters, columns) and start it after they agree.
+
+## What good output looks like
+
+- The number that answers the question, with its date window and application scope.
+- A comparison with the previous period when the tool returned one.
+- For exports, the report id, its status, and the download link once ready.
+
+## Do not
+
+- Never ask for credentials (password, API key, one-time code).
+- Never fall back to raw HTTP calls (curl/REST) for a console task.
+- Never invent numbers, report ids or download links.
+- Never state prices. Link https://didit.me/pricing.
