@@ -56,7 +56,7 @@ SOLICIT = re.compile(
     r"(api[ _-]?key|password|passcode|one[- ]time code|otp|secret|token|credentials)",
     re.IGNORECASE,
 )
-EM_DASH = "—"
+EM_DASH = chr(0x2014)
 CONFIRM_WORDS = re.compile(r"\b(confirm\w*|agree\w*)\b", re.IGNORECASE)
 TOOL_TOKEN = re.compile(r"\bdidit_[a-z0-9_]+\b")
 DISCOVERY = {"didit_tool_search", "didit_tool_describe", "didit_tool_call_read", "didit_tool_call_write"}
