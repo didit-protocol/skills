@@ -33,7 +33,7 @@ The Didit MCP server lets an MCP client call the Didit platform through tools. I
 - Two ways to connect:
   - **Log in with Didit** (OAuth 2.1 with PKCE, the default and recommended path): the server acts as the signed-in person, across every organization and application they belong to, with their console role permissions.
   - **Application API key** (headless agents and CI with no person present): the connection is that one application, with the key's own access. See Connect with an API key.
-- Tool results are processed, not raw endpoint JSON. A successful call returns compact JSON text plus `structuredContent` (an object as is; an array or a scalar wrapped as `{"value": ...}`). API keys and webhook secrets are redacted in what tools read, except that `didit_org_create_api_key` returns the new key's secret once, on purpose. Large payloads (for example workflow feature configs) are summarized. A failed call returns sanitized error text (a code and a message, plus field, hint and allowed values when there are any) and no `structuredContent`.
+- Tool results are processed, not raw endpoint JSON. A successful call returns compact JSON text plus `structuredContent` (an object as is; an array or a scalar wrapped as `{"value": ...}`). API keys and webhook secrets are redacted in what tools read. On the hosted server the only exception is `didit_org_create_api_key`, which returns the new key's secret once, on purpose; a local server also returns credentials from `didit_org_reveal_application_api_key` (the raw key) and `didit_account_verify_email` (the new applications' API keys and an access token). Large payloads (for example workflow feature configs) are summarized. A failed call returns no `structuredContent`: an error raised by a tool handler is sanitized text with a code and a message, plus field, hint and allowed values when there are any, while a refusal by the server itself (for example a write on a read-only connection) is plain text with no code.
 - Open source (MIT): https://github.com/didit-protocol/mcp, published on npm as `@didit-protocol/mcp-server` (binary `didit-mcp-server`).
 
 **When to use the REST skills instead:** a backend integration that runs with an application API key in your own code (creating sessions for your users, receiving webhooks, submitting transactions) calls the REST API directly; see **didit-verification-management**, **didit-sdk-integration** and the standalone API skills.
@@ -172,7 +172,7 @@ https://mcp.didit.me/mcp?toolsets=core,transactions,cases&read_only=true
 | `workflows` | Verification workflows and questionnaires: build, edit, validate and publish |
 | `lists` | Custom lists, the blocklist and the allowlist |
 | `vendors` | Vendor users and vendor businesses |
-| `transactions` | Transactions, wallet screening and rules with backtesting |
+| `transactions` | Transactions, wallet screening and rules with back-testing |
 | `cases` | Case management |
 | `investigator` | The AI Investigator: review queue, reports, decisions, policy questions and performance |
 | `webhooks` | Webhook destinations and alerts |
@@ -282,10 +282,14 @@ See https://docs.didit.me/integration/mcp/tools for the per-tool table with each
 
 ### Scope resolution
 
-`organization_id` and `application_id` default to the person's only organization and application (or to `MCP_DEFAULT_ORG` and `MCP_DEFAULT_APP` on a self-hosted server). Rules that matter with several:
+`organization_id` and `application_id` default to the person's only organization and application (or to `MCP_DEFAULT_ORG` and `MCP_DEFAULT_APP` on a self-hosted server). An organization whose applications could not be listed gives no default application, even when it is the only one.
+
+Scope ids follow each tool's schema. Always send the ids a tool requires. Send an optional `organization_id` or `application_id` only when the context shows several organizations or applications, or when it returned no default for that id: then ask the person which organization or application to use and pass the one they name. Never send an id the tool does not declare. Through a discovery proxy (`didit_tool_call_read` or `didit_tool_call_write`), put the target's arguments, ids included, inside `arguments`, never next to `name`.
+
+Rules that matter with several:
 - **Ids required:** `didit_org_list_applications` needs `organization_id`, `didit_org_list_api_keys` needs `application_id`, and `didit_org_get_application` and `didit_org_create_api_key` need both ids.
-- **Cross-app without ids:** the `*_search` tools (rows tagged with their organization and application) and `didit_analytics` (aggregate totals over the apps it scanned). Six per-app lists fall back to the matching cross-app search when you pass no scope: `didit_session_list`, `didit_workflow_list`, `didit_case_list`, `didit_transaction_list`, `didit_vendor_user_list` and `didit_vendor_business_list`.
-- **Everything else that is per app needs both ids then**, record reads included (for example `didit_case_get`, `didit_workflow_get`, `didit_session_validate_signatures`).
+- **Cross-app without ids:** the six aggregate searches `didit_session_search`, `didit_transaction_search`, `didit_case_search`, `didit_vendor_user_search`, `didit_vendor_business_search` and `didit_workflow_search` (rows tagged with their organization and application), and `didit_analytics` (aggregate totals over the apps it scanned). Six per-app lists fall back to the matching cross-app search when you pass no scope: `didit_session_list`, `didit_workflow_list`, `didit_case_list`, `didit_transaction_list`, `didit_vendor_user_list` and `didit_vendor_business_list`.
+- **Everything else that is per app needs both ids then**, record reads included (for example `didit_case_get`, `didit_workflow_get`, `didit_session_validate_signatures`). Other tools whose names end in `_search` are not cross-app discovery: `didit_verify_kyb_search`, for example, starts a company registry check in one application.
 - **No ids at all:** for example `didit_context_get`, `didit_docs_search`, and the session tools keyed by `session_id` alone such as `didit_session_get_decision`.
 - When unsure, read the tool's own schema (`didit_tool_describe`, or the tools reference). On an API key connection ids are never needed.
 
@@ -294,9 +298,10 @@ Read the environment from `didit_context_get` (`mode`), never from an app's name
 ### Confirmations
 
 The server refuses these calls without `confirm: true` (a real boolean):
-- `didit_session_delete` and `didit_session_batch_delete`: always, with an id list or with `delete_all`.
+- `didit_session_delete` (one session): `session_id` and `confirm: true`, always.
+- `didit_session_batch_delete` (several sessions): `session_numbers` (a non-empty list) or `delete_all: true`, plus `confirm: true`, always.
 - `didit_vendor_user_delete` and `didit_vendor_business_delete`: only with `delete_all: true`. An explicit id list is deleted without `confirm`.
-- `didit_case_manage` when it files a SAR: action `sar` or `file_sar`, or any call that sets status `SAR_FILED`.
+- `didit_case_manage` when it files a SAR: action `resolve` with `data.status: "SAR_FILED"` and `confirm: true`.
 - `didit_org_create_api_key`, the Investigator decision tools, and on the local server `didit_org_reveal_application_api_key` and `didit_org_top_up`.
 
 **Whatever the server enforces, an agent must ask the human and get explicit approval for that exact action before any delete, decision or credential call, and before passing `confirm: true`.** Deletion is permanent.
@@ -314,7 +319,7 @@ Tools that take files (ID, proof of address, liveness, face match, face search, 
 
 ### Responses
 
-A successful call returns compact JSON text (the channel the model reads) and the same result as `structuredContent`: an object as is, an array or a scalar wrapped as `{"value": ...}`. Results are shaped by the server, not passed through raw: API keys and webhook signing secrets are redacted (copy the signing secret from **Webhooks** in the console), with the one deliberate exception of `didit_org_create_api_key`, which returns the new secret once. Large workflow configs are summarized. A failed call returns only sanitized error text: a code and a message, plus field, hint and allowed values when present, without backend secrets or local paths, and no `structuredContent`. Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final result. `didit_session_create` returns a `url` the end user must complete; the decision arrives later by webhook or `didit_session_get_decision`. Decision keys are plural arrays (`id_verifications[]`, `liveness_checks[]`, `face_matches[]`, `aml_screenings[]`, ...), one entry per workflow node.
+A successful call returns compact JSON text (the channel the model reads) and the same result as `structuredContent`: an object as is, an array or a scalar wrapped as `{"value": ...}`. Results are shaped by the server, not passed through raw: API keys and webhook signing secrets are redacted (copy the signing secret from **Webhooks** in the console). On the hosted server the one deliberate exception is `didit_org_create_api_key`, which returns the new secret once; a local server also returns credentials from `didit_org_reveal_application_api_key` and `didit_account_verify_email`. Large workflow configs are summarized. A failed call has no `structuredContent`. An error from a tool handler is sanitized text: a code and a message, plus field, hint and allowed values when present, without backend secrets or local paths. A refusal by the server itself (a write on a read-only connection, a tool this connection cannot call) is plain text without a code. Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final result. `didit_session_create` returns a `url` the end user must complete; the decision arrives later by webhook or `didit_session_get_decision`. Decision keys are plural arrays (`id_verifications[]`, `liveness_checks[]`, `face_matches[]`, `aml_screenings[]`, ...), one entry per workflow node.
 
 ---
 
@@ -324,11 +329,11 @@ A successful call returns compact JSON text (the channel the model reads) and th
 |---|---|---|
 | `401` from `/mcp` (`WWW-Authenticate: Bearer error="invalid_token"`) | Token or API key missing, expired or revoked | Let the client refresh, re-run **Log in with Didit**, or send a valid API key |
 | `403` from a tool | Often the person's role in that organization lacks the permission; it can also be another refusal by the backend | Read the error code and hint; for a missing role permission, ask an owner or admin |
-| `missing_scope` | The role in that organization lacks the named permission (the server checks this before calling in `enforce` mode) | Ask an owner or admin to grant it |
+| `missing_scope` | Read its `field` and hint. With a permission named, the role in that organization lacks it (the server checks this before calling in `enforce` mode). On `didit_org_create_api_key` it can instead mean `organization_id` or `application_id` was not passed | Missing ids: read them from `didit_context_get` and pass them, no role change needed. Missing permission: ask an owner or admin to grant it |
 | `405` | `GET` (other than a browser navigation on a deployment that serves the page) or `DELETE` on `/mcp` or the bare origin | Use `POST` |
-| `unsafe_operation` / `bad_request` on a delete | `confirm: true` missing or not a boolean | Ask the human, then retry with `confirm: true` |
+| `unsafe_operation` / `bad_request` on a delete | Read the error's `field`. `confirm`: the confirmation is missing or not a boolean. Another field (for example `session_numbers` or `vendor_data_list`): the id list is missing, empty or too long | Retry with `confirm: true` only when the tool declares `confirm` and the error names it, after the human approved that exact deletion; otherwise fix the named field |
 | File rejected | `*_path` sent to the hosted server, both forms sent, over 15 MB, or not an allowed file type | Send one `*_base64` value of an allowed type |
-| `organization_id is required` or empty results | Several apps and no scope | Use a `*_search` tool or `didit_context_get`, then pass `organization_id` and `application_id` |
+| `organization_id is required` or empty results | Several apps, or no default, and no scope | Use one of the six aggregate searches or `didit_context_get`, ask the person which organization and application, then pass the ids the tool declares |
 | Every tool fails | Possible causes include the app being disconnected in **Connected apps** or a sign-in that can no longer refresh | Reconnect and approve the connection again |
 | Refused on an API key connection | The tool needs a person (members, billing, audit log, downloads) or names another application | Use an OAuth connection, or the console |
 | `invalid_redirect_uri` at sign-in | The authorization server does not accept the client's callback URL; for a remote client this can mean it has not been reviewed yet | Check the redirect URI the client sends; if it is right, contact Didit support |

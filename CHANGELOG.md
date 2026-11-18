@@ -19,16 +19,19 @@ proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), tr
 - **didit-mcp-server (1.0.0 to 1.1.0):** matches server v5.1.67. Documents API key connections (one
   application, the key's own access, person-only tools refused) next to OAuth, which stays the default;
   the three advertised scopes, with `didit:staff` for Didit staff only; that a successful tool result is
-  compact JSON plus `structuredContent` (arrays and scalars wrapped as `{value}`), with secrets redacted except
-  the one-time secret from `didit_org_create_api_key` and large payloads summarized, while errors are sanitized
-  text with no `structuredContent`; that revoking stops refresh while an accepted access token can reach the
+  compact JSON plus `structuredContent` (arrays and scalars wrapped as `{value}`), with secrets redacted (on
+  the hosted server except the one-time secret from `didit_org_create_api_key`; a local server also returns
+  credentials from key reveal and email verification) and large payloads summarized, while handler errors are
+  sanitized text with a code and server refusals plain text, neither with `structuredContent`; single-session
+  and batch session deletion documented separately, a SAR filed as `resolve` with `data.status: "SAR_FILED"`,
+  and `missing_scope` routed by its field and hint; that revoking stops refresh while an accepted access token can reach the
   server for up to 60 seconds (separate from a rotated API key's grace period); device-code `login` and
   `logout` with stored, refreshed credentials (logout deletes the local copy even when revocation fails); what
   `GET` and `DELETE` on `/mcp` and the bare origin return, on the hosted server and on an open-source build
   without the connect page; which confirmations the server enforces per operation; tool
   coverage (167 tools for a signed-in person, 9 more on a local server, `?toolsets=core` with 29 tools,
   `read_only=true`, the discovery tools, `didit_docs_search`); the `organization_id`/`application_id` rules
-  (tools that require ids, the six per-app lists with a cross-app fallback); the self-hosting and stdio
+  (tools that require ids, optional ids when several targets or no default, the six aggregate searches, the six per-app lists with a cross-app fallback); the self-hosting and stdio
   triggers in the description; OpenAI Codex and the per-client docs pages; the Claude Code plugin install; launcher versions pinned;
   and which top-up and key tools are hosted or local only.
 - **All skills, pricing (checked against https://docs.didit.me/getting-started/pricing and the pages it links
@@ -50,6 +53,9 @@ proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), tr
   `vendor_data`, separate credentials and backend-confirmed decisions; keeps unavailable Authentication,
   signals, issuer, automatic-event and step-up capabilities gated. An API key is required only for the
   selected verification/monitoring paths, not Authentication-only guidance.
+  The Authentication section now says the access token format depends on the application's documented
+  runtime (opaque token checked with `GET session/`, or an ES256 JWT verified with the issuer's JWKS), and that
+  logout reports server revocation as confirmed only on success.
 - README lists the seven SK1 additions awaiting human ClawHub publication and the per-skill staging
   procedure. No ClawHub publication is performed by this change.
 - Dedicated Authentication, electronic-signature and biometric-consent skills remain deferred until
