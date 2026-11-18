@@ -27,13 +27,13 @@ This records a real transaction in the application. Show the payload and wait fo
 ## 3. Rules
 
 - `didit_transaction_rule_list` shows the rules of one application. Filter by `source` (`PRESET` or `CUSTOM`), `mode` (`ACTIVE`, `TEST`, `DISABLED`), `category` or `search`.
-- `didit_transaction_rule_backtest` dry-runs a rule definition (`conditions`, `aggregation`, `evaluation_mode`, `scope`, `period_days` from 1 to 365, default 90) against recent transactions. It writes nothing.
+- `didit_transaction_rule_backtest` dry-runs a rule definition (`conditions`, `aggregation`, `evaluation_mode`, `scope`, `period_days` from 1 to 365, default 90) against at most the 10,000 most recent transactions of the application. It writes nothing. The window is rolling days back from today, not a calendar period: for "last quarter" use `period_days: 90` and say it is the last 90 days, and mention the 10,000 cap when the application has more.
 - `didit_transaction_rule_create` saves a custom rule. Required: `title` (unique in the application), `category`, `mode` and `actions`. Include every outcome the person asked for (review, decline, approve, score, case) in `actions`; pass an empty list only for a monitor-only rule.
 
 Recommended order:
 
 1. Backtest the exact conditions first and report the hit rate.
-2. Create the rule with `mode: "TEST"` so it records hits without acting.
+2. Create the rule with `mode: "TEST"` so it records hits without acting. Pass the same `conditions`, `aggregation`, `evaluation_mode` and `scope` that were backtested, plus `actions`; the backtest saves none of them.
 3. Switch it to `ACTIVE` only after the person reviews the test hits.
 
 Confirm the title, conditions, actions and mode with the person before creating the rule.

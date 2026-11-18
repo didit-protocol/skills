@@ -27,7 +27,7 @@ Report balances and plan details only as the tools return them. For list prices,
 ## 3. Exports
 
 1. `didit_report_list` shows existing reports, newest first (`status`, `report_type`, `q`, `limit`, `offset`). Check here before starting a new one.
-2. `didit_report_export` starts an export job. `kind` is `sessions`, `transactions`, `businesses`, `vendor-users` or `vendor-businesses`, and `data` holds filters and `columns`. If a column is wrong, the error lists the allowed columns: retry from that list instead of guessing.
+2. `didit_report_export` starts an export job. `kind` is `sessions`, `transactions`, `businesses`, `vendor-users` or `vendor-businesses`, and `data` holds filters and `columns`. For `sessions`, `vendor-users` and `vendor-businesses` an unknown column is refused and the error lists the allowed ones: retry from that list instead of guessing. For `transactions` and `businesses` nothing checks the columns and an unknown one just comes out blank, so take column names from `didit_docs_search` and never guess them.
 3. `didit_report_get` with `report_id` shows its status (`PENDING`, `PROCESSING`, `READY`, `FAILED`).
 4. When it is `READY`, `didit_report_get_download_url` with `report_id` returns a signed link. Give the person the link; do not try to download or paste the file.
 

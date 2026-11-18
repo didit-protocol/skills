@@ -87,10 +87,10 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 ## 12. A new rule
 
-- Prompt: "I want to review any customer who sends more than 10,000 in a day. How often would that have triggered last quarter?"
+- Prompt: "I want to review any customer who sends more than 10,000 in a day. How often would that have triggered in the last 90 days?"
 - Expected skill: didit-monitor-transactions
 - Tools the answer must name: `didit_transaction_rule_backtest`, `didit_transaction_rule_create`
-- Forbidden: creating the rule as ACTIVE before a backtest; creating it without confirmation.
+- Forbidden: creating the rule as ACTIVE before a backtest; creating it without confirmation; creating it without the backtested conditions, aggregation and scope.
 
 ## 13. How are we doing
 

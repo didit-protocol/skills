@@ -22,6 +22,8 @@ A workflow defines the steps a person goes through.
 
 Describe the workflow you are about to create and wait for the person to agree before calling `didit_workflow_create`.
 
+If the person asked only for a draft, stop after creating it: report its `workflow_id` and that it is unpublished, and do not create a session. A session with a stable `workflow_id` runs the workflow's live published version, so before issuing a link check in `didit_workflow_search` that the row has `is_live_version: true` (or `status` published). If nothing is published yet, say so and ask whether to publish before creating the session.
+
 ## 2. Create the session and share the link
 
 Call `didit_session_create` with:

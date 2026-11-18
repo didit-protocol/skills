@@ -48,7 +48,7 @@ Before calling it, confirm the session, the new status and any email recipient w
 - `didit_case_get` with `case_id` returns one case with its details.
 - `didit_case_manage` acts on a case: `case_id`, `action` (`assign`, `resolve`, `reopen`, `escalate`, `comment`, `update`) and a `data` payload, for example `{ "assignee_id": "..." }` or `{ "comment": "..." }`.
 
-Every `didit_case_manage` call changes the case, so confirm the action and its payload with the person first. Filing a regulatory report (a SAR) needs `confirm: true`: send it only after the person has agreed to that exact filing in this conversation.
+Every `didit_case_manage` call changes the case, so confirm the action and its payload with the person first. Filing a regulatory report (a SAR: any action whose `data.status` is `SAR_FILED`, for example `resolve` with that status) also needs `confirm: true`: send it only after the person has agreed to that exact filing in this conversation. No other tool in this skill takes `confirm`; `didit_session_update_status` is irreversible but is confirmed by asking, not by a flag.
 
 ## What good output looks like
 

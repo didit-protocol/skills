@@ -41,7 +41,7 @@ Already added the Didit server by hand (a custom connector or `claude mcp add`)?
 | didit-connect | Sign in, pick the organization and application, learn the rules every other skill follows |
 | didit-verify-people | Create KYC workflows and verification links, read decisions and why, test in sandbox |
 | didit-review-queue | Work sessions in review, approve or decline, add notes, manage cases |
-| didit-run-checks | Run one check: AML, ID document, proof of address, database, face, liveness, email, phone |
+| didit-run-checks | Run one check: AML, ID document, proof of address, database, face, liveness, phone code (email through a session) |
 | didit-verify-businesses | Look companies up in official registries and run full KYB |
 | didit-monitor-transactions | Read flagged transactions, backtest and create rules, screen wallets |
 | didit-reports | Analytics, credit balance, plan, and exports |
@@ -49,7 +49,7 @@ Already added the Didit server by hand (a custom connector or `claude mcp add`)?
 
 ## What this plugin does on your machine and where data goes
 
-- The plugin runs no code on your machine. It has no hooks, no scripts and no binaries, and it sends nothing by itself.
+- The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
 - When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You never give it a password or an API key.
 - Data you ask about is read from, and changes you approve are written to, your Didit account.

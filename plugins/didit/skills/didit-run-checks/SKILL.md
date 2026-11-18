@@ -1,6 +1,6 @@
 ---
 name: didit-run-checks
-description: Used when someone wants a single check on one person without a full verification flow, such as screening a name against sanctions, PEP and adverse media lists, checking an ID document or a proof of address, validating identity data against official databases, comparing two faces, searching a face against past users, checking a selfie for liveness, or confirming an email address or phone number with a one-time code.
+description: Used when someone wants a single check on one person without a full verification flow, such as screening a name against sanctions, PEP and adverse media lists, checking an ID document or a proof of address, validating identity data against official databases, comparing two faces, searching a face against past users, checking a selfie for liveness, or confirming a phone number (or, through a session, an email address) with a one-time code.
 ---
 
 # Run one-off checks
@@ -10,7 +10,7 @@ Follow the rules of didit-connect first: call `didit_context_get`, pick the appl
 ## Before any check
 
 - Every tool in this skill is a write. In a live application each check uses Didit credits. Say so and wait for the person to agree before the first one. Sandbox checks are free.
-- Use `vendor_data` (the person's id in the customer's system) when the person gives one, so the result links to that user.
+- When the person gives the checked person's id in the customer's system, pass it as `vendor_data` so the result links to that user. Only the AML, database, document, address and face tools declare `vendor_data`; the email and phone tools do not, so never send it to them.
 
 ## Checks that take text
 
@@ -43,13 +43,16 @@ If the client cannot pass the file, create a verification session instead (see d
 
 ## Email and phone codes
 
-These reach a real person. Confirm the address or number, and that the person being checked expects a code, before sending.
+These reach a real person. Confirm the address or number, and that the person being checked expects a code, before sending. The four tools take only the destination (and `code` for a check), plus the scope ids.
 
-1. `didit_verify_email_send` with `email`, or `didit_verify_phone_send` with `phone_number` (with country code, for example `+34600000000`). Phone codes go by WhatsApp first and fall back to SMS. A code is valid for 5 minutes.
-2. The person being checked reads the code they received and tells the operator.
-3. `didit_verify_email_check` with `email` and `code`, or `didit_verify_phone_check` with `phone_number` and `code`. Each code allows 3 attempts.
+**Phone:**
+1. `didit_verify_phone_send` with `phone_number` (with country code, for example `+34600000000`). Codes go by WhatsApp first and fall back to SMS. A code is valid for 5 minutes. The result has `request_id` and a `status` (`Success`, `Retry` or `Blocked` with a reason).
+2. The person being checked reads the code and tells the operator. If the code should stay private to that person, offer a verification session with a `PHONE_VERIFICATION` step instead (see didit-verify-people), so they enter it themselves.
+3. `didit_verify_phone_check` with `phone_number` and `code`. Each code allows 3 attempts. The status is `Approved`, `Failed` (with attempts left), `Declined` or `Expired or Not Found`.
 
-In a sandbox application the phone send is mocked and the check approves any code. In a live application a phone send answers an error until the organization has credits.
+In a sandbox application the phone send is mocked and the check approves any code. In a live application a phone send answers an error until the organization has credits, and repeated sends to one number can be rate limited. Both tools need a role that can create sessions.
+
+**Email:** `didit_verify_email_send` and `didit_verify_email_check` (with `email`, and `code` for the check) are listed, but in this server build they call a route the server's own source marks as not existing, so expect them to fail. To confirm an email address, create a verification session whose workflow has an `EMAIL_VERIFICATION` step instead (see didit-verify-people) and share its link. If the person still wants the direct tool, try it once and report the error as returned; never claim a code was sent unless the result says so.
 
 ## Reading results
 

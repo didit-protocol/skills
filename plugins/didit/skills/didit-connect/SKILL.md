@@ -15,10 +15,10 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 
 ## Always start with the context
 
-1. Call `didit_context_get` first. It returns every organization and application the person can use, their ids, and whether each application is sandbox or live.
-2. Pick the organization and application from that result. If the person has one of each, use them and pass no ids.
-3. If there are several, ask which one, or use the one the person named. Then pass `organization_id` and `application_id` on every later call.
-4. Read sandbox or live from the context result only. Never decide it from an application's name.
+1. Call `didit_context_get` first. It returns the organizations and applications the person can use with their ids, each application's `mode` (`sandbox` or `live`) when the server knows it, and `default_organization_id` and `default_application_id` when there is exactly one of each.
+2. When the defaults are present, use them and pass no ids. When `default_application_id` is missing (several applications, or an organization whose applications could not be listed), ask which application to use, or use the one the person named.
+3. Pass `organization_id` and `application_id` only to tools whose arguments declare them. Some tools take only `organization_id` (for example `didit_org_get_balance`), some take neither (for example `didit_docs_search`, `didit_session_get_decision`). For a call through `didit_tool_call_read` or `didit_tool_call_write`, put the ids inside `arguments`, never next to `name`.
+4. Read sandbox or live from `mode` only. Never decide it from an application's name. If `mode` is missing, say the environment is unknown and treat the application as live (billable) until the person confirms otherwise.
 
 ## Calling tools
 
@@ -32,8 +32,8 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 
 ## Confirmations
 
-- Tools that overwrite a decision, delete records or issue credentials take `confirm: true`. Send it only after the person has agreed to that exact action in this conversation.
-- For every other change (status updates, deletions, invitations, webhooks), describe what will change and wait for a clear yes before calling the tool.
+- Every change (status updates, deletions, invitations, webhooks, exports) needs the person's agreement first: describe what will change and wait for a clear yes before calling the tool. Irreversible ones (overwriting a decision, deleting a webhook or a member) get the same question, said plainly as irreversible.
+- A few tools also declare a `confirm` argument, for example `didit_case_manage` (filing a SAR), `didit_session_delete` and `didit_org_create_api_key`. Send `confirm: true` only to a tool whose arguments declare it, and only after the person has agreed to that exact action in this conversation. Never add `confirm` to a tool that does not declare it.
 
 ## Billable actions
 
@@ -62,7 +62,7 @@ If the person wants backend code that calls the Didit REST API with an API key, 
 |---|---|
 | Create a verification workflow or link, read a decision, test in sandbox | didit-verify-people |
 | Sessions in review, approve or decline, add notes, work cases | didit-review-queue |
-| One-off checks: AML, document, address, database, face, email, phone | didit-run-checks |
+| One-off checks: AML, document, address, database, face, phone code (email through a session) | didit-run-checks |
 | Verify a company (KYB), look up existing business records | didit-verify-businesses |
 | Transactions, monitoring rules, backtests, wallet screening | didit-monitor-transactions |
 | Analytics, balance, plan, exports | didit-reports |
@@ -70,7 +70,7 @@ If the person wants backend code that calls the Didit REST API with an API key, 
 
 ## What good output looks like
 
-- The organization and application in use, and whether it is sandbox or live, stated once at the start.
+- The organization and application in use, and whether it is sandbox, live or unknown, stated once at the start.
 - The tool that was called, or the exact reason a tool is not available and what the person can change.
 - A clear question before any billable or irreversible action.
 
