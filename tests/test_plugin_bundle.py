@@ -267,8 +267,9 @@ LOCAL_ONLY = re.compile(r"local (?:\(stdio\) )?server only", re.I)
 # The rule for an application API key connection, word for word, in all four start skills.
 API_KEY_RULE = (
     "If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: "
-    "member, role, API key, billing, compliance and audit-log tools are not available. Say so and point the person "
-    "to sign in with OAuth for those."
+    "member, role, API key, billing-detail (`didit_billing_*`), compliance and audit-log tools are not available; "
+    "the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for "
+    "the missing ones."
 )
 # Recipes whose person-only tools need a note in the same section.
 PERSON_ONLY_SKILLS = {
@@ -1160,9 +1161,12 @@ class SkillTests(TreeCase):
     def test_secrets_are_not_displayed_or_stored(self):
         team = (self.t.plugins / "didit-user-management" / "skills" / "didit-users-team" / "SKILL.md").read_text(encoding="utf-8")
         self.assertNotRegex(team, r"write it (straight )?to [^.\n]*if they asked")
-        self.assertIn("never offer to", team)
+        # The server's own rule for a new key: straight to the project's secret store or .env where
+        # files can be written, shown once otherwise, never repeated or kept in notes or memory.
+        self.assertIn("write it straight to the project's secret store or `.env` and do not print it in the chat", team)
+        self.assertIn("Never repeat it later, never put it in notes or memory", team)
         prompts = (self.t.plugins / "didit-user-management" / "tests" / "prompts.md").read_text(encoding="utf-8")
-        self.assertIn("writing the secret to `.env`", prompts)
+        self.assertIn("repeating the secret", prompts)
         alerts = (self.t.plugins / "didit-transaction-monitoring" / "skills" / "didit-tm-alerts-cases" / "SKILL.md").read_text(encoding="utf-8")
         self.assertNotIn("Show the channel, destination and on/off state", alerts)
         self.assertIn("masked", alerts)

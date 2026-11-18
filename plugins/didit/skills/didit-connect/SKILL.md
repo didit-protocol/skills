@@ -21,7 +21,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
    - For example `didit_org_list_api_keys` requires `application_id`; read ids from `didit_context_get`.
    - `didit_docs_search` and `didit_session_get_decision` take neither id; `didit_org_get_balance` and the member tools take only `organization_id`.
 4. Read sandbox or live from `mode` only. Never decide it from an application's name. If `mode` is missing, say the environment is unknown and treat the application as live (billable) until the person confirms otherwise.
-5. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing, compliance and audit-log tools are not available. Say so and point the person to sign in with OAuth for those.
+5. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing-detail (`didit_billing_*`), compliance and audit-log tools are not available; the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for the missing ones.
 
 ## Calling tools
 

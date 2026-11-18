@@ -25,7 +25,7 @@ Didit Authentication signs a developer's own customers into the developer's appl
 8. Never put a verification API key, console token or end-user token in code, URLs or logs.
 9. `didit_context_get` has no field that says whether Authentication is on. For a live application, tell the person to check the Products page of the Didit console; never assume it is on.
 10. Authentication is billed per monthly active user. Never state a price: link https://didit.me/pricing.
-11. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing, compliance and audit-log tools are not available. Say so and point the person to sign in with OAuth for those.
+11. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing-detail (`didit_billing_*`), compliance and audit-log tools are not available; the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for the missing ones.
 
 ## Sandbox first
 

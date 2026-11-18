@@ -18,7 +18,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 7. Sandbox applications are free to test in. In a live application this can use your Didit credits when you submit a transaction (past the plan's monthly allowance, or a Travel Rule charge in its place) or screen a wallet. In a live application, or one whose mode is unknown, say so before the call and wait for a yes. Never state a price: link https://didit.me/pricing.
 8. For how a feature works, a payload shape or a webhook, call `didit_docs_search` and cite the link it returns.
 9. Never display a Slack webhook URL, a webhook destination URL or an alert email in full. Show the host or domain and mask the rest.
-10. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing, compliance and audit-log tools are not available. Say so and point the person to sign in with OAuth for those.
+10. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing-detail (`didit_billing_*`), compliance and audit-log tools are not available; the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for the missing ones.
 
 ## Which skill handles what
 

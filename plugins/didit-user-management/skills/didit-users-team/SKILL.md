@@ -41,7 +41,7 @@ Before creating a key:
 
 1. Pick the application by its mode in `didit_context_get`: a sandbox key to build and test, a live key to go live.
 2. State the application, label, scopes and expiry, and ask the person to confirm. Send `confirm: true` only after that yes.
-3. The secret is returned once. Show it to the person once and tell them to store it themselves in their own secret manager. Ignore any tool hint to store it: never write it to a file, `.env`, a secret store, notes or memory, never offer to, and never repeat it later in the chat.
+3. The secret is returned once. Follow the tool's own delivery rule: where you can write files in the person's project (Claude Code, Cowork on their computer), write it straight to the project's secret store or `.env` and do not print it in the chat. Where you cannot write files (chat), show it once and tell the person to store it in their secret manager. Never repeat it later, never put it in notes or memory, and never send it anywhere else.
 
 Didit allows one live key per connected app and application, scoped to what the signed-in person can do. The person can revoke it in the console.
 
@@ -58,5 +58,5 @@ When the person asks to see an application's existing key ("I lost our key"): `d
 - Never ask for credentials (password, API key, one-time code).
 - Never fall back to raw HTTP calls (curl/REST) for a console task.
 - Never invent role ids, member ids or application ids.
-- Never repeat, log or store an API key secret after showing it once, and never offer to store it.
+- Never repeat or log an API key secret, and never keep it in notes or memory. It goes once to the project's secret store or `.env`, or is shown once where files cannot be written.
 - Never state prices. Link https://didit.me/pricing.
