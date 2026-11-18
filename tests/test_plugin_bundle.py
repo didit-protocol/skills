@@ -698,7 +698,9 @@ class SkillTests(TreeCase):
         self.assertIn("only when the tool declares `confirm` and the error names it", text)
         self.assertIn("On the hosted server `didit_org_create_api_key` also returns the new key's secret once", text)
         self.assertNotIn("API keys and webhook secrets are redacted in what tools read", text)
-        self.assertIn("Nothing else is redacted", text)
+        self.assertNotIn("Nothing else is redacted", text)  # other handlers redact more (imports, rule values)
+        self.assertIn("treat any credential-looking value in a result as sensitive", text)
+        self.assertIn("printf '%s' \"$REFRESH_TOKEN\" | curl", text)
         self.assertIn("for Slack, the posting URL in `value`", text)
         self.assertIn("host plus the last 4 characters", text)
         # No secret in process arguments: no shell-expanded header, no token in curl or `-e` arguments.
