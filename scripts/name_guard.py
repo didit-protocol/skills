@@ -175,7 +175,13 @@ def withheld_runs(words, key, digests, cache):
 def withheld_name_lines(text, key, digests, cache):
     """Line numbers where a withheld name starts. Never the words."""
     folded = comparable(text)
-    found = [(m.group(0), folded.count("\n", 0, m.start()) + 1) for m in WORD_RE.finditer(folded)]
+    # One pass: each count covers only the text between two words, so a large file costs its
+    # size once (counting from the start for every word would cost its size once per word).
+    found, line, seen = [], 1, 0
+    for match in WORD_RE.finditer(folded):
+        line += folded.count("\n", seen, match.start())
+        seen = match.start()
+        found.append((match.group(0), line))
     runs = withheld_runs([word for word, _ in found], key, digests, cache)
     return sorted({found[start][1] for start, _ in runs})
 

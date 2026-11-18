@@ -337,6 +337,19 @@ class NameGuardTest(unittest.TestCase):
         code, output = self.run_guard()
         self.assertEqual(code, 0, output)
 
+    def test_line_numbers_stay_right_deep_in_a_large_file(self):
+        # 60,000 lines and 240,000 words: the line of a name near the end, in the middle and at the
+        # start, with blank lines and a line that holds several words before the name.
+        lines = ["plain words on this line"] * 60000
+        lines[0] = "zorvex starts the file"
+        lines[29999] = ""
+        lines[30000] = "three words then quill harbor here"
+        lines[59998] = "the end is near: zorvex"
+        (self.tree / "big.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output[:300])
+        self.assertIn("  big.txt: line 1, 30001, 59999\n", output)
+
     def test_a_name_split_over_two_lines_is_found_on_its_first_line(self):
         (self.tree / "a.txt").write_text("we use quill\nharbor for this\n", encoding="utf-8")
         code, output = self.run_guard()
