@@ -4,4 +4,4 @@ max_turns: 15
 allowed_tools: [Skill]
 ---
 
-Flag customers who send more than 10,000 in one day in our sandbox application. How often would that have fired last quarter?
+Flag customers who send more than 10,000 in one day in the application named Production copy. How often would that have fired last quarter?
