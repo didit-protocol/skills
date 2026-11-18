@@ -317,7 +317,8 @@ VERIFY_RESPONSE = {
     "application": {"uuid": "app-uuid", "name": "Default", "client_id": "client-1", "api_key": FAKE_API_KEY},
 }
 LOGIN_RESPONSE = {"access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400}
-SECRETS = (FAKE_API_KEY, FAKE_ACCESS, FAKE_REFRESH, FAKE_PASSWORD)
+FAKE_TEMP_TOKEN = "tt_SYNTHETIC_temp_token_value_0123456789abcdef"
+SECRETS = (FAKE_API_KEY, FAKE_ACCESS, FAKE_REFRESH, FAKE_PASSWORD, FAKE_TEMP_TOKEN)
 
 
 class SetupAccountSecretsTest(unittest.TestCase):
@@ -352,35 +353,146 @@ class SetupAccountSecretsTest(unittest.TestCase):
         output = self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com", show_secrets=True)
         self.assertIn(FAKE_API_KEY, output)
 
-    def run_main(self, argv, response):
+    def run_main(self, argv, response=None, post=None):
+        """Run main() with a mocked handler (or a mocked requests.post). Returns (exit code, stdout, stderr)."""
         out, err = io.StringIO(), io.StringIO()
-        handler = "verify_email" if argv[0] == "verify" else "login"
-        env = {"DIDIT_PASSWORD": FAKE_PASSWORD}
-        with mock.patch.object(self.mod, handler, return_value=response), \
-                mock.patch.object(sys, "argv", ["setup_account.py", *argv]), \
-                mock.patch.dict(os.environ, env), \
-                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            self.mod.main()
-        return out.getvalue() + err.getvalue()
+        handler = {"verify": "verify_email", "login": "login", "register": "register"}.get(argv[0], "resend_otp")
+        env = {"DIDIT_PASSWORD": FAKE_PASSWORD, "DIDIT_VERIFICATION_CODE": "A3K9F2"}
+        patches = [mock.patch.object(sys, "argv", ["setup_account.py", *argv]),
+                   mock.patch.dict(os.environ, env)]
+        if post is not None:
+            patches.append(mock.patch.object(self.mod, "requests", types.SimpleNamespace(post=post)))
+        else:
+            self.handler_mock = mock.MagicMock(return_value=response)
+            patches.append(mock.patch.object(self.mod, handler, self.handler_mock))
+        code = None
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            stack.enter_context(contextlib.redirect_stdout(out))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            try:
+                self.mod.main()
+            except SystemExit as exc:
+                code = exc.code
+        return code, out.getvalue(), err.getvalue()
+
+    def assert_streams_clean(self, result, *extra):
+        """Both stdout and stderr are scanned, separately."""
+        _, out, err = result
+        for stream in (out, err):
+            self.assert_no_secret(stream)
+            for value in extra:
+                self.assertNotIn(value, stream)
 
     def test_main_output_is_masked(self):
-        self.assert_no_secret(self.run_main(["verify", "user@example.com", "A3K9F2"], VERIFY_RESPONSE))
-        self.assert_no_secret(self.run_main(["login", "user@example.com"], LOGIN_RESPONSE))
+        result = self.run_main(["verify", "user@example.com"], VERIFY_RESPONSE)
+        self.assertEqual(result[0], 0)
+        self.assert_streams_clean(result)
+        self.assertIn("dk_t...cdef", result[1])
+        self.assert_streams_clean(self.run_main(["login", "user@example.com"], LOGIN_RESPONSE))
+
+    def test_abbreviated_show_secrets_is_rejected(self):
+        for flag in ("--show", "--show-s", "--sh"):
+            with self.subTest(flag=flag):
+                result = self.run_main(["login", "user@example.com", flag], LOGIN_RESPONSE)
+                self.assertEqual(result[0], 2)
+                self.assert_streams_clean(result)
+        full = self.run_main(["login", "user@example.com", "--show-secrets"], LOGIN_RESPONSE)
+        self.assertIn(FAKE_ACCESS, full[1])
+
+    def fake_response(self, status, body=None, text=""):
+        response = mock.MagicMock()
+        response.status_code = status
+        response.text = text
+        if body is None:
+            response.json.side_effect = ValueError("not json: " + text)
+        else:
+            response.json.return_value = body
+        return response
+
+    def test_non_json_error_body_is_not_echoed(self):
+        body = f"<html>upstream failed {FAKE_ACCESS} trace-marker-123</html>"
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(502, text=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "trace-marker-123", "<html>")
+        self.assertIn("HTTP 502", result[2])
+
+    def test_json_error_message_is_not_echoed(self):
+        body = {"code": "invalid_credentials", "detail": f"bad password {FAKE_PASSWORD} detail-marker"}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(401, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "detail-marker")
+        self.assertIn("invalid_credentials", result[2])
+
+    def test_transport_exception_text_is_not_echoed(self):
+        post = mock.MagicMock(side_effect=OSError(f"proxy said {FAKE_REFRESH} exc-marker"))
+        result = self.run_main(["register", "user@example.com"], post=post)
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "exc-marker")
+
+    def test_second_factor_temp_token_is_masked(self):
+        challenge = {"2fa_required": True, "has_authenticator": True, "temp_token": FAKE_TEMP_TOKEN}
+        for command in ("verify", "login"):
+            for extra in ([], ["--show-secrets"]):
+                with self.subTest(command=command, extra=extra):
+                    result = self.run_main([command, "user@example.com", *extra], challenge)
+                    self.assertEqual(result[0], 1)
+                    self.assert_streams_clean(result, FAKE_TEMP_TOKEN)
+                    self.assertIn("Second factor required", result[2])
+                    self.assertNotIn("Account ready", result[1] + result[2])
+
+    def test_sso_required_is_reported(self):
+        body = {"code": "sso_required", "organization": {"name": "org-name-marker"}}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(403, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assertIn("SSO required", result[2])
+        self.assert_streams_clean(result, "org-name-marker")
 
     def test_write_env_stores_full_values_with_mode_0600(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_path = Path(tmp) / ".env"
             env_path.write_text('OTHER="kept"\nDIDIT_API_KEY="old"\n', encoding="utf-8")
-            output = self.run_main(["verify", "user@example.com", "A3K9F2", "--write-env", str(env_path)],
-                                   VERIFY_RESPONSE)
-            self.assert_no_secret(output)
+            result = self.run_main(["verify", "user@example.com", "--write-env", str(env_path)], VERIFY_RESPONSE)
+            self.assertEqual(result[0], 0)
+            self.assert_streams_clean(result)
             written = env_path.read_text(encoding="utf-8")
-            self.assertIn(f'DIDIT_API_KEY="{FAKE_API_KEY}"', written)
-            self.assertIn(f'DIDIT_REFRESH_TOKEN="{FAKE_REFRESH}"', written)
+            self.assertIn(f"DIDIT_API_KEY='{FAKE_API_KEY}'", written)
+            self.assertIn(f"DIDIT_REFRESH_TOKEN='{FAKE_REFRESH}'", written)
             self.assertIn('OTHER="kept"', written)
             self.assertNotIn('DIDIT_API_KEY="old"', written)
             self.assertEqual(env_path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), [".env"])
 
+    def test_write_env_refuses_a_symlink_before_spending_the_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real = Path(tmp) / "real.env"
+            real.write_text("UNTOUCHED=1\n", encoding="utf-8")
+            link = Path(tmp) / ".env"
+            link.symlink_to(real)
+            result = self.run_main(["verify", "user@example.com", "--write-env", str(link)], VERIFY_RESPONSE)
+            self.assertEqual(result[0], 1)
+            self.assertIn("symlink", result[2])
+            self.handler_mock.assert_not_called()
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(real.read_text(encoding="utf-8"), "UNTOUCHED=1\n")
+            self.assert_streams_clean(result)
+            with self.assertRaises(self.mod.SetupError):
+                self.mod.write_env(str(link), {"DIDIT_API_KEY": FAKE_API_KEY})
+            self.assertNotIn(FAKE_API_KEY, real.read_text(encoding="utf-8"))
+
+    def test_write_env_rejects_values_that_cannot_be_single_quoted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            for bad in ("has'quote", "has\nnewline"):
+                with self.subTest(value=bad), self.assertRaises(self.mod.SetupError):
+                    self.mod.write_env(str(env_path), {"DIDIT_API_KEY": bad})
+            self.assertFalse(env_path.exists())
+            self.mod.write_env(str(env_path), {"DIDIT_API_KEY": "a$b`c\"d"})
+            self.assertEqual(env_path.read_text(encoding="utf-8"), "DIDIT_API_KEY='a$b`c\"d'\n")
 
 if __name__ == "__main__":
     sys.exit(0 if unittest.main(exit=False, verbosity=1).result.wasSuccessful() else 1)

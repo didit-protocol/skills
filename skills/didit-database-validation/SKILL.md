@@ -29,12 +29,12 @@ metadata:
 
 Verifies personal data against the authoritative source for a country (civil registry, tax authority, electoral roll or biometric registry) and returns a per-field comparison, a per-service outcome code and the registry record. Use it to catch synthetic identities and ID numbers that do not belong to the person.
 
-**Pricing:** per service, list prices as of 2026-11-18 ([database validation pricing](https://docs.didit.me/getting-started/database-validation-pricing)): from $0.05 (Dominican Republic `dom_cedula`) to $8.00 per query; most Latin American national ID services are $0.20. A query is billed once per service the registry answered, including no-match and not-found answers; `400` rejections and services the source never answered are free. Queries are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (list prices as of 2026-11-18, [database validation pricing](https://docs.didit.me/getting-started/database-validation-pricing)):** per service, from $0.05 (Dominican Republic `dom_cedula`) to $8.00 per query; most Latin American national ID services are $0.20. A query is billed once per service the registry answered, including no-match and not-found answers; `400` rejections and services the source never answered are free. Queries are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Key constraints:**
 - `issuing_state` is ISO 3166-1 **alpha-3** (`BRA`, `PER`, `ARG`). Alpha-2 codes (`BR`) return `400` "Invalid issuing state".
 - Each country exposes one or more **services** (`service_id`). Without `services`, exactly **one** default service runs. Spain, Kenya, Zambia and most non-Latin-American services have no default: name them in `services`.
-- Required fields depend on the selected services. Missing or malformed fields return `400` before any registry call (never billed).
+- Required fields depend on the selected services. Missing or malformed fields return `400` before any registry call (never billed, see Pricing above).
 - Send JSON, or `multipart/form-data` when a service needs a `selfie` (Argentina `arg_renaper`, Panama `pan_cedula_sib`, other biometric services).
 - Results per field: `full_match`, `partial_match`, `no_match`. Overall `status`: `Approved`, `Declined` or `In Review`.
 
@@ -229,9 +229,9 @@ A decline wins over review. A multi-service request can be `Approved` on one ser
 | `401` | The API key has expired | Rotate it or create a new key in **Developers > API keys** |
 | `403` | Missing, wrong or revoked API key; a scoped key without access to this endpoint; a request from outside the key's IP allowlist; or not enough credits | Read the message in `detail` or `error`: fix the `x-api-key` header or the key's access, or top up |
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
-| `502` | No selected service returned a usable result. Body: `error` plus `validation_errors[]` (`service_id`, `code` e.g. `empty_provider_response`, `message`, `retryable: true`). Nothing is billed | Retry later; with `save_api_request=true` the attempt is still recorded as a session |
+| `502` | No selected service returned a usable result. Body: `error` plus `validation_errors[]` (`service_id`, `code` e.g. `empty_provider_response`, `message`, `retryable: true`). Nothing is billed (see Pricing above) | Retry later; with `save_api_request=true` the attempt is still recorded as a session |
 
-`400` bodies on this endpoint (never billed):
+`400` bodies on this endpoint (never billed, see Pricing above):
 - `{"error": ["Invalid issuing state. Valid options are: ARE, ARG, ..."]}`: wrong or alpha-2 `issuing_state`
 - `{"error": ["No database validation services configured for ESP."]}`: no default service for the country; send `services`
 - `{"error": ["Missing required fields: tax_number (or use 'identification_number' ...)"], "fields_required_by": {"tax_number": ["bra_cpf"]}}`; also `any_field_required_by`, `field_dependencies_required_by`, `address_fields_required_by` for the same family of problems
@@ -256,13 +256,13 @@ The credit check covers the sum of the selected services' prices and runs before
 | `database_validation.match_type` | string/null | `full_match`, `partial_match` or `no_match` across services; `null` for outcome-only services |
 | `database_validation.validations` | array or object | Per service: `service_id`, `service_name`, `validation` (field to `full_match`/`partial_match`/`no_match`), `outcome_code`, `outcome_detail`, `source_data` (registry record). Merged map when `save_api_request=false` |
 | `database_validation.warnings` | array | `{feature, risk, additional_data, log_type, short_description, long_description}`; empty on a clean full match |
-| `database_validation.errors` | array | Only when some services failed: `service_id`, `code`, `message`, `retryable`. Those services are not billed |
+| `database_validation.errors` | array | Only when some services failed: `service_id`, `code`, `message`, `retryable`. Those services are not billed (see Pricing above) |
 | `database_validation.services_used` | array | Services that returned a result (only when the request sent `services`) |
 | `database_validation.match_score` | number | 0.0-1.0 share of attempted services with a full match (only when the request sent `services`) |
 | `vendor_data` / `metadata` | string/object | Echo of your values |
 | `created_at` | string | ISO 8601 UTC timestamp |
 
-**`outcome_code` values:** `MATCH`, `PARTIAL_MATCH`, `NO_MATCH` (definitive mismatch), `DOCUMENT_NOT_FOUND` (number not in the registry), `INVALID_DOCUMENT_FORMAT` / `INVALID_INPUT` (the registry rejected the data), `MINOR_BLOCKED`, `DECEASED`, `BIOMETRIC_NO_MATCH` (face does not match), `BIOMETRIC_IMAGE_UNUSABLE` (retake the selfie), `INCONCLUSIVE` (review, not a no-match), `DOCUMENT_SUPERSEDED` (a newer edition of the document exists), `REGISTRY_UNAVAILABLE` / `REGISTRY_ERROR` (source failure, not billed).
+**`outcome_code` values:** `MATCH`, `PARTIAL_MATCH`, `NO_MATCH` (definitive mismatch), `DOCUMENT_NOT_FOUND` (number not in the registry), `INVALID_DOCUMENT_FORMAT` / `INVALID_INPUT` (the registry rejected the data), `MINOR_BLOCKED`, `DECEASED`, `BIOMETRIC_NO_MATCH` (face does not match), `BIOMETRIC_IMAGE_UNUSABLE` (retake the selfie), `INCONCLUSIVE` (review, not a no-match), `DOCUMENT_SUPERSEDED` (a newer edition of the document exists), `REGISTRY_UNAVAILABLE` / `REGISTRY_ERROR` (source failure, not billed; see Pricing above).
 
 ---
 
@@ -338,7 +338,7 @@ Other countries (Australia, Austria, Canada, China, Denmark, Finland, France, Ge
 4. Approved -> data confirmed by the registry
    Declined -> DATABASE_VALIDATION_NO_MATCH / _DOCUMENT_SUPERSEDED: do not trust the identity data
    In Review -> COULD_NOT_PERFORM_DATABASE_VALIDATION: review or retry later
-   502 -> no service answered (not billed): retry later
+   502 -> no service answered (not billed, see Pricing above): retry later
 ```
 
 ### Spain DNI/NIE

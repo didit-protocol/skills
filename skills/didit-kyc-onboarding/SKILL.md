@@ -32,7 +32,7 @@ End-to-end Know Your Customer (KYC) verification. This skill creates a KYC workf
 4. The selfie is matched to the document portrait
 5. Gets approved, declined, or flagged for review
 
-**Pricing:** in a workflow you pay per feature that completes. List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): ID Verification (document capture) $0.15, Passive Liveness $0.10, Face Match $0.05, Device & IP Analysis $0.03 (the four together are a $0.33 full ID check), Active liveness (`ACTIVE_3D` or `FLASHING`) $0.15, NFC $0.15, AML Screening $0.20, Email Verification $0.02, Phone Verification $0.02 + carrier price. Checks are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (workflow list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** in a workflow you pay per feature that completes: ID Verification (document capture) $0.15, Passive Liveness $0.10, Face Match $0.05, Device & IP Analysis $0.03 (the four together are a $0.33 full ID check), Active liveness (`ACTIVE_3D` or `FLASHING`) $0.15, NFC $0.15. AML, email and phone verification prices: the Pricing notes in **didit-aml-screening**, **didit-email-verification** and **didit-phone-verification**. Checks are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:**
 - Workflows: https://docs.didit.me/management-api/workflows/create
@@ -151,7 +151,7 @@ The body accepts only these keys; any other key (including `workflow_type`) retu
 | `feature` | Config | Notes |
 |---|---|---|
 | `OCR` | `documents_allowed`, `methods`, `duplicated_user_action`, age and risk actions | ID document capture. Put it first so later steps can use its data |
-| `LIVENESS` | `face_liveness_method`: `PASSIVE`, `ACTIVE_3D` (3D action and flash) or `FLASHING` (3D flash) | Active methods bill as Active Liveness ($0.15 list price as of 2026-11-18) |
+| `LIVENESS` | `face_liveness_method`: `PASSIVE`, `ACTIVE_3D` (3D action and flash) or `FLASHING` (3D flash) | Active methods bill as Active Liveness (price: see Pricing above) |
 | `FACE_MATCH` | `face_match_score_decline_threshold`, `face_match_score_review_threshold` (0-100) | Must come after `OCR` |
 | `NFC` | `allow_nfc_skip`, `skip_nfc_action`, `unverified_chip_action` | Must come after `OCR`; chip read by the native iOS/Android SDK, skipped in web browsers |
 | `AML` | `aml_score_review_threshold`, `aml_score_approve_threshold` | Needs `OCR` before it |

@@ -33,7 +33,7 @@ Estimates a person's age from a facial image and runs a passive liveness check i
 - One clear, front-facing, well-lit face. The **largest** detected face drives `age_estimation`
 - Accuracy: mean absolute error (MAE) 3.5 years overall; 1.5 years for under-18 (see the table below)
 
-**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.10 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.10 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Decision:** **any** warning declines. `status` is `Approved` only when `warnings` is empty. There is no `In Review` on this endpoint. `method` is always `PASSIVE`.
 
@@ -41,7 +41,7 @@ Estimates a person's age from a facial image and runs a passive liveness check i
 
 **Saving (`save_api_request`, default `true`):** the call is saved as an API session (Business Console, `status.updated` webhook, and `GET /v3/session/{request_id}/decision/`, where the result appears in `liveness_checks[]` with `features: ["AGE_ESTIMATION"]`), the face crop and reference image are stored, and the face is added to your application's face search index (used by Face Search and duplicate detection). With `false` nothing is stored and `request_id` cannot be looked up.
 
-**Sandbox:** sandbox API keys return a static `Approved` payload (`age_estimation: 30`, no warnings) after request validation; nothing is saved or billed.
+**Sandbox:** sandbox API keys return a static `Approved` payload (`age_estimation: 30`, no warnings) after request validation; nothing is saved or billed (see Pricing above).
 
 **API Reference:** https://docs.didit.me/standalone-apis/age-estimation
 **Feature Guide:** https://docs.didit.me/core-technology/age-estimation/overview
@@ -257,7 +257,7 @@ Workflow-only: the ID verification fallback and per-country limits are **not** a
 3. The user takes a selfie and the age is estimated (workflows compare the age in whole years):
    - **Fallback on** (`enable_id_verification_fallback: true`): an age below `borderline_minimum_age_threshold` raises `AGE_BELOW_MINIMUM` and declines; ages in the borderline band up to `borderline_maximum_age_threshold`, or an age that cannot be estimated, continue to ID verification; clear passes complete on the selfie.
    - **Fallback off**: no estimated age raises `AGE_NOT_DETECTED`; an age below `minimum_age_threshold` raises `AGE_BELOW_MINIMUM`.
-4. When the fallback runs, the document's date of birth is checked against the per-country age limits, and the document portrait is face matched against the age-estimation selfie (reported in `face_matches[]` with the age estimation node as `node_id`, not billed as a separate Face Match).
+4. When the fallback runs, the document's date of birth is checked against the per-country age limits, and the document portrait is face matched against the age-estimation selfie (reported in `face_matches[]` with the age estimation node as `node_id`, not billed as a separate Face Match; see Pricing above).
 5. `GET /v3/session/{sessionId}/decision/`: the estimate is in `liveness_checks[].age_estimation`.
 
 Other `AGE_ESTIMATION` config fields: `face_liveness_method` (`ACTIVE_3D` = 3D Action & Flash, highest security; `FLASHING` = 3D Flash, high; `PASSIVE` = single frame, standard), `face_liveness_score_decline_threshold`, `face_liveness_score_review_threshold`. Workflow sessions also run blocklist and duplicate-face screening.

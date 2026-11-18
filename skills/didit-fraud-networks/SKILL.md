@@ -37,7 +37,7 @@ A **network** is a cluster of subjects (users, businesses and transaction partie
 - A shared signal is a reason to investigate, not proof of fraud. A signal linking an unusually large number of subjects (office IP, kiosk device, data-center IP) is flagged `is_hub` rather than treated as fraud evidence.
 - Status changes, dismissing, blocklisting, creating a case from a network and network notes are done in the Business Console (notes are for console users only; API keys get `403`).
 
-**Pricing:** No list price is published for these endpoints; check [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for these endpoints. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/management-api/networks/list
 **Feature guide:** https://docs.didit.me/console/networks

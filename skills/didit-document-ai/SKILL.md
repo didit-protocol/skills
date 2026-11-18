@@ -32,11 +32,11 @@ Send one document and the list of fields you want read from it. Didit runs its d
 - `fields`: 1 to 30 items, at most 16 KB. Bracket-style form keys (`fields[0][key]=...`) return `400`
 - Synchronous and model-based: typically 5 to 15 seconds, multi-page PDFs up to about 30 seconds. Use a client timeout of at least 45 seconds and do not retry before the call completes
 - A readable but problematic document still returns `200` with `Declined` or `In Review`: always read `document_ai.status` and `document_ai.warnings`
-- Only `200` responses are billed: `400` and `403` responses cost nothing
+- Only `200` responses are billed: `400` and `403` responses cost nothing (see Pricing above)
 
 **Use cases:** proof of funds, bank statements, payslips, source-of-wealth letters, tax documents, invoices, contracts, any document without a fixed template.
 
-**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.20 per document (billed per `200` response, when the document is processed and a status is returned), paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.20 per document (billed per `200` response, when the document is processed and a status is returned), paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:** https://docs.didit.me/standalone-apis/document-ai
 **Feature Guide:** https://docs.didit.me/core-technology/document-ai/overview
@@ -311,7 +311,7 @@ The credit check runs before the upload is read: a key that cannot pay gets `403
 
 ## Sandbox
 
-Sandbox API keys return a deterministic mock response with placeholder values and are not charged. Use them to test request building and parsing, not extraction quality.
+Sandbox API keys return a deterministic mock response with placeholder values and are not charged (see Pricing above). Use them to test request building and parsing, not extraction quality.
 
 ---
 
@@ -324,7 +324,7 @@ To have the user upload documents in the hosted flow instead, add the `DOCUMENT_
 - The name is compared with the verified subject: the ID-verification name (or the session's expected details) on a person workflow, the verified company on a business workflow.
 - `status_rules` can target `document_ai.<key>` and cross-reference other steps with `value_type: "field"` (e.g. `document_ai.account_holder` `fuzzy_match` `kyc.full_name`).
 - Results arrive in the session decision (`GET /v3/session/{sessionId}/decision/`) and webhooks.
-- Same $0.20 per document (list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
+- Same price per document (see Pricing above).
 
 Full config reference: https://docs.didit.me/management-api/workflows/feature-configs
 

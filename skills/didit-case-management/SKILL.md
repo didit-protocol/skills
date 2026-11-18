@@ -37,7 +37,7 @@ A **case** is a compliance investigation anchored to exactly one subject: one us
 - Every endpoint is scoped to one organization and one application: `https://verification.didit.me/v3/organization/{organization_id}/application/{application_id}/...`
 - Actions taken with an API key have no person attached: `actor_email` and `actor_name` on events and notes, and `resolved_by_email`, are `null`.
 
-**Pricing:** No list price is published for these endpoints; check [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for these endpoints. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/management-api/cases/list
 **Feature guides:** https://docs.didit.me/console/case-management/cases | https://docs.didit.me/console/case-management/blueprints | https://docs.didit.me/console/case-management/four-eyes | https://docs.didit.me/console/case-management/fiu-reports

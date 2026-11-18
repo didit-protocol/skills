@@ -43,7 +43,7 @@ The hub skill for the Didit platform: account and application setup, workflows, 
 | Web and mobile SDKs, SDK tokens | `didit-sdk-integration` |
 | Didit from an MCP client | `didit-mcp-server` |
 
-**Pricing:** a session costs the sum of the features its workflow runs, and only features that finish are charged (the workflow's `total_price`, which excludes variable-priced features such as `DATABASE_VALIDATION` and `PHONE_VERIFICATION`). No list price is published for the management endpoints themselves. As of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)), the Free plan includes $10 of credit a month for organizations that signed up with a work email in the console; an organization created through the API (as `setup_account.py` does) starts at $0, and the Free credit does not pay for phone verification. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing:** a session costs the sum of the features its workflow runs, and only features that finish are charged (the workflow's `total_price`, which excludes variable-priced features such as `DATABASE_VALIDATION` and `PHONE_VERIFICATION`). As of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)) the pricing page lists no separate price for the management endpoints themselves. The Free plan includes $10 of credit a month for organizations that signed up with a work email in the console; an organization created through the API (as `setup_account.py` does) starts at $0, and the Free credit does not pay for phone verification. Top-ups are $50 to $20,000 each on Free, Growth and Scale; Enterprise organizations cannot buy top-ups and are invoiced for overage instead. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Base URLs:** `https://verification.didit.me/v3` (everything with `x-api-key`), `https://apx.didit.me/auth/v2` (account setup).
 
@@ -683,9 +683,9 @@ GET   /v3/transactions/{uuid}/   # Didit's transaction uuid from the create resp
 | Endpoint | Body | Response |
 |---|---|---|
 | `GET /v3/billing/balance/` | - | `{"balance": "142.5000", "auto_refill_enabled": true, "auto_refill_amount": "100.0000", "auto_refill_threshold": "10.0000"}`; the auto-refill values are `null` when unset |
-| `POST /v3/billing/top-up/` | `amount_in_dollars` (required, $50 to $20,000), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
+| `POST /v3/billing/top-up/` | `amount_in_dollars` (required; limits as of 2026-11-18: see Pricing above), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
 
-Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Enterprise organizations cannot buy top-ups: usage beyond their contract credit is invoiced as overage ([pricing](https://docs.didit.me/getting-started/pricing#credit-and-top-ups)).
+Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Enterprise organizations cannot buy top-ups (as of 2026-11-18, see Pricing above): usage beyond their contract credit is invoiced as overage ([pricing](https://docs.didit.me/getting-started/pricing#credit-and-top-ups)).
 
 ---
 
@@ -946,23 +946,37 @@ pip install requests
 read -rs DIDIT_PASSWORD && export DIDIT_PASSWORD   # optional: otherwise each command prompts
 python scripts/setup_account.py register you@yourdomain.com
 # (check email for the 6-character code)
-python scripts/setup_account.py verify you@yourdomain.com A3K9F2 --write-env .env   # saves DIDIT_API_KEY and tokens
+python scripts/setup_account.py verify you@yourdomain.com --write-env .env   # prompts for the code; saves DIDIT_API_KEY and tokens
 python scripts/setup_account.py resend-otp you@yourdomain.com
 python scripts/setup_account.py login you@yourdomain.com --write-env .env
 ```
 
-The script never prints a full API key, access token, refresh token or password. Output shows each one
-masked (first 4 and last 4 characters, for example `dk_t...cdef`). To keep the full values:
-- `--write-env <path>` writes `DIDIT_API_KEY`, `DIDIT_ACCESS_TOKEN` and `DIDIT_REFRESH_TOKEN` to that file,
-  created or updated with mode `0600`; other lines in the file are kept. Keep the file out of version control.
-- `--show-secrets` prints the full response to stdout. Pass it only on purpose: terminals, shell
+Output is a fixed summary (status line, organization and application UUIDs, masked credentials). The
+script never prints a response body, a server message or exception text, and never prints a full API key,
+access token, refresh token, temporary second-factor token or password. Credentials are masked to the first
+4 and last 4 characters (for example `dk_t...cdef`); values under 12 characters show as `****`.
+To keep the full values:
+- `--write-env <path>` writes `DIDIT_API_KEY`, `DIDIT_ACCESS_TOKEN` and `DIDIT_REFRESH_TOKEN` to that file as
+  single-quoted literals, through a `0600` temporary file in the same directory that atomically replaces it;
+  other lines in the file are kept. It refuses a symlink or anything that is not a regular file, and it checks
+  the destination before the code is spent. Keep the file out of version control.
+- `--show-secrets` prints those credentials in full in the summary. Pass it only on purpose: terminals, shell
   recordings and agent logs keep what is printed.
+- Flags must be spelled out in full: an abbreviation such as `--show` is rejected.
 
-The password comes from the `DIDIT_PASSWORD` environment variable or a no-echo prompt. Never put it on the
-command line: other local users can read it in the process list, and it stays in shell history and agent logs.
-A positional password still works for older callers, but the script prints a warning.
+The verification code works once, so pass `--write-env` on `verify`: without it the API key is shown masked
+only and you create a new key in the console later. An account that already has a second factor gets a
+second-factor challenge instead of tokens, and an organization that enforces SSO gets `sso_required`; the
+script reports either one (the temporary token stays masked) and exits 1. Sign in at
+https://business.didit.me instead.
+
+The password comes from `DIDIT_PASSWORD` and the code from `DIDIT_VERIFICATION_CODE`, or from a no-echo
+prompt. Never put either on the command line: other local users can read it in the process list, and it stays
+in shell history and agent logs. A positional password or code still works for older callers, but the script
+prints a warning, and by then the value is already exposed.
 When an agent runs these commands without a terminal, the script cannot prompt: ask the user to export
-`DIDIT_PASSWORD` in the agent's environment instead of pasting the password into the conversation.
+`DIDIT_PASSWORD` (and `DIDIT_VERIFICATION_CODE`) in the agent's environment instead of pasting them into the
+conversation. Imported as a library, the functions raise `SetupError` with fixed text on any failure.
 
 ### manage_workflows.py: workflow CRUD
 

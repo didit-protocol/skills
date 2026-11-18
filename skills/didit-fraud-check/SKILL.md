@@ -37,9 +37,9 @@ Submit typed identifiers (email, phone, government ID numbers, your own external
 - Each module reports its own `status` and `reason`. A source that could not answer is never reported as a mismatch or as zero risk.
 - `risk` keeps five dimensions separate (`identity`, `contact`, `device_network`, `behavioral`, `fraud_network`); `recommendation` is `approve`, `review` or `reject`.
 - `client_reference` is your idempotency key: same body returns the stored result with no new charge; a different body returns `409`.
-- Sandbox applications get sample responses with no supplier calls and no charges.
+- Sandbox applications get sample responses with no supplier calls and no charges (see Pricing above).
 
-**Pricing:** No list price is published for Fraud Check itself; the IP Risk API is $0.02 per request (list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)). Current prices: [didit.me/pricing](https://didit.me/pricing). Each paid module bills at your organization's current prepaid or contract rate for that check, skipped and unavailable modules are not billed, and `networks_same_org` and `networks_cross_org` have no per-check charge. Read the exact amount from `estimated_price` in the plan response.
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for Fraud Check itself; the IP Risk API is $0.02 per request. Current prices: [didit.me/pricing](https://didit.me/pricing). Each paid module bills at your organization's current prepaid or contract rate for that check, skipped and unavailable modules are not billed, and `networks_same_org` and `networks_cross_org` have no per-check charge. Read the exact amount from `estimated_price` in the plan response. Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **API Reference:** [Fraud Check](https://docs.didit.me/standalone-apis/fraud-check) | [Plan](https://docs.didit.me/standalone-apis/fraud-check-plan) | [Get](https://docs.didit.me/standalone-apis/fraud-check-result) | [IP Risk](https://docs.didit.me/standalone-apis/ip-risk)
 
@@ -67,7 +67,7 @@ See the **didit-verification-management** skill for full platform management (wo
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `https://verification.didit.me/v3/fraud/checks/plan/` | Dry run: availability, selection and estimated price per module. No check, no session, no charge |
+| `POST` | `https://verification.didit.me/v3/fraud/checks/plan/` | Dry run: availability, selection and estimated price per module. No check, no session, no charge (see Pricing above) |
 | `POST` | `https://verification.didit.me/v3/fraud/checks/` | Run a Fraud Check |
 | `GET` | `https://verification.didit.me/v3/fraud/checks/{check_id}/` | Read a stored check of your application |
 | `POST` | `https://verification.didit.me/v3/ip/risk/` | Standalone IP risk score (see [IP Risk API](#ip-risk-api)) |
@@ -148,15 +148,15 @@ POST https://verification.didit.me/v3/fraud/checks/
 
 | Module | Needs | Feeds | Billing |
 |---|---|---|---|
-| `normalization` | Runs even with `include: []` | `inputs[]` | Free |
+| `normalization` | Runs even with `include: []` | `inputs[]` | Not billed (see Pricing above) |
 | `email_risk` | An `email` identifier | `contact` | Paid |
 | `phone_risk` | A `phone` identifier | `contact` | Paid |
 | `email_social` | A valid `email` identifier (profile `2026-09-14`+). No OTP is sent | `enrichment` | Paid add-on |
 | `phone_social` | A valid `phone` identifier (profile `2026-09-14`+). No OTP is sent | `enrichment` | Paid add-on |
 | `ip_risk` | A public `context.ip_address` | `device_network` | Paid |
 | `database_validation` | A government identifier with its `country`, where Didit has a registry source for it, plus the attributes that source needs | `identity` | Paid, price varies by country ([Database Validation pricing](https://docs.didit.me/getting-started/database-validation-pricing)) |
-| `networks_same_org` | Something to look up in your private network history (identifier or public IP) | `behavioral` | Free |
-| `networks_cross_org` | An email, phone or properly namespaced document identifier; organization participation and entitlement (profile `2026-09-14.1`+) | `fraud_network` | Free, uses the organization's network read budget |
+| `networks_same_org` | Something to look up in your private network history (identifier or public IP) | `behavioral` | No per-check charge (see Pricing above) |
+| `networks_cross_org` | An email, phone or properly namespaced document identifier; organization participation and entitlement (profile `2026-09-14.1`+) | `fraud_network` | No per-check charge (see Pricing above); uses the organization's network read budget |
 | `biometric_identity` | `subject.selfie` + a `tax_number` with `country: "BR"` + `context.consent_obtained: true`; organization entitlement (profile `2026-09-14.2`) | `identity`, `identity_relationship` | Paid per check at your Database Validation rate |
 
 ### Example
@@ -247,9 +247,9 @@ Abbreviated. A real response lists every module of the profile in `modules` and 
 POST https://verification.didit.me/v3/fraud/checks/plan/
 ```
 
-Send the same body you will send to `POST /v3/fraud/checks/`. `subject` is optional for a plan; running a check still needs at least one identifier. Planning creates no check or session, calls no supplier, reads no network history and charges nothing.
+Send the same body you will send to `POST /v3/fraud/checks/`. `subject` is optional for a plan; running a check still needs at least one identifier. Planning creates no check or session, calls no supplier, reads no network history and charges nothing (see Pricing above).
 
-Sandbox example (live applications get prices from their own rate card; sandbox prices are `0`):
+Sandbox example (live applications get prices from their own rate card; sandbox prices are `0`; see Pricing above):
 
 ```json
 {
@@ -287,7 +287,7 @@ A plan is not a reservation: execution re-checks eligibility and pricing, and an
 GET https://verification.didit.me/v3/fraud/checks/{check_id}/
 ```
 
-Returns the stored result (same shape as the run response). No re-run, no charge. Returns `404` for an unknown, unfinished or deleted check, or one that belongs to another application. If your organization loses global network access, reads hide the shared aggregates and their derived risk evidence; the original `recommendation` is kept.
+Returns the stored result (same shape as the run response). No re-run, no charge (see Pricing above). Returns `404` for an unknown, unfinished or deleted check, or one that belongs to another application. If your organization loses global network access, reads hide the shared aggregates and their derived risk evidence; the original `recommendation` is kept.
 
 ---
 
@@ -318,7 +318,7 @@ Returns the stored result (same shape as the run response). No re-run, no charge
 | `not_available_in_profile_version` | The pinned profile version does not offer it |
 | `consent_required` | `context.consent_obtained` was not `true` |
 | `unsupported_region` | The identifier's country is not covered |
-| `source_unavailable` | The source could not answer (timeout or error). Not billed. Not a mismatch |
+| `source_unavailable` | The source could not answer (timeout or error). Not billed (see Pricing above). Not a mismatch |
 
 ### Risk bands and availability
 
@@ -330,7 +330,7 @@ Returns the stored result (same shape as the run response). No re-run, no charge
 
 Pin `2026-09-14.2`, select `biometric_identity`, send a `tax_number` identifier with `country: "BR"`, `subject.selfie`, and `context.consent_obtained: true`. Missing consent gives `consent_required`; a non-Brazilian identifier gives `unsupported_region`.
 
-`identity_relationship.result` is `match`, `mismatch`, `inconclusive` or `no_reference`. `inconclusive` needs review and is never a mismatch. The result only establishes the selfie-to-CPF relationship: it does not validate names or birth date, prove liveness, or search faces. Timeouts and source errors are unavailable and not billed; completed inconclusive answers are billed. The selfie is not returned or stored as session media by this check.
+`identity_relationship.result` is `match`, `mismatch`, `inconclusive` or `no_reference`. `inconclusive` needs review and is never a mismatch. The result only establishes the selfie-to-CPF relationship: it does not validate names or birth date, prove liveness, or search faces. Timeouts and source errors are unavailable and not billed (see Pricing above); completed inconclusive answers are billed. The selfie is not returned or stored as session media by this check.
 
 ## Global fraud network (`networks_cross_org`)
 
@@ -361,7 +361,7 @@ Queries supported email, phone and namespaced document identifiers against the s
 | `409` | `client_reference` reused with a different body; a check with that reference is still running (`Retry-After` header); or the verification was deleted before the check completed | Use a new reference, or retry the identical request after `Retry-After` |
 | `429` | Rate limit: 300 POST/PATCH/DELETE and 600 GET requests a minute per key | Wait the `Retry-After` seconds, then retry |
 
-The credit check runs before any module: a check is never half-run on an account that cannot pay. `409` responses are not charged.
+The credit check runs before any module: a check is never half-run on an account that cannot pay. `409` responses are not charged (see Pricing above).
 
 ---
 
@@ -398,7 +398,7 @@ The credit check runs before any module: a check is never half-run on an account
 POST https://verification.didit.me/v3/ip/risk/
 ```
 
-Server-to-server IP scoring: geolocation, network ownership, VPN/Tor and data-center flags, threat data and claimed-country mismatch. Creates an API session (`request_id`). Live calls are billable once the lookup starts; no list price is published (check [didit.me/pricing](https://didit.me/pricing)). Sandbox keys return deterministic approved data without credits, sessions or network contribution.
+Server-to-server IP scoring: geolocation, network ownership, VPN/Tor and data-center flags, threat data and claimed-country mismatch. Creates an API session (`request_id`). Live calls are billable once the lookup starts (price: see Pricing above). Sandbox keys return deterministic approved data without credits, sessions or network contribution.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|

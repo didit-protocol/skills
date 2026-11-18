@@ -44,7 +44,7 @@ Choose Identity verification, Transaction monitoring, Authentication, or any com
 
 **Verification/transaction versions documented here:** Web SDK 0.4.0, iOS 4.9.1, Android 4.9.1, React Native 4.9.1, Flutter 4.9.1. These versions do not establish availability of Authentication or `@didit-protocol/signals`.
 
-**Pricing:** The SDKs have no list price of their own. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one (Transaction Screening, inside your plan's monthly allowance and then $0.001 per transaction, list prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing))). Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for the SDKs. A session bills the features of its workflow (only features that finish); a transaction submitted from a device bills like a server-side one, as Transaction Screening (allowance and price: the Pricing note in **didit-transaction-monitoring**). Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Docs:** https://docs.didit.me/integration/sdks · Web: https://docs.didit.me/integration/web-sdks/javascript-sdk · Native: https://docs.didit.me/integration/native-sdks/overview · Transactions from the device: https://docs.didit.me/transaction-monitoring/sdk-transaction-submission · Events from the device: https://docs.didit.me/transaction-monitoring/sdk-event-submission
 

@@ -40,7 +40,7 @@ Searches the largest face in an image against your application's face search ind
 - With several faces the largest one is searched and `MULTIPLE_FACES_DETECTED` is added
 - `vendor_data` does **not** exclude the same user's earlier faces from the results (unlike Passive Liveness)
 
-**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.05 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.05 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Decision:** `Declined` only when `FACE_IN_BLOCKLIST` or `POSSIBLE_FACE_IN_BLOCKLIST` fires; otherwise `Approved`. Duplicate and multiple-face warnings never decline, and there is no `In Review`. `Approved` does **not** mean the face is new: check `total_matches` and the duplicate warnings. This endpoint returns no liveness verdict (use **didit-liveness-detection** for that).
 
@@ -48,7 +48,7 @@ Searches the largest face in an image against your application's face search ind
 
 **Similarity guidance:** the Face Search docs read 90%+ as a strong likelihood of the same person and 70-89% as a possible match that may need review. Didit's own verdict is the warning: `DUPLICATED_FACE` / `FACE_IN_BLOCKLIST` for strong matches, `POSSIBLE_DUPLICATED_FACE` / `POSSIBLE_FACE_IN_BLOCKLIST` for weaker ones.
 
-**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed.
+**Sandbox:** sandbox API keys return a static `Approved` payload after request validation; nothing is saved or billed (see Pricing above).
 
 **API Reference:** https://docs.didit.me/standalone-apis/face-search
 **Feature Guide:** https://docs.didit.me/core-technology/face-search/overview

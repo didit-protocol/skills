@@ -27,7 +27,7 @@ metadata:
 
 Verifies an address document (image or PDF) in one call. The document is classified (type and subtype), the issuer, dates, holder name and address are extracted, the address is parsed and geocoded, PDF/EXIF forensics look for tampering, and optional `expected_*` values are cross-checked. The answer is `Approved` or `Declined` with a `warnings` list explaining every issue found.
 
-**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.20 per standalone call (every `200` response is billed, `Approved` or `Declined`), paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.20 per standalone call (every `200` response is billed, `Approved` or `Declined`), paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Key constraints:**
 - Formats: **JPG, JPEG, PNG, TIFF, PDF, WEBP**. Multi-page PDFs are supported. Encrypted PDFs need `document_password`.

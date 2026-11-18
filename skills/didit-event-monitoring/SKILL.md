@@ -38,7 +38,7 @@ Events are everything your platform knows besides money movement: the login befo
 - No webhooks fire for events: read the response or the list endpoints.
 - Money movement itself goes to `POST /v3/transactions/` (see the **didit-transaction-monitoring** skill).
 
-**Pricing:** No list price is published for events; check [didit.me/pricing](https://didit.me/pricing).
+**Pricing (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** the pricing page lists no separate price for events. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Guides:** https://docs.didit.me/transaction-monitoring/events | https://docs.didit.me/transaction-monitoring/sdk-event-submission | https://docs.didit.me/transaction-monitoring/event-rules | https://docs.didit.me/transaction-monitoring/rules-library
 

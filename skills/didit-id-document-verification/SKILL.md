@@ -35,7 +35,7 @@ Verifies an identity document from images (or PDFs) of its front and back in one
 
 **Coverage:** 14,000+ document types from 220+ countries and territories: passports, national ID cards, driver's licenses, residence permits and more.
 
-**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.20 per standalone call that returns `200` (Approved or Declined); `400` responses are not billed. Calls are paid from your plan credit or top-ups. Digital ID wallets are billed separately (see [Digital ID Wallets](#digital-id-wallets-standalone)). Current prices: [didit.me/pricing](https://didit.me/pricing).
+**Pricing (list prices as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)):** $0.20 per standalone call that returns `200` (Approved or Declined); `400` responses are not billed. Calls are paid from your plan credit or top-ups. Digital ID wallets are billed separately (see [Digital ID Wallets](#digital-id-wallets-standalone)). Current prices: [didit.me/pricing](https://didit.me/pricing). Billing statements elsewhere in this skill (what is or is not billed) refer to this note and its date.
 
 **Sandbox:** sandbox API keys skip processing and billing and return a static `Approved` mock (a fictional "Sandbox User" USA identity card) after request validation. Nothing is stored.
 
@@ -348,7 +348,7 @@ Verify a person through a national or bank digital ID they already hold, from yo
 | Smart-ID | `POST /v3/id-verification/wallets/smart-id/` | EST, LVA, LTU, BEL | in app | $0.21 |
 | Mobile-ID | `POST /v3/id-verification/wallets/mobile-id/` | EST, LTU | in app | $0.21 |
 
-Other wallets have start endpoints but are **Coming soon**: they fail closed with `403` `wallet_unavailable`. Billing: once per request, only when the identity is verified; cancelled, expired or failed sign-ins are free. Wallet verifications are priced separately from document capture.
+Other wallets have start endpoints but are **Coming soon**: they fail closed with `403` `wallet_unavailable`. Billing: once per request, only when the identity is verified; cancelled, expired or failed sign-ins are not billed (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)). Wallet verifications are priced separately from document capture.
 
 | Operation | Endpoint |
 |---|---|
@@ -356,7 +356,7 @@ Other wallets have start endpoints but are **Coming soon**: they fail closed wit
 | Start a sign-in | `POST /v3/id-verification/wallets/<wallet>/` (the catalog `path`) |
 | Read status and result | `GET /v3/id-verification/wallets/verifications/{request_id}/` |
 | Ask the wallet for a phone approval (Smart-ID, Mobile-ID) | `POST /v3/id-verification/wallets/verifications/{request_id}/poll/` |
-| Cancel a pending sign-in (never billed) | `POST /v3/id-verification/wallets/verifications/{request_id}/cancel/` |
+| Cancel a pending sign-in (never billed, see Pricing above) | `POST /v3/id-verification/wallets/verifications/{request_id}/cancel/` |
 
 ### Start request
 
@@ -417,7 +417,7 @@ Header `Idempotency-Key` (optional, max 255 characters): use a new key per attem
 | `403` | `{"detail": ...}`, `wallet_unavailable`, `insufficient_credits` | Bad key, wallet not live for you, or top up |
 | `404` | `not_found` | No wallet verification of this application has that `request_id` |
 | `409` | `idempotency_key_reused`, `idempotency_key_in_progress`, `verification_in_progress` (cancel while the user is completing) | Use a new key, or wait `Retry-After` seconds |
-| `502` | `wallet_provider_unavailable` | The wallet could not start; nothing was created or billed |
+| `502` | `wallet_provider_unavailable` | The wallet could not start; nothing was created or billed (see Pricing above) |
 | `503` | `wallet_not_configured` | This environment cannot reach the wallet |
 
 ```python
@@ -455,7 +455,7 @@ if "ftn" in live:
 
 These are not available on the standalone endpoints; use a workflow and session (see the **didit-kyc-onboarding** skill):
 
-- **NFC chip reading:** workflow feature `NFC`, placed after `OCR`. The chip is read by the native iOS/Android SDK during a session; web browsers skip it. $0.15 per completed read (list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
+- **NFC chip reading:** workflow feature `NFC`, placed after `OCR`. The chip is read by the native iOS/Android SDK during a session; web browsers skip it. Billed per completed read (price: the Pricing note in **didit-kyc-onboarding**).
 - **Non-document lookup and wallets inside a workflow:** set `config.methods` per country on the `OCR` feature (document capture, lookup against a government register or other authoritative source, digital ID wallets, with fallback rules). See https://docs.didit.me/management-api/workflows/feature-configs and https://docs.didit.me/core-technology/id-verification/non-doc-lookup.
 
 ---
