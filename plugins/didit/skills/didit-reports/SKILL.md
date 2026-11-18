@@ -5,7 +5,7 @@ description: Reads usage, analytics, credits and plan details and exports data f
 
 # Reports, analytics and billing
 
-Follow the rules of didit-connect first: call `didit_context_get`. Everything here is read-only except starting an export.
+Follow the rules of didit-connect first: call `didit_context_get`. Everything here is read-only except starting an export and a top-up (`didit_org_top_up`), which is a write that needs the person's agreement and `confirm: true`.
 
 ## 1. Analytics
 

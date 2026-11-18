@@ -6,10 +6,10 @@ Every example is the full argument object of the tool named on its code fence. R
 
 Setting `group_index` on any condition turns on grouped evaluation for the whole list, and `evaluation_mode` is then ignored. `group_logic` combines the conditions inside a group (default `AND`). `groups_logic` combines the groups (default `OR`) and is read from the first condition only.
 
-Outbound transfers to two countries above 2,000, or any transaction with a risk score of 80 or more. Country codes are normalized before comparison.
+Outbound transfers to two countries above 2,000, or any transaction with a risk score of 80 or more. The direction is a condition of group 0, not a `scope`: a scope would apply to both groups and drop high-scoring inbound transactions. Country codes are normalized before comparison.
 
 ```json didit_transaction_rule_backtest
-{"conditions": [{"field": "counterparty_country", "operator": "in", "value": ["IRN", "PRK"], "group_index": 0, "group_logic": "AND", "groups_logic": "OR"}, {"field": "amount", "operator": "gt", "value": 2000, "group_index": 0}, {"field": "score", "operator": "gte", "value": 80, "group_index": 1}], "scope": {"directions": ["OUTBOUND"]}, "period_days": 90}
+{"conditions": [{"field": "direction", "operator": "eq", "value": "OUTBOUND", "group_index": 0, "group_logic": "AND", "groups_logic": "OR"}, {"field": "counterparty_country", "operator": "in", "value": ["IRN", "PRK"], "group_index": 0}, {"field": "amount", "operator": "gt", "value": 2000, "group_index": 0}, {"field": "score", "operator": "gte", "value": 80, "group_index": 1}], "period_days": 90}
 ```
 
 ## A list as the comparison set
@@ -35,13 +35,15 @@ Send the same definition that was back-tested, plus `title`, `category`, `mode` 
 Confirm the title, definition, actions and mode with the person, and wait for a clear yes before this call:
 
 ```json didit_transaction_rule_create
-{"title": "Daily outbound total above 10,000", "category": "finance", "mode": "TEST", "scope": {"directions": ["OUTBOUND"]}, "aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", "value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__"}}], "actions": [{"type": "change_status", "value": "IN_REVIEW"}, {"type": "add_score", "value": 20}, {"type": "open_case", "grouping": "by_applicant", "attach_matched_transaction": true}]}
+{"title": "Daily outbound total above 10,000", "category": "finance", "mode": "TEST", "scope": {"directions": ["OUTBOUND"]}, "aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", "value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__", "direction": "OUTBOUND"}}], "actions": [{"type": "change_status", "value": "IN_REVIEW"}, {"type": "add_score", "value": 20}, {"type": "open_case", "grouping": "by_applicant", "attach_matched_transaction": true}]}
 ```
 
-To change a PRESET rule, create a CUSTOM copy of its definition and point at the original in `metadata`, then set the preset to `DISABLED`:
+To change a PRESET rule, read it with `didit_transaction_rule_get` and build a CUSTOM copy of its whole definition: keep its `conditions`, `aggregation`, `evaluation_mode`, `scope` and `actions`, change only what the person asked for, and point at the original in `metadata`. Create the copy in `TEST` and leave the preset as it is, so it keeps enforcing while the copy records hits. In this example the preset's only change is a higher amount threshold; its actions are copied unchanged:
 
 ```json didit_transaction_rule_create
 {"title": "<preset title> (custom)", "category": "<preset category>", "mode": "TEST", "conditions": [{"field": "amount", "operator": "gt", "value": 15000}], "actions": [{"type": "change_status", "value": "IN_REVIEW"}], "metadata": {"based_on": "<library_key>", "based_on_rule_uuid": "<rule_uuid>"}}
 ```
+
+After the person has reviewed the copy's test hits and agreed to the switch, set the copy to `ACTIVE` first, then the preset to `DISABLED`, so one of them is always enforcing and a transaction does not alert twice. Back-test the copy's exact definition before it goes `ACTIVE`.
 
 Source: the rule schemas of the Didit MCP server (`conditions`, `aggregation`, `scope`, `actions`, `evaluation_mode`, `period_days`).

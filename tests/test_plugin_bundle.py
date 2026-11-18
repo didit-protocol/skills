@@ -336,6 +336,15 @@ RULE_METRICS = {"count", "sum", "max", "min", "avg", "distinct_count", "unique_c
 RULE_AGG_OPERATORS = {"eq", "ne", "gt", "gte", "lt", "lte"}
 RULE_SCOPE_KEYS = {"transaction_types", "directions", "action_types"}
 RULE_ACTION_TYPES = {"add_score", "change_status", "add_tags", "add_note", "add_to_list", "open_case"}
+# didit_questionnaire_create / _update form_elements items (live hosted schema): no `placeholder`,
+# and `title` is an object of locale to text.
+QUESTION_KEYS = {"element_type", "title", "is_required", "choices"}
+QUESTION_TYPES = {
+    "SHORT_TEXT", "LONG_TEXT", "PARAGRAPH", "DROPDOWN", "SINGLE_CHOICE", "MULTIPLE_CHOICE", "NUMBER", "IMAGE",
+    "FILE_UPLOAD", "TIME", "EMAIL", "ADDRESS", "PHONE", "COUNTRY", "DATE_PICKER", "CONSENT", "SECTION_HEADER",
+    "SEPARATOR", "HEADING", "REPEATABLE_GROUP",
+}
+QUESTIONNAIRE_TOOLS = {"didit_questionnaire_create", "didit_questionnaire_update"}
 WORKFLOW_FEATURES = {
     "AGE_ESTIMATION", "AML", "BANK_VERIFICATION", "DATABASE_VALIDATION", "DOCUMENT_AI", "EMAIL_VERIFICATION",
     "FACE_MATCH", "GEOLOCATION", "IP_ANALYSIS", "KYB_DOCUMENTS", "KYB_KEY_PEOPLE", "KYB_REGISTRY", "LIVENESS", "NFC",
@@ -387,6 +396,54 @@ def rule_definition_problems(args: dict) -> list[str]:
     return problems
 
 
+def questionnaire_problems(args: dict) -> list[str]:
+    problems = []
+    for element in args.get("form_elements", []):
+        if not isinstance(element, dict) or "element_type" not in element:
+            problems.append(f"form element needs element_type: {element}")
+            continue
+        problems += [f"form element has unknown key {k}" for k in sorted(set(element) - QUESTION_KEYS)]
+        if element["element_type"] not in QUESTION_TYPES:
+            problems.append(f"form element type {element['element_type']!r} is not in the schema")
+        if "title" in element and not isinstance(element["title"], dict):
+            problems.append(f"form element title must be a locale object: {element['title']!r}")
+    if "title" in args and not isinstance(args["title"], str):
+        problems.append("the questionnaire title is a string")
+    return problems
+
+
+def fence_lead_problems(text: str) -> list[str]:
+    """A ```json example right under a tool's own line (`- `tool`: ...`) is that tool's example."""
+    problems = []
+    for match in JSON_FENCE.finditer(text):
+        before = [line for line in text[: match.start()].split("\n") if line.strip()]
+        if not before:
+            continue
+        lead = re.match(r"^\s*(?:-\s+)?`(didit_[a-z0-9_]+)`:", before[-1])
+        if lead and match.group(2) != lead.group(1):
+            problems.append(f"```json {match.group(2)} follows the line of {lead.group(1)}")
+    return problems
+
+
+def confirm_list(text: str) -> set[str] | None:
+    """Tools a start skill lists as declaring `confirm` (empty when it says none does); None when it has no list."""
+    if "None of the tools these skills use declares a `confirm` argument" in text:
+        return set()
+    if "Only some tools declare a `confirm` argument" not in text:
+        return None
+    span = text.split("Only some tools declare a `confirm` argument", 1)[1].split("Send `confirm", 1)[0]
+    return set(TOOL_TOKEN.findall(span))
+
+
+def confirm_list_problems(listed: set[str] | None, used: set[str], known: dict[str, dict]) -> list[str]:
+    if listed is None:
+        return ["no list of the tools that take `confirm`"]
+    declares = {name for name, tool in known.items() if tool["confirm"]}
+    problems = [f"{t} is named in the plugin's skills and takes `confirm`, but the start list omits it" for t in sorted((used & declares) - listed)]
+    problems += [f"{t} is in the start list but does not take `confirm`" for t in sorted(listed - declares)]
+    return problems
+
+
 def json_example_problems(text: str, tools: dict[str, dict]) -> list[str]:
     """Every ```json fence names a catalog tool, parses, and uses only arguments that tool declares (required ones included)."""
     problems = []
@@ -411,9 +468,11 @@ def json_example_problems(text: str, tools: dict[str, dict]) -> list[str]:
         problems += [f"{tool}: {k} must be a list" for k in sorted(ARRAY_ARGS.get(tool, set()) & set(args)) if not isinstance(args[k], list)]
         if tool in RULE_TOOLS:
             problems += [f"{tool}: {p}" for p in rule_definition_problems(args)]
+        if tool in QUESTIONNAIRE_TOOLS:
+            problems += [f"{tool}: {p}" for p in questionnaire_problems(args)]
         if tool == "didit_workflow_create":
             problems += [f"{tool}: unknown feature {f.get('feature')!r}" for f in args.get("features", []) if f.get("feature") not in WORKFLOW_FEATURES]
-    return problems
+    return problems + fence_lead_problems(text)
 
 
 def conditional_rule_problems(texts: dict[str, str]) -> list[str]:
@@ -763,6 +822,18 @@ class SkillTests(TreeCase):
                     self.assertEqual(json_example_problems(text, tools), [])
         self.assertGreater(seen, 0)
 
+    def test_start_skill_confirm_list_matches_catalog(self):
+        """Each start skill lists exactly the catalog's `confirm` tools that the plugin's skills name."""
+        known = self.t.known_tools()
+        starts = {"didit": "didit-connect", **START_SKILL}
+        for base in self.t.plugin_dirs():
+            used: set[str] = set()
+            for _, text in self.t.skill_texts(base)[:-1]:
+                used |= set(TOOL_TOKEN.findall(text))
+            start = (base / "skills" / starts[base.name] / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(plugin=base.name):
+                self.assertEqual(confirm_list_problems(confirm_list(start), used, known), [])
+
     def test_conditional_instruction_is_not_agreement(self):
         texts = {}
         for plugin, skills in CONDITIONAL_RULE_SKILLS.items():
@@ -953,10 +1024,8 @@ class SkillTests(TreeCase):
                 for skill in EXPECTED_SKILLS[plugin]:
                     if skill != start:
                         self.assertIn(skill, text, f"{start} must route to {skill}")
-                if plugin in {"didit-transaction-monitoring", "didit-user-management"}:
+                if plugin != "didit-authentication":
                     self.assertIn("Never add `confirm` to any other tool", text)
-                    named = set(re.findall(r"didit_[a-z0-9_]+", text.split("Only some tools declare", 1)[1].split("Send `confirm", 1)[0]))
-                    self.assertTrue(named and named <= CONFIRM_TOOLS, named)
         auth = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-start" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Products page of the Didit console", auth)
 
@@ -1239,6 +1308,29 @@ class LintSelfTests(unittest.TestCase):
         ok = ('  ```json didit_org_invite_member\n  {"emails": ["a@example.com"], "role": "<role>", "app_ids": ["<app>"]}\n  ```\n'
               '```json didit_transaction_rule_backtest\n{"aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", '
               '"value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__"}}], "period_days": 90}\n```\n')
+        self.assertEqual(json_example_problems(ok, tools), [])
+
+    def test_confirm_list_defects_are_rejected(self):
+        known = {"didit_a": {"confirm": True}, "didit_b": {"confirm": True}, "didit_c": {"confirm": False}}
+        listed = confirm_list("Only some tools declare a `confirm` argument; in this plugin: `didit_a` and `didit_c`. Send `confirm: true` only")
+        self.assertEqual(listed, {"didit_a", "didit_c"})
+        problems = confirm_list_problems(listed, {"didit_a", "didit_b"}, known)
+        self.assertTrue(any("didit_b" in p for p in problems) and any("didit_c" in p for p in problems), problems)
+        self.assertNotEqual(confirm_list_problems(None, set(), known), [])
+        self.assertEqual(confirm_list_problems({"didit_a"}, {"didit_a", "didit_c"}, known), [])
+
+    def test_nested_example_defects_are_rejected(self):
+        tools = {"didit_questionnaire_create": {"properties": ["form_elements", "status", "title"], "required": ["form_elements", "title"]},
+                 "didit_org_list_roles": {"properties": [], "required": []}}
+        for bad in (
+            '```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "LONG_TEXT", "title": "Q"}]}\n```\n',
+            '```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "LONG_TEXT", "title": {"en": "Q"}, "placeholder": "x"}]}\n```\n',
+            '```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "long_text"}]}\n```\n',
+            '- `didit_org_list_roles`: lists roles.\n\n```json didit_questionnaire_create\n{"title": "T", "form_elements": []}\n```\n',
+        ):
+            with self.subTest(text=bad):
+                self.assertNotEqual(json_example_problems(bad, tools), [])
+        ok = '`didit_questionnaire_create`:\n\n```json didit_questionnaire_create\n{"title": "T", "form_elements": [{"element_type": "LONG_TEXT", "title": {"en": "Q"}, "is_required": false}]}\n```\n'
         self.assertEqual(json_example_problems(ok, tools), [])
 
     def test_missing_conditional_rule_is_rejected(self):

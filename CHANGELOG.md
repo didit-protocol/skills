@@ -14,8 +14,15 @@ Checked against the live hosted server (`https://mcp.didit.me/mcp`, v5.1.67) on 
 
 ### Changed
 - **Plugins:** `plugins/didit/tests/tool-catalog.json` is now the live hosted catalog (208 / 29 / 97 tools), staff-only tools removed. Every plugin skill description now says what the skill does and the situations and words that should load it.
-- **didit-mcp-server (1.1.0 to 1.2.0):** hosted counts updated; the tool-family overview adds the hosted-only groups Travel Rule, Compliance, Marketplace and Networks plus `didit_transaction_sdk_token`. Corrects the earlier statement that `didit_org_reveal_application_api_key` and `didit_org_top_up` are local only: the hosted server lists both, each needs `confirm: true`, the revealed key is a credential shown once and never stored or repeated, and a top-up returns a checkout link unless a person turned on saved-card top-ups.
+- **didit-mcp-server (1.1.0 to 1.2.0):** hosted counts updated; the tool-family overview adds the hosted-only groups Travel Rule, Compliance, Marketplace and Networks plus `didit_transaction_sdk_token`. Corrects the earlier statement that `didit_org_reveal_application_api_key` and `didit_org_top_up` are local only: the hosted server lists both, each needs `confirm: true`, the revealed key is a credential shown once and never stored or repeated, and a top-up defaults to checkout and returns a payment link, even when a person turned on saved-card top-ups; an immediate charge needs an explicit `payment_method: "saved_card"` and an `idempotency_key`.
 - **didit plugin:** didit-connect names the hosted-only tool groups; didit-monitor-transactions has a short Travel Rule section; didit-reports covers `didit_org_top_up`. **didit-user-management:** didit-users-team covers `didit_org_reveal_application_api_key`.
+
+### Fixed
+- **didit-user-management:** didit-users-start lists `didit_org_reveal_application_api_key` among the tools that take `confirm`; **didit:** didit-connect lists all four `confirm` tools its skills use, `didit_org_top_up` included. A test now builds each plugin's list from the catalog.
+- **didit-workspace-admin:** the questionnaire example sends each question `title` as a locale object (`{"en": ...}`) and no `placeholder`, which the hosted item schema does not declare.
+- **didit-reports:** a top-up is named as a write that needs agreement and `confirm: true`.
+- **Transaction monitoring rules (both plugins):** daily outbound totals filter the history by `"direction": "OUTBOUND"` (a `scope` selects only the evaluated transaction), and a named currency goes in the aggregation `filters` too. The grouped example puts the direction in group 0 so any transaction scoring 80 or more still matches. Replacing a preset copies its whole definition and actions, starts the copy in `TEST`, and keeps the preset enforcing until the person approves the switch and the copy is `ACTIVE`.
+- **Tests:** every `json` example under a tool's own line must name that tool, and questionnaire `form_elements` are checked against the hosted item schema.
 
 ## [5.2.0] - 2026-11-18
 

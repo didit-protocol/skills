@@ -40,16 +40,16 @@ The same fields go to `didit_transaction_rule_backtest`, `didit_transaction_rule
   - `operator`: `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `contains`, `not_contains`, `contains_any` (a list of strings), `regex`, `fuzzy_match` (needs `score` 0 to 100), and the presence checks `exists`, `is_not_empty`, `is_not_null`, `not_exists`, `is_empty`, `is_null` (no `value`).
   - Optional `value_type`: `list` (the value is a List UUID), `field` (the value is another field path) or `relative_date`. Leave it out for a literal value.
 - `evaluation_mode`: `ALL` (default) or `ANY`, how flat conditions combine. Setting `group_index` on any condition switches to grouped evaluation (`group_logic` and `groups_logic`, each `AND` or `OR`).
-- `aggregation`: a list of velocity checks over past transactions; every entry must match. Each needs `metric` (`count`, `sum`, `max`, `min`, `avg`, `distinct_count`, `unique_count`), `operator` (`eq`, `ne`, `gt`, `gte`, `lt`, `lte`), `value` (a number) and `window` (`<N>m` minutes, not months, `<N>h` hours or `<N>d` days). Optional `field` (default `amount`, ignored for `count`) and `filters`: `{"subject_vendor_data": "__current__"}` counts only the same customer's transactions.
+- `aggregation`: a list of velocity checks over past transactions; every entry must match. Each needs `metric` (`count`, `sum`, `max`, `min`, `avg`, `distinct_count`, `unique_count`), `operator` (`eq`, `ne`, `gt`, `gte`, `lt`, `lte`), `value` (a number) and `window` (`<N>m` minutes, not months, `<N>h` hours or `<N>d` days). Optional `field` (default `amount`, ignored for `count`) and `filters`: `{"subject_vendor_data": "__current__"}` counts only the same customer's transactions. `scope` selects only the transaction being evaluated and never filters the history, so for a total of outbound funds also put `"direction": "OUTBOUND"` in `filters`.
 - `scope`: `transaction_types`, `directions` (`INBOUND`, `OUTBOUND`) and `action_types`, each a list. Left out, nothing is restricted.
 - `period_days` (back-test only): 1 to 365, default 90. "Last quarter" is `period_days: 90`; say it is the last 90 days, not a calendar quarter, and that at most the 10,000 most recent transactions are replayed.
 
-Amounts are compared as stored on each transaction. When the person gives a threshold with no currency, say which reading you used (for example "10,000 in the transaction's own currency, every currency counted") and run the back-test: it changes nothing. Add a `currency` condition when they name one.
+Amounts are compared as stored on each transaction. When the person gives a threshold with no currency, say which reading you used (for example "10,000 in the transaction's own currency, every currency counted") and run the back-test: it changes nothing. When they name one, add a `currency` condition and put the same `currency` in the aggregation `filters` so the historical total counts only that currency.
 
 Total sent by one customer in a day above 10,000:
 
 ```json didit_transaction_rule_backtest
-{"scope": {"directions": ["OUTBOUND"]}, "aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", "value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__"}}], "period_days": 90}
+{"scope": {"directions": ["OUTBOUND"]}, "aggregation": [{"metric": "sum", "field": "amount", "operator": "gt", "value": 10000, "window": "1d", "filters": {"subject_vendor_data": "__current__", "direction": "OUTBOUND"}}], "period_days": 90}
 ```
 
 More than 5 transactions by one customer within an hour:

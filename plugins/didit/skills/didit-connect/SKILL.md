@@ -37,7 +37,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 
 - Every change (status updates, deletions, invitations, webhooks, exports) needs the person's agreement first: describe what will change and wait for a clear yes before calling the tool. Say plainly when a change cannot be undone (overwriting a decision, deleting a webhook or a member).
 - An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. Report what you found, say exactly what you would change and in which application (sandbox or live), then wait for a yes.
-- Only some tools declare a `confirm` argument, for example `didit_case_manage` (filing a SAR), `didit_session_delete` and `didit_org_create_api_key`. Send `confirm: true` only to a tool whose schema declares it, and only after the person agreed to that exact action in this conversation. Never add `confirm` to any other tool: rule, webhook and list deletions take none.
+- Only some tools declare a `confirm` argument; in this plugin: `didit_case_manage` (filing a SAR), `didit_session_delete`, `didit_org_create_api_key` and `didit_org_top_up`. Send `confirm: true` only to those, and only after the person agreed to that exact action in this conversation. Never add `confirm` to any other tool: rule, webhook and list deletions take none.
 
 ## Billable actions
 

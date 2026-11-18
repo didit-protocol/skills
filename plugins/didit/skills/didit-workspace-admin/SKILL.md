@@ -46,10 +46,10 @@ Show each URL masked (the host, then `...` and the last 4 characters), never in 
 ## 5. Questionnaires
 
 - `didit_questionnaire_list` lists the application's questionnaires.
-- `didit_questionnaire_create`: `title` and `form_elements`, an ordered list of questions, each with an uppercase `element_type`, a `title`, `is_required` and, for choice questions, `choices`. `status: "draft"` keeps it unpublished. A per-question hint goes in `placeholder`. Each choice is `{ value, label }`.
+- `didit_questionnaire_create`: `title` and `form_elements`, an ordered list of questions, each with an uppercase `element_type`, a `title`, `is_required` and, for choice questions, `choices`. The questionnaire's own `title` is a string; each question's `title` is an object of locale to text, for example `{"en": "Main source of funds"}`. `status: "draft"` keeps it unpublished. Each choice is `{ value, label }`.
 
   ```json didit_questionnaire_create
-  {"title": "Source of funds", "status": "draft", "form_elements": [{"element_type": "SINGLE_CHOICE", "title": "Main source of funds", "is_required": true, "choices": [{"value": "salary", "label": "Salary"}, {"value": "savings", "label": "Savings"}]}, {"element_type": "LONG_TEXT", "title": "Anything else we should know?", "is_required": false, "placeholder": "Optional"}]}
+  {"title": "Source of funds", "status": "draft", "form_elements": [{"element_type": "SINGLE_CHOICE", "title": {"en": "Main source of funds"}, "is_required": true, "choices": [{"value": "salary", "label": "Salary"}, {"value": "savings", "label": "Savings"}]}, {"element_type": "LONG_TEXT", "title": {"en": "Anything else we should know?"}, "is_required": false}]}
   ```
 
 - `didit_questionnaire_update`: `questionnaire_id` plus the fields to change. Sending `form_elements` replaces the whole question list, so include every question to keep, in order. Show the full new list before calling it.
