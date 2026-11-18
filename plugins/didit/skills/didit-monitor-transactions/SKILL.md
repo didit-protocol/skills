@@ -22,7 +22,7 @@ Explain which rules fired, what each one checks, and the resulting status.
 - The shapes of `transaction_details` and `subject` depend on the category. Look them up with `didit_docs_search` before building one; do not guess field names.
 - Optional: `counterparty`, `transaction_at`, `custom_properties`, `include_crypto_screening`.
 
-This records a real transaction in the application. Show the payload and wait for the person to agree before calling it.
+This records a real transaction in the application. In a live application, or one whose mode is unknown, submitting it uses the organization's Didit credits, and `include_crypto_screening` adds a wallet screening billed on its own. Show the payload with that notice and wait for the person to agree before calling it. Never state a price: link https://didit.me/pricing.
 
 ## 3. Rules
 
@@ -44,11 +44,11 @@ Confirm the title, conditions, actions and mode with the person before creating 
 
 - `wallet_address` and `blockchain` (`BTC`, `ETH`, `LTC`, `XRP`, `BCH`, `DOGE`, `TRX`, `SOL`, `MATIC`, `BNB`, `USDT`, `USDC`) are required. Optional `direction`.
 - It returns a risk score, severity, any sanctions hit and the source or destination of funds.
-- It needs transaction monitoring configured for the application and is billable in a live application. Say so and wait for a yes.
+- It needs transaction monitoring configured for the application and uses the organization's Didit credits in a live application, or one whose mode is unknown. Say so and wait for a yes. Never state a price: link https://didit.me/pricing.
 
 ## 5. Alert channels
 
-`didit_alert_list` lists where the application sends alerts (email or Slack), with the destination and whether each channel is on.
+`didit_alert_list` lists where the application sends alerts (email or Slack), with the destination and whether each channel is on. A Slack webhook URL is a posting credential: show only `hooks.slack.com/...` and the last 4 characters, and mask email addresses to the first letter and the domain.
 
 ## What good output looks like
 

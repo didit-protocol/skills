@@ -7,7 +7,7 @@ description: Used when a developer is choosing which Didit sign-in methods to of
 
 Follow the rules of didit-auth-start first: call `didit_context_get` for the application, and call `didit_docs_search` for the current sign-in methods page before giving details. Docs mark Authentication as new.
 
-Methods are turned on in the Didit console. The hosted sign-in page shows only the methods that are on, and runs every method below.
+Methods are turned on in the Didit console. The hosted sign-in page shows only the methods that are on, and supports every available method below (the Didit ID Wallet is not available yet).
 
 ## 1. The methods
 

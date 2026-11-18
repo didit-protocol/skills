@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Offline checks for every plugin bundle under plugins/ and the repo's plugin marketplaces.
 
-Stdlib only. Runs on the working tree and, when git is available and HEAD contains a
-plugin, on `git archive HEAD:plugins/<name>` (what a directory submission would receive).
+Stdlib only. Every content check runs twice: on the working tree and on HEAD extracted with
+`git archive` (what a submission receives), so an expected plugin missing from HEAD fails.
 Every generic check runs on every plugin folder; the `didit`-specific ones stay pinned to it.
 
     python3 tests/test_plugin_bundle.py
@@ -22,11 +22,6 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PLUGINS_DIR = ROOT / "plugins"
-PLUGIN = PLUGINS_DIR / "didit"
-REST_SKILLS = ROOT / "skills"
-CATALOG = PLUGIN / "tests" / "tool-catalog.json"
-PROMPTS = PLUGIN / "tests" / "prompts.md"
 
 PLUGIN_SKILLS = [
     "didit-connect",
@@ -92,7 +87,6 @@ SOLICIT = re.compile(
     re.IGNORECASE,
 )
 EM_DASH = chr(0x2014)
-CONFIRM_WORDS = re.compile(r"\b(confirm\w*|agree\w*)\b", re.IGNORECASE)
 TOOL_TOKEN = re.compile(r"\bdidit_[a-z0-9_]+\b")
 DISCOVERY = {"didit_tool_search", "didit_tool_describe", "didit_tool_call_read", "didit_tool_call_write"}
 # Tokens that look like tool names but are not: a record field and the Flutter Authentication package.
@@ -225,57 +219,226 @@ def mcp_problems(base: Path) -> list[str]:
     return problems
 
 
-class CatalogMixin:
-    @classmethod
-    def catalog(cls) -> dict:
-        if not hasattr(cls, "_catalog"):
-            cls._catalog = load_json(CATALOG)
-        return cls._catalog
+# Tools whose schema declares `confirm`. Kept by hand so a catalog change is noticed here.
+CONFIRM_TOOLS = {
+    "didit_case_manage",
+    "didit_investigator_accept",
+    "didit_investigator_batch_accept",
+    "didit_investigator_override",
+    "didit_investigator_question_answer",
+    "didit_investigator_question_dismiss",
+    "didit_investigator_rereview",
+    "didit_org_create_api_key",
+    "didit_session_batch_delete",
+    "didit_session_delete",
+    "didit_vendor_business_delete",
+    "didit_vendor_user_delete",
+}
+# A sentence about getting the person's agreement (checked with backticked spans removed).
+AGREEMENT = re.compile(
+    r"(wait for (a clear yes|a yes|the person to (confirm|agree))"
+    r"|ask (the person )?to confirm"
+    r"|after (the person|they) (has |have )?(agreed|confirmed|said yes)"
+    r"|after that (yes|agreement)"
+    r"|(get|getting) the person's agreement"
+    r"|the person's agreement)",
+    re.IGNORECASE,
+)
+BACKTICKED = re.compile(r"`[^`\n]*`")
+# Blanket rules that contradict the tool schemas.
+BLANKET_RULES = [
+    (re.compile(r"\b(pass|send)\w*\s+(both\s+)?`organization_id`\s+and\s+`application_id`\s+(on|to|with|in)\s+(every|all|later|each|any)\b", re.I),
+     "tells the model to pass both scope ids on every call"),
+    (re.compile(r"\b(always|every call)\b[^\n.]{0,20}\b(pass|send)\w*\s+(both\s+)?`organization_id`\s+and\s+`application_id`", re.I),
+     "tells the model to always pass both scope ids"),
+    (re.compile(r"\bpass\s+no\s+ids\b", re.I), "tells the model to pass no ids, which breaks tools that require them"),
+    (re.compile(r"\b(tools|actions|changes|anything|everything)\b[^\n.]{0,80}\b(take|takes|need|needs|require|requires|get|gets)\s+`confirm(: true)?`", re.I),
+     "attaches `confirm` to a class of actions instead of to tools that declare it"),
+    (re.compile(r"\ball\s+(take|need|require)\s+`confirm", re.I), "attaches `confirm` to a class of actions"),
+    (re.compile(r"\b(deletions?|deleting|deletes|overwrit\w+|irreversible|credentials?)\b[^\n.]{0,60}\b(take|takes|need|needs|require|requires)\s+`confirm", re.I),
+     "attaches `confirm` to a class of actions"),
+]
+CONFIRM_TICK = re.compile(r"`confirm(: true)?`")
+ARG_LINE_COLON = re.compile(r"^\s*(?:-|\d+\.)\s+`(didit_[a-z0-9_]+)`:\s*(.*)$")
+ARG_LINE_WITH = re.compile(r"`(didit_[a-z0-9_]+)`\s+(?:with|takes|needs)\s+((?:`[^`]+`(?:\s*(?:,|and/or|and|or)\s*)?)+)")
+ARG_TOKEN = re.compile(r"`([a-z][a-z0-9_]*)(?::[^`]*)?`")
+BILLING_WORDS = re.compile(r"\b(credits|billed|billable|bills)\b", re.I)
+BILLABLE_IN_SECTION = {"didit_transaction_create", "didit_transaction_screen_wallet"}
+BILLABLE_IN_FILE = {
+    "didit_session_create",
+    "didit_verify_aml",
+    "didit_verify_database",
+    "didit_verify_face_match",
+    "didit_verify_face_search",
+    "didit_verify_id",
+    "didit_verify_passive_liveness",
+    "didit_verify_poa",
+    "didit_verify_kyb_search",
+}
+README_FORBIDDEN = [
+    (re.compile(r"\bno binaries\b", re.I), "say 'no executable binaries': the icon is a binary file"),
+    (re.compile(r"only the tools this plugin uses", re.I), "a toolset connection is a shorter tool list, not only this plugin's tools"),
+]
 
-    @classmethod
-    def known_tools(cls) -> dict[str, dict]:
+
+def strip_ticks(text: str) -> str:
+    return BACKTICKED.sub(" ", text)
+
+
+def confirm_section_problems(text: str, confirm_tools: set[str]) -> list[str]:
+    """Every section that names a `confirm` tool needs a sentence about getting agreement (argument syntax does not count)."""
+    problems = []
+    for section in sections(text):
+        used = confirm_tools & set(TOOL_TOKEN.findall(section))
+        if used and not AGREEMENT.search(strip_ticks(section)):
+            problems.append(f"{section.split(chr(10), 1)[0]!r}: {sorted(used)} without a sentence about the person's agreement")
+    return problems
+
+
+def blanket_problems(text: str) -> list[str]:
+    problems = []
+    for number, line in enumerate(text.split("\n"), 1):
+        for pattern, why in BLANKET_RULES:
+            if pattern.search(line):
+                problems.append(f"line {number}: {why}: {line.strip()[:120]}")
+    return problems
+
+
+def confirm_attach_problems(text: str, confirm_tools: set[str]) -> list[str]:
+    """A line that mentions `confirm` may only name tools that declare it (unless it says the tool takes none)."""
+    problems = []
+    for number, line in enumerate(text.split("\n"), 1):
+        for sentence in re.split(r"(?<=[.;])\s+", line):
+            if not CONFIRM_TICK.search(sentence):
+                continue
+            for tool in sorted(set(TOOL_TOKEN.findall(sentence)) - NOT_TOOLS - confirm_tools):
+                if re.search(rf"`{tool}`[^.\n]*\b(takes no|does not declare|has no)\b[^.\n]*`confirm", sentence):
+                    continue
+                problems.append(f"line {number}: `confirm` next to {tool}, which does not declare it")
+    return problems
+
+
+def arg_pair_problems(text: str, props: dict[str, set[str]]) -> list[str]:
+    """`tool`: `arg`, ... and `tool` with `arg` pairs must name arguments the tool declares.
+
+    Only backticked names that are an argument of some catalog tool are checked, so enum values
+    and response fields in the same clause are left alone. Parentheses are dropped first.
+    """
+    union = set().union(*props.values())
+    problems = []
+    for number, line in enumerate(text.split("\n"), 1):
+        pairs: list[tuple[str, str]] = []
+        match = ARG_LINE_COLON.match(line)
+        if match:
+            clause = re.split(r"\.\s", re.sub(r"\([^)]*\)", " ", match.group(2)), maxsplit=1)[0]
+            clause = re.split(r"`[a-z_]+`\s+with\s+`|\beach\b", clause, maxsplit=1)[0]  # nested object fields
+            pairs += [(match.group(1), arg) for arg in ARG_TOKEN.findall(clause)]
+        for tool, args in ARG_LINE_WITH.findall(re.sub(r"\([^)]*\)", " ", line)):
+            pairs += [(tool, arg) for arg in ARG_TOKEN.findall(args)]
+        for tool, arg in pairs:
+            if tool in props and arg in union and arg not in props[tool]:
+                problems.append(f"line {number}: {tool} has no argument {arg}")
+    return problems
+
+
+def readme_problems(text: str) -> list[str]:
+    return [why for pattern, why in README_FORBIDDEN if pattern.search(text)]
+
+
+class Tree:
+    """One copy of the repository: the working tree, or HEAD extracted from git."""
+
+    def __init__(self, root: Path, label: str):
+        self.root = root
+        self.label = label
+        self.plugins = root / "plugins"
+        self.plugin = self.plugins / "didit"
+        self.rest = root / "skills"
+        self.catalog_path = self.plugin / "tests" / "tool-catalog.json"
+        self.prompts = self.plugin / "tests" / "prompts.md"
+        self._catalog = None
+
+    def plugin_dirs(self) -> list[Path]:
+        return sorted(p for p in self.plugins.iterdir() if p.is_dir())
+
+    def catalog(self) -> dict:
+        if self._catalog is None:
+            self._catalog = load_json(self.catalog_path)
+        return self._catalog
+
+    def known_tools(self) -> dict[str, dict]:
         tools: dict[str, dict] = {}
-        for profile in cls.catalog()["profiles"].values():
+        for profile in self.catalog()["profiles"].values():
             for tool in profile.get("tools", []):
                 tools.setdefault(tool["name"], tool)
         return tools
 
-
-def plugin_dirs() -> list[Path]:
-    return sorted(p for p in PLUGINS_DIR.iterdir() if p.is_dir())
-
-
-def skill_texts(base: Path) -> list[tuple[str, str]]:
-    """(where, text) for every SKILL.md and the prompts file of one plugin."""
-    out = []
-    for name in EXPECTED_SKILLS[base.name]:
-        out.append((f"{base.name}/skills/{name}/SKILL.md", (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")))
-    out.append((f"{base.name}/tests/prompts.md", (base / "tests" / "prompts.md").read_text(encoding="utf-8")))
-    return out
+    def skill_texts(self, base: Path) -> list[tuple[str, str]]:
+        """(where, text) for every SKILL.md and the prompts file of one plugin."""
+        out = []
+        for name in EXPECTED_SKILLS[base.name]:
+            out.append((f"{base.name}/skills/{name}/SKILL.md", (base / "skills" / name / "SKILL.md").read_text(encoding="utf-8")))
+        out.append((f"{base.name}/tests/prompts.md", (base / "tests" / "prompts.md").read_text(encoding="utf-8")))
+        return out
 
 
-class LayoutTests(unittest.TestCase):
+WORKING = Tree(ROOT, "working tree")
+_COMMITTED: list = []
+
+
+def git(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True)
+
+
+def committed_tree() -> Tree:
+    """HEAD extracted once with `git archive` (what a submission from the repo receives)."""
+    if not _COMMITTED:
+        if shutil.which("git") is None or git("rev-parse", "--verify", "HEAD").returncode != 0:
+            raise unittest.SkipTest("git or HEAD not available")
+        archive = git("archive", "--format=tar", "HEAD")
+        if archive.returncode != 0:
+            raise AssertionError(archive.stderr.decode())
+        tmp = tempfile.TemporaryDirectory()
+        with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+            for member in tar.getmembers():
+                if member.issym() or member.islnk():
+                    raise AssertionError(f"link in HEAD: {member.name}")
+            tar.extractall(tmp.name)
+        _COMMITTED.extend([Tree(Path(tmp.name), "HEAD"), tmp])
+    return _COMMITTED[0]
+
+
+class TreeCase(unittest.TestCase):
+    tree: Tree = WORKING
+
+    @property
+    def t(self) -> Tree:
+        return self.tree
+
+
+class LayoutTests(TreeCase):
     def test_plugin_folders_are_known(self):
-        self.assertEqual([p.name for p in plugin_dirs()], sorted(EXPECTED_SKILLS))
+        # In HEAD this also fails when an expected plugin was never committed.
+        self.assertEqual([p.name for p in self.t.plugin_dirs()], sorted(EXPECTED_SKILLS))
 
 
-class ManifestTests(unittest.TestCase):
+class ManifestTests(TreeCase):
     def test_every_manifest_is_valid_json(self):
         paths = [
-            ROOT / ".claude-plugin" / "marketplace.json",
-            ROOT / ".agents" / "plugins" / "marketplace.json",
-            *PLUGINS_DIR.rglob("*.json"),
+            self.t.root / ".claude-plugin" / "marketplace.json",
+            self.t.root / ".agents" / "plugins" / "marketplace.json",
+            *self.t.plugins.rglob("*.json"),
         ]
         for path in paths:
-            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+            with self.subTest(path=path.relative_to(self.t.root).as_posix()):
                 load_json(path)
 
     def test_no_root_plugin_json(self):
-        self.assertFalse((ROOT / ".claude-plugin" / "plugin.json").exists())
+        self.assertFalse((self.t.root / ".claude-plugin" / "plugin.json").exists())
 
     def test_host_manifests_agree(self):
-        didit = load_json(PLUGIN / ".claude-plugin" / "plugin.json")
-        for base in plugin_dirs():
+        didit = load_json(self.t.plugin / ".claude-plugin" / "plugin.json")
+        for base in self.t.plugin_dirs():
             with self.subTest(plugin=base.name):
                 claude = load_json(base / ".claude-plugin" / "plugin.json")
                 codex = load_json(base / ".codex-plugin" / "plugin.json")
@@ -299,19 +462,26 @@ class ManifestTests(unittest.TestCase):
                     self.assertTrue((base / codex["interface"][key]).is_file(), key)
                 self.assertTrue((base / cursor["logo"]).is_file())
 
+    def _entries(self, market: dict) -> dict[str, dict]:
+        names = [entry["name"] for entry in market["plugins"]]
+        self.assertEqual(len(names), len(set(names)), f"duplicate marketplace entries: {names}")
+        sources = [json.dumps(entry["source"], sort_keys=True) for entry in market["plugins"]]
+        self.assertEqual(len(sources), len(set(sources)), "two marketplace entries share a source")
+        return {entry["name"]: entry for entry in market["plugins"]}
+
     def test_claude_marketplace_resolves(self):
-        market = load_json(ROOT / ".claude-plugin" / "marketplace.json")
+        market = load_json(self.t.root / ".claude-plugin" / "marketplace.json")
         self.assertEqual(market["name"], "didit")
-        entries = {entry["name"]: entry for entry in market["plugins"]}
+        entries = self._entries(market)
         self.assertEqual(set(entries), set(EXPECTED_SKILLS) | {"didit-api"})
         for entry in entries.values():
-            self.assertTrue((ROOT / entry["source"]).is_dir(), entry["source"])
+            self.assertTrue((self.t.root / entry["source"]).is_dir(), entry["source"])
         for name in EXPECTED_SKILLS:
             with self.subTest(plugin=name):
                 entry = entries[name]
                 self.assertEqual(entry["source"], f"./plugins/{name}")
                 self.assertEqual(entry["version"], "1.0.0")
-                manifest = load_json(PLUGINS_DIR / name / ".claude-plugin" / "plugin.json")
+                manifest = load_json(self.t.plugins / name / ".claude-plugin" / "plugin.json")
                 self.assertEqual(entry["description"], manifest["description"])
                 self.assertTrue(entry.get("category"))
                 self.assertTrue(entry.get("keywords"))
@@ -320,37 +490,38 @@ class ManifestTests(unittest.TestCase):
         self.assertIs(api["strict"], False)
         self.assertEqual(api["version"], "5.2.0")
         listed = api["skills"]
-        rest = sorted(p.parent.name for p in REST_SKILLS.glob("*/SKILL.md"))
+        self.assertEqual(len(listed), len(set(listed)), "duplicate skills in didit-api")
+        rest = sorted(p.parent.name for p in self.t.rest.glob("*/SKILL.md"))
         self.assertEqual(sorted(Path(s).name for s in listed), rest)
         for skill in listed:
-            self.assertTrue((ROOT / skill / "SKILL.md").is_file(), skill)
+            self.assertTrue((self.t.root / skill / "SKILL.md").is_file(), skill)
 
     def test_codex_marketplace_resolves(self):
-        market = load_json(ROOT / ".agents" / "plugins" / "marketplace.json")
+        market = load_json(self.t.root / ".agents" / "plugins" / "marketplace.json")
         self.assertEqual(market["name"], "didit")
-        entries = {entry["name"]: entry for entry in market["plugins"]}
+        entries = self._entries(market)
         self.assertEqual(set(entries), set(EXPECTED_SKILLS))
         shape = {key: value for key, value in entries["didit"].items() if key not in {"name", "source"}}
         for name, entry in entries.items():
             with self.subTest(plugin=name):
                 self.assertEqual(entry["source"], {"source": "local", "path": f"./plugins/{name}"})
-                self.assertTrue((ROOT / entry["source"]["path"]).is_dir())
+                self.assertTrue((self.t.root / entry["source"]["path"]).is_dir())
                 self.assertEqual({k: v for k, v in entry.items() if k not in {"name", "source"}}, shape)
 
     def test_mcp_server_entry(self):
-        reference = (PLUGIN / ".mcp.json").read_bytes()
-        for base in plugin_dirs():
+        reference = (self.t.plugin / ".mcp.json").read_bytes()
+        for base in self.t.plugin_dirs():
             with self.subTest(plugin=base.name):
                 self.assertEqual(mcp_problems(base), [])
                 self.assertEqual((base / ".mcp.json").read_bytes(), reference, "must be identical to plugins/didit/.mcp.json")
 
     def test_no_empty_gitmodules(self):
-        self.assertFalse((ROOT / ".gitmodules").exists())
+        self.assertFalse((self.t.root / ".gitmodules").exists())
 
 
-class SkillTests(CatalogMixin, unittest.TestCase):
+class SkillTests(TreeCase):
     def test_skill_set_and_frontmatter(self):
-        for base in plugin_dirs():
+        for base in self.t.plugin_dirs():
             skills = EXPECTED_SKILLS[base.name]
             found = sorted(p.name for p in (base / "skills").iterdir() if p.is_dir())
             self.assertEqual(found, sorted(skills), base.name)
@@ -372,7 +543,7 @@ class SkillTests(CatalogMixin, unittest.TestCase):
         self.assertEqual(len(PLUGIN_SKILLS), 8)
 
     def test_skill_names_unique_across_repo(self):
-        rest = {p.parent.name for p in REST_SKILLS.glob("*/SKILL.md")}
+        rest = {p.parent.name for p in self.t.rest.glob("*/SKILL.md")}
         self.assertEqual(len(rest), 20)
         seen: dict[str, str] = {}
         for plugin, skills in EXPECTED_SKILLS.items():
@@ -382,47 +553,87 @@ class SkillTests(CatalogMixin, unittest.TestCase):
                     self.assertNotIn(name, rest, f"{name} collides with a REST skill")
                     seen[name] = plugin
 
-    def test_no_collision_with_rest_skills(self):
-        rest = {p.parent.name for p in REST_SKILLS.glob("*/SKILL.md")}
-        self.assertEqual(set(PLUGIN_SKILLS) & rest, set())
-
     def test_every_tool_exists_in_catalog(self):
-        known = self.known_tools()
-        for base in plugin_dirs():
-            for where, text in skill_texts(base):
+        known = self.t.known_tools()
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base):
                 for token in sorted(set(TOOL_TOKEN.findall(text)) - NOT_TOOLS):
                     with self.subTest(file=where, tool=token):
                         self.assertIn(token, known)
 
-    def test_confirm_tools_are_confirmed(self):
-        confirm_tools = {name for name, tool in self.known_tools().items() if tool["confirm"]}
-        for base in plugin_dirs():
-            for where, text in skill_texts(base):
+    def test_confirm_tool_list_matches_catalog(self):
+        known = self.t.known_tools()
+        self.assertEqual({name for name, tool in known.items() if tool["confirm"]}, CONFIRM_TOOLS)
+        self.assertEqual({name for name, tool in known.items() if "confirm" in tool["properties"]}, CONFIRM_TOOLS)
+
+    def test_confirm_tools_need_agreement(self):
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                with self.subTest(file=where):
+                    self.assertEqual(confirm_section_problems(text, CONFIRM_TOOLS), [])
+
+    def test_confirm_only_on_tools_that_declare_it(self):
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base):
+                with self.subTest(file=where):
+                    self.assertEqual(confirm_attach_problems(text, CONFIRM_TOOLS), [])
+
+    def test_no_blanket_rules(self):
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base):
+                with self.subTest(file=where):
+                    self.assertEqual(blanket_problems(text), [])
+
+    def test_tool_argument_pairs(self):
+        props = {name: set(tool["properties"]) for name, tool in self.t.known_tools().items()}
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                with self.subTest(file=where):
+                    self.assertEqual(arg_pair_problems(text, props), [])
+
+    def test_billing_notice_before_billable_calls(self):
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                tools = set(TOOL_TOKEN.findall(text))
+                if tools & BILLABLE_IN_FILE:
+                    with self.subTest(file=where):
+                        self.assertRegex(text, BILLING_WORDS)
+                        self.assertIn("live application", text)
                 for section in sections(text):
-                    used = confirm_tools & set(TOOL_TOKEN.findall(section))
-                    if used:
+                    used = BILLABLE_IN_SECTION & set(TOOL_TOKEN.findall(section))
+                    if used and re.search(r"`(" + "|".join(sorted(used)) + r")`\s+(records|sends|checks|submits)", section):
                         with self.subTest(file=where, section=section.split("\n", 1)[0]):
-                            self.assertRegex(section, CONFIRM_WORDS, f"{sorted(used)} without a confirmation sentence")
+                            self.assertRegex(section, BILLING_WORDS)
+                            self.assertIn("https://didit.me/pricing", section)
 
     def test_focused_plugins_skip_business_update(self):
         # No recipe uses it (its route does not exist as coded); prompts.md may list it as forbidden.
         for name in FOCUSED:
-            for where, text in skill_texts(PLUGINS_DIR / name)[:-1]:
+            for where, text in self.t.skill_texts(self.t.plugins / name)[:-1]:
                 with self.subTest(file=where):
                     self.assertNotRegex(text, r"\bdidit_vendor_business_update\b(?!_)")
 
-    def test_read_only_and_discovery_wording(self):
-        profiles = self.catalog()["profiles"]
-        read_only = {tool["name"] for tool in profiles["all_read_only"]["tools"]}
-        full = {tool["name"] for tool in profiles["all"]["tools"]}
+    def test_catalog_profiles(self):
+        profiles = self.t.catalog()["profiles"]
+        full = {tool["name"]: tool for tool in profiles["all"]["tools"]}
+        read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
-        # The facts the wording relies on.
-        self.assertEqual(read_only & DISCOVERY, set(), "discovery tools appear on all_read_only")
-        self.assertTrue(all(tool["type"] == "read" for tool in profiles["all_read_only"]["tools"]))
-        self.assertEqual(full & DISCOVERY, set(), "discovery tools appear when every toolset loads")
+        self.assertTrue(read_only, "all_read_only is empty")
+        for tool in read_only:
+            with self.subTest(tool=tool["name"]):
+                self.assertEqual(tool["type"], "read")
+                self.assertIn(tool["name"], full)
+                self.assertEqual(full[tool["name"]]["type"], "read")
         self.assertTrue(DISCOVERY <= core, "core profile should list the discovery tools")
         self.assertIn("didit_context_get", core)
-        connect = (PLUGIN / "skills" / "didit-connect" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertEqual({tool["name"] for tool in read_only} & DISCOVERY, set(), "discovery tools appear on all_read_only")
+        self.assertEqual(set(full) & DISCOVERY, set(), "discovery tools appear when every toolset loads")
+        for name, profile in profiles.items():
+            names = [tool["name"] for tool in profile["tools"]]
+            self.assertEqual(len(names), len(set(names)), f"duplicate tools in {name}")
+
+    def test_read_only_and_discovery_wording(self):
+        connect = (self.t.plugin / "skills" / "didit-connect" / "SKILL.md").read_text(encoding="utf-8")
         for phrase in (
             "Call `didit_context_get` first",
             "only when they are themselves in your tool list",
@@ -439,18 +650,30 @@ class SkillTests(CatalogMixin, unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, connect)
 
-    def test_focused_start_skills_restate_the_rules(self):
-        for plugin, start in START_SKILL.items():
-            text = (PLUGINS_DIR / plugin / "skills" / start / "SKILL.md").read_text(encoding="utf-8")
+    def test_start_skills_share_the_rules(self):
+        starts = {"didit": "didit-connect", **START_SKILL}
+        for plugin, start in starts.items():
+            text = (self.t.plugins / plugin / "skills" / start / "SKILL.md").read_text(encoding="utf-8")
             with self.subTest(skill=start):
-                self.assertLessEqual(len(text.rstrip("\n").split("\n")), 60)
+                if plugin != "didit":
+                    self.assertLessEqual(len(text.rstrip("\n").split("\n")), 70)
                 for phrase in (
                     "Call `didit_context_get` first",
+                    "A default is present only when there is exactly one",
+                    "could not be listed leaves `default_application_id` out",
+                    "establish the target before any change",
                     "Never decide it from an application's name",
+                    "say the environment is unknown",
+                    "Always send the ids a tool requires",
+                    "only when the context shows several organizations or applications",
+                    "Never send an id the tool does not declare",
+                    "inside `arguments`, never next to `name`",
                     "only when they are themselves in your tool list",
                     "proxy call",
+                    "wait for a clear yes before calling the tool",
                     "`confirm: true`",
-                    "Never ask for a password, an API key or a one-time code",
+                    "only after the person agreed to that exact action in this conversation",
+                    "a password, an API key or a one-time code",
                     "`didit_docs_search`",
                     "https://didit.me/pricing",
                 ):
@@ -458,24 +681,53 @@ class SkillTests(CatalogMixin, unittest.TestCase):
                 for skill in EXPECTED_SKILLS[plugin]:
                     if skill != start:
                         self.assertIn(skill, text, f"{start} must route to {skill}")
+                if plugin in {"didit-transaction-monitoring", "didit-user-management"}:
+                    self.assertIn("Never add `confirm` to any other tool", text)
+                    named = set(re.findall(r"didit_[a-z0-9_]+", text.split("Only some tools declare", 1)[1].split("Send `confirm", 1)[0]))
+                    self.assertTrue(named and named <= CONFIRM_TOOLS, named)
+        auth = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-start" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Products page of the Didit console", auth)
+
+    def test_secrets_are_not_displayed_or_stored(self):
+        team = (self.t.plugins / "didit-user-management" / "skills" / "didit-users-team" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotRegex(team, r"write it (straight )?to [^.\n]*if they asked")
+        self.assertIn("never offer to", team)
+        prompts = (self.t.plugins / "didit-user-management" / "tests" / "prompts.md").read_text(encoding="utf-8")
+        self.assertIn("writing the secret to `.env`", prompts)
+        alerts = (self.t.plugins / "didit-transaction-monitoring" / "skills" / "didit-tm-alerts-cases" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertNotIn("Show the channel, destination and on/off state", alerts)
+        self.assertIn("masked", alerts)
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                with self.subTest(file=where):
+                    self.assertNotRegex(text, r"(write|save|store) (it|the (secret|key)) (straight )?(to|in) [^.\n]*\.env[^.\n]*if")
+
+    def test_watch_only_presets_are_not_installed(self):
+        rules = (self.t.plugins / "didit-transaction-monitoring" / "skills" / "didit-tm-rules" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("It takes no `mode`", rules)
+        self.assertIn("Never install for a watch-only request", rules)
+        prompts = (self.t.plugins / "didit-transaction-monitoring" / "tests" / "prompts.md").read_text(encoding="utf-8")
+        block = next(s for s in sections(prompts) if "watch them before they act" in s)
+        self.assertIn("calling `didit_transaction_rule_install`", block.split("- Forbidden:", 1)[1])
+        self.assertNotIn("didit_transaction_rule_install", block.split("- Tools the answer must name:", 1)[1].split("\n", 1)[0])
 
     def test_authentication_has_no_configuration_tools(self):
-        known = self.known_tools()
+        known = self.t.known_tools()
         # The catalog has no tool that configures Authentication in this build.
         for name, tool in known.items():
             with self.subTest(tool=name):
                 self.assertNotIn("authentication", tool.get("permission") or "")
                 self.assertNotRegex(name, r"^didit_(auth|sign_?in|sso|passkey|jwks)")
-        core = {tool["name"] for tool in self.catalog()["profiles"]["core"]["tools"]}
-        for where, text in skill_texts(PLUGINS_DIR / "didit-authentication"):
+        core = {tool["name"] for tool in self.t.catalog()["profiles"]["core"]["tools"]}
+        for where, text in self.t.skill_texts(self.t.plugins / "didit-authentication"):
             for token in set(TOOL_TOKEN.findall(text)) - NOT_TOOLS:
                 with self.subTest(file=where, tool=token):
                     self.assertIn(token, core, "Authentication skills only use core tools")
-        readme = (PLUGINS_DIR / "didit-authentication" / "README.md").read_text(encoding="utf-8")
+        readme = (self.t.plugins / "didit-authentication" / "README.md").read_text(encoding="utf-8")
         self.assertIn("this plugin is guidance + documentation search; configuration happens in the didit console", readme.lower())
 
     def test_prompts_cover_every_skill_twice(self):
-        for base in plugin_dirs():
+        for base in self.t.plugin_dirs():
             skills = EXPECTED_SKILLS[base.name]
             text = (base / "tests" / "prompts.md").read_text(encoding="utf-8")
             blocks = [s for s in sections(text) if s.startswith("## ")]
@@ -492,24 +744,26 @@ class SkillTests(CatalogMixin, unittest.TestCase):
                         self.assertNotIn(name, prompt.group(1))
                     counts[expected.group(1)] += 1
                 self.assertEqual(set(counts.values()), {2}, counts)
-        self.assertEqual(len([s for s in sections(PROMPTS.read_text(encoding="utf-8")) if s.startswith("## ")]), 16)
+        self.assertEqual(len([s for s in sections(self.t.prompts.read_text(encoding="utf-8")) if s.startswith("## ")]), 16)
 
 
-class BundleTests(unittest.TestCase):
-    def test_working_tree_bundle(self):
-        for base in plugin_dirs():
+class BundleTests(TreeCase):
+    def test_bundle_rules(self):
+        for base in self.t.plugin_dirs():
             with self.subTest(plugin=base.name):
                 self.assertEqual(bundle_problems(base), [])
 
     def test_readme_and_license(self):
-        for base in plugin_dirs():
+        for base in self.t.plugin_dirs():
             with self.subTest(plugin=base.name):
                 readme = (base / "README.md").read_text(encoding="utf-8")
                 self.assertGreaterEqual(words_outside_fences(readme), 40)
+                self.assertEqual(readme_problems(readme), [])
                 license_text = (base / "LICENSE").read_text(encoding="utf-8")
                 self.assertIn("MIT License", license_text)
                 for heading in ("What this plugin does on your machine and where data goes", "Requirements", "Disconnect"):
                     self.assertIn(heading, readme)
+                self.assertIn("no executable binaries", readme)
                 if base.name != "didit":
                     self.assertIn(WHICH_HEADING, readme)
                     for other in EXPECTED_SKILLS:
@@ -519,9 +773,16 @@ class BundleTests(unittest.TestCase):
                     for skill in EXPECTED_SKILLS[base.name]:
                         self.assertIn(skill, readme)
 
+    def test_root_readme_install_section(self):
+        readme = (self.t.root / "README.md").read_text(encoding="utf-8")
+        install = readme.split("## Install", 1)[1].split("### Developer skills for the REST API", 1)[0]
+        self.assertEqual(readme_problems(install), [])
+        self.assertIn("`didit-api` uses no MCP server", install)
+        self.assertIn("is one of the four MCP plugins", install)
+
     def test_only_one_binary(self):
-        reference = (PLUGIN / "assets" / "didit-icon.png").read_bytes()
-        for base in plugin_dirs():
+        reference = (self.t.plugin / "assets" / "didit-icon.png").read_bytes()
+        for base in self.t.plugin_dirs():
             with self.subTest(plugin=base.name):
                 binaries = sorted(p.relative_to(base).as_posix() for p in base.rglob("*.png"))
                 self.assertEqual(binaries, ["assets/didit-icon.png"])
@@ -530,39 +791,101 @@ class BundleTests(unittest.TestCase):
                 self.assertEqual((width, height), (400, 400))
                 self.assertEqual(data, reference)
 
-    def _git(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True)
 
-    def test_committed_bundle(self):
+class CommittedTree:
+    """Mixin: run a test class against HEAD instead of the working tree."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tree = committed_tree()
+
+
+class CommittedLayoutTests(CommittedTree, LayoutTests):
+    pass
+
+
+class CommittedManifestTests(CommittedTree, ManifestTests):
+    pass
+
+
+class CommittedSkillTests(CommittedTree, SkillTests):
+    pass
+
+
+class CommittedBundleTests(CommittedTree, BundleTests):
+    pass
+
+
+class GitTreeTests(unittest.TestCase):
+    def test_every_plugin_is_committed_without_links(self):
         if shutil.which("git") is None:
             self.skipTest("git not available")
-        checked = 0
         for name in EXPECTED_SKILLS:
             rel = f"plugins/{name}"
-            if self._git("rev-parse", "--verify", f"HEAD:{rel}").returncode != 0:
-                continue
-            checked += 1
             with self.subTest(plugin=name):
-                tree = self._git("ls-tree", "-r", "HEAD", rel)
+                self.assertEqual(git("rev-parse", "--verify", f"HEAD:{rel}").returncode, 0, f"{rel} is not in HEAD")
+                tree = git("ls-tree", "-r", "HEAD", rel)
                 self.assertEqual(tree.returncode, 0)
                 for line in tree.stdout.decode().splitlines():
-                    mode = line.split()[0]
-                    self.assertNotIn(mode, {"160000", "120000"}, f"gitlink or symlink: {line}")
-                archive = self._git("archive", "--format=tar", f"HEAD:{rel}")
+                    self.assertNotIn(line.split()[0], {"160000", "120000"}, f"gitlink or symlink: {line}")
+                archive = git("archive", "--format=tar", f"HEAD:{rel}")
                 self.assertEqual(archive.returncode, 0, archive.stderr.decode())
                 with tempfile.TemporaryDirectory() as tmp:
                     with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
-                        for member in tar.getmembers():
-                            self.assertFalse(member.issym() or member.islnk(), member.name)
                         tar.extractall(tmp)
                     base = Path(tmp)
                     self.assertEqual(bundle_problems(base), [])
                     self.assertEqual(mcp_problems(base), [])
-                    self.assertTrue((base / ".claude-plugin" / "plugin.json").is_file())
-                    self.assertTrue((base / "LICENSE").is_file())
-                    self.assertGreaterEqual(words_outside_fences((base / "README.md").read_text(encoding="utf-8")), 40)
-        if checked == 0:
-            self.skipTest("HEAD does not contain any plugin yet")
+
+
+class LintSelfTests(unittest.TestCase):
+    """Each lint must reject the defect it exists for."""
+
+    def test_argument_syntax_is_not_agreement(self):
+        text = "## 3. Re-review\n\n- Call didit_investigator_rereview with run_id and `confirm: true`.\n"
+        self.assertNotEqual(confirm_section_problems(text, CONFIRM_TOOLS), [])
+        text = "## 3. Re-review\n\n- `didit_investigator_rereview`: `run_id`, `confirm: true`. It starts a review.\n"
+        self.assertNotEqual(confirm_section_problems(text, CONFIRM_TOOLS), [])
+        ok = text + "Name the report and wait for the person to confirm first.\n"
+        self.assertEqual(confirm_section_problems(ok, CONFIRM_TOOLS), [])
+
+    def test_blanket_scope_rules_are_rejected(self):
+        for bad in (
+            "With several, ask which one, then pass `organization_id` and `application_id` on later calls.",
+            "Always pass `organization_id` and `application_id`.",
+            "When the defaults are present, use them and pass no ids.",
+        ):
+            with self.subTest(text=bad):
+                self.assertNotEqual(blanket_problems(bad), [])
+        self.assertEqual(blanket_problems("Always send the ids a tool requires (for example `didit_org_create_api_key` requires `organization_id` and `application_id`)."), [])
+
+    def test_blanket_confirm_rules_are_rejected(self):
+        for bad in (
+            "5. Tools that overwrite a decision or delete records take `confirm: true`.",
+            "Tools that delete records or issue credentials take `confirm: true`.",
+            "accepting, overriding, re-reviewing and answering policy questions all take `confirm: true`, sent later.",
+        ):
+            with self.subTest(text=bad):
+                self.assertNotEqual(blanket_problems(bad), [])
+        self.assertEqual(blanket_problems("Send `confirm: true` only to a tool whose schema declares it."), [])
+
+    def test_confirm_on_undeclared_tool_is_rejected(self):
+        self.assertNotEqual(confirm_attach_problems("`didit_webhook_delete` and `didit_case_manage` need `confirm: true`.", CONFIRM_TOOLS), [])
+        self.assertEqual(confirm_attach_problems("No other tool takes `confirm`; `didit_session_update_status` is confirmed by asking.", CONFIRM_TOOLS), [])
+        self.assertNotEqual(confirm_attach_problems("- `didit_lists_delete`: `list_uuid`, `confirm: true`.", CONFIRM_TOOLS), [])
+        self.assertEqual(confirm_attach_problems("- `didit_session_delete`: `session_id`, `confirm: true`.", CONFIRM_TOOLS), [])
+        self.assertEqual(confirm_attach_problems("`didit_lists_delete` takes no `confirm`.", CONFIRM_TOOLS), [])
+
+    def test_undeclared_argument_is_rejected(self):
+        props = {"didit_docs_search": {"query", "language", "limit"}, "didit_org_list_members": {"organization_id"}, "didit_case_get": {"case_id", "application_id"}}
+        self.assertNotEqual(arg_pair_problems("- `didit_docs_search`: `query`, `organization_id`.", props), [])
+        self.assertNotEqual(arg_pair_problems("`didit_org_list_members` with `organization_id` and `application_id`", props), [])
+        self.assertEqual(arg_pair_problems("- `didit_docs_search`: `query`, optional `language` (`en`).", props), [])
+
+    def test_readme_claims_are_rejected(self):
+        self.assertNotEqual(readme_problems("It has no hooks, no scripts and no binaries."), [])
+        self.assertNotEqual(readme_problems("If you want only the tools this plugin uses, connect it."), [])
+        self.assertEqual(readme_problems("no executable binaries; for a shorter tool list, connect it."), [])
 
 
 if __name__ == "__main__":

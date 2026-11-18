@@ -25,7 +25,7 @@ Confirm the emails, role and applications before inviting, and the member's name
 - `didit_webhook_update`: `destination_uuid` plus the fields to change. A new URL redirects future deliveries, and `subscribed_events` replaces the whole list.
 - `didit_webhook_delete`: `destination_uuid`. Deliveries stop.
 
-Confirm the destination and each field change before updating or deleting.
+Show each URL masked (the host, then `...` and the last 4 characters), never in full. Confirm the destination and each field change before updating or deleting.
 
 ## 3. Lists
 

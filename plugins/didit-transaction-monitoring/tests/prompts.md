@@ -38,7 +38,7 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 ## 5. A new velocity rule
 
-- Prompt: "Flag anyone who sends more than 10,000 in one day. How often would that have fired last quarter?"
+- Prompt: "Flag anyone who sends more than 10,000 in one day. How often would that have fired in the last 90 days?"
 - Expected skill: didit-tm-rules
 - Tools the answer must name: `didit_transaction_rule_backtest`, `didit_transaction_rule_create`
 - Forbidden: creating the rule as ACTIVE before a backtest; creating it without confirmation.
@@ -47,8 +47,8 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 - Prompt: "Install the preset rules for crypto exchanges, but I want to watch them before they act."
 - Expected skill: didit-tm-rules
-- Tools the answer must name: `didit_transaction_rule_library_list`, `didit_transaction_rule_install`, `didit_transaction_rule_update`
-- Forbidden: inventing library keys or bundle names; installing before the person confirms the list.
+- Tools the answer must name: `didit_transaction_rule_library_list`, `didit_transaction_rule_backtest`, `didit_transaction_rule_create`
+- Forbidden: calling `didit_transaction_rule_install` for this watch-only request (installed presets start ACTIVE when monitoring is on); inventing library keys or bundle names; creating copies before the person confirms the list.
 
 ## 7. One wallet
 

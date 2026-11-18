@@ -13,16 +13,16 @@ Follow the rules of didit-tm-start first: call `didit_context_get` and pick the 
 - `didit_alert_configure` changes one channel: `alert_type` plus `data` with `value` (an email address, or a Slack webhook URL) and/or `is_active`. A channel with no destination is always off.
 - If it answers `409 legacy_alerts_read_only`, that application's alerts are managed in the console's Notification settings. Say so; do not retry.
 
-Show the channel, destination and on/off state, and wait for a yes before changing it.
+A Slack webhook URL is a posting credential, and an email address is personal data. Show the channel, the on/off state and a masked destination (for Slack only `hooks.slack.com/...` plus the last 4 characters, for email the first letter and the domain), never the full value. Describe the change and wait for the person to confirm before changing it.
 
 ## 2. Webhook destinations
 
-- `didit_webhook_list` and `didit_webhook_get` (`destination_uuid`) show destinations with their URL, version, enabled flag and subscribed events. Signing secrets are redacted.
+- `didit_webhook_list` and `didit_webhook_get` (`destination_uuid`) show destinations with their URL, version, enabled flag and subscribed events. Signing secrets are redacted. Show each URL masked: the host, then `...` and the last 4 characters.
 - `didit_webhook_create` needs `label` and an HTTPS `url`. Optional: `enabled`, `webhook_version` (`v1`, `v2`, `v3`), `subscribed_events` (omit to receive all). For event names, call `didit_docs_search`.
-- `didit_webhook_update` overwrites the fields you send. A new URL redirects future deliveries, `enabled: false` stops them, and `subscribed_events` replaces the whole list.
-- `didit_webhook_delete` removes a destination so it stops receiving events.
+- `didit_webhook_update` needs `destination_uuid` (from the list) and overwrites the fields you send. A new URL redirects future deliveries, `enabled: false` stops them, and `subscribed_events` replaces the whole list.
+- `didit_webhook_delete` needs `destination_uuid` and removes a destination so it stops receiving events. It takes no other argument.
 
-These send account data to an address outside Didit or stop deliveries. Show the destination, the URL and the events, and wait for the person to confirm each create, update or delete.
+These send account data to an address outside Didit or stop deliveries. Show the label, the masked URL and the events, and wait for the person to confirm each create, update or delete.
 
 ## 3. Find and read cases
 
@@ -60,6 +60,6 @@ Confirm the title, subject or links, priority and assignee before creating it.
 
 - Never ask for credentials (password, API key, one-time code).
 - Never fall back to raw HTTP calls (curl/REST) for a console task.
-- Never print a webhook signing secret.
+- Never print a webhook signing secret, a full webhook URL or a full alert destination.
 - Never invent case ids, member ids or event names.
 - Never state prices. Link https://didit.me/pricing.

@@ -56,7 +56,7 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 
 ## What this plugin does on your machine and where data goes
 
-- The plugin runs no code on your machine. It has no hooks, no scripts and no binaries, and it sends nothing by itself.
+- The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
 - When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You never give it a password or an API key.
 - Data you ask about is read from, and changes you approve are written to, your Didit account.
@@ -69,7 +69,7 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 
 ## Shorter tool list (optional)
 
-The plugin connects to the full server so it shares one connection with any other Didit plugin or connector. If you want only the tools this plugin uses, connect the `didit` server yourself to `https://mcp.didit.me/mcp?toolsets=core,docs`. The toolsets that fit this plugin are `core`, `docs`. `core` already includes `didit_docs_search` and `didit_context_get`. Add `read_only=true` to allow reads only. The skills explain to the assistant what changes on such a connection.
+The plugin connects to the full server so it shares one connection with any other Didit plugin or connector. For a shorter tool list, connect the `didit` server yourself to `https://mcp.didit.me/mcp?toolsets=core,docs`. The toolsets that fit this plugin are `core`, `docs`. `core` already includes `didit_docs_search` and `didit_context_get`. Add `read_only=true` to allow reads only. The skills explain to the assistant what changes on such a connection.
 
 ## Disconnect
 

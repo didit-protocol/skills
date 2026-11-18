@@ -74,10 +74,10 @@ Want only one Didit product? Install a focused plugin instead. All of them use t
 | [`didit-authentication`](plugins/didit-authentication/) | Guidance for adding Didit end-user sign-in to your app | `/plugin install didit-authentication --marketplace didit-protocol/skills` |
 | `didit-api` | Developer skills for the REST API (below) | `/plugin install didit-api --marketplace didit-protocol/skills` |
 
-Then run `/mcp` to sign in to the `didit` server.
+After installing any of the four MCP plugins (`didit`, `didit-transaction-monitoring`, `didit-user-management`, `didit-authentication`), run `/mcp` to sign in to the `didit` server. `didit-api` uses no MCP server.
 
 - **claude.ai and Cowork** (manual marketplace; directory listing pending): Customize > Plugins > Add marketplace `didit-protocol/skills`, install the plugin, then connect "didit" on the plugin's Connectors tab.
-- **Codex:** `codex plugin marketplace add didit-protocol/skills` then `codex plugin add <name>@didit`.
+- **Codex:** `codex plugin marketplace add didit-protocol/skills` then `codex plugin add <name>@didit`, where `<name>` is one of the four MCP plugins. `didit-api` is listed for Claude only.
 - **Cursor:** use the Cursor plugin of [didit-protocol/mcp](https://github.com/didit-protocol/mcp), or the `.cursor-plugin/plugin.json` in each plugin folder.
 
 Already added the Didit server by hand (custom connector or `claude mcp add`)? Keep it: the plugins use the same server name `didit` and URL.

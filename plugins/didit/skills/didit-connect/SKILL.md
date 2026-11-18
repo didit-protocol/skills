@@ -15,9 +15,13 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 
 ## Always start with the context
 
-1. Call `didit_context_get` first. It returns the organizations and applications the person can use with their ids, each application's `mode` (`sandbox` or `live`) when the server knows it, and `default_organization_id` and `default_application_id` when there is exactly one of each.
-2. When the defaults are present, use them and pass no ids. When `default_application_id` is missing (several applications, or an organization whose applications could not be listed), ask which application to use, or use the one the person named.
-3. Pass `organization_id` and `application_id` only to tools whose arguments declare them. Some tools take only `organization_id` (for example `didit_org_get_balance`), some take neither (for example `didit_docs_search`, `didit_session_get_decision`). For a call through `didit_tool_call_read` or `didit_tool_call_write`, put the ids inside `arguments`, never next to `name`.
+1. Call `didit_context_get` first. It returns the organizations and applications the person can use with their ids, each application's `mode` (`sandbox` or `live`) when the server knows it, and `default_organization_id` and `default_application_id`. A default is present only when there is exactly one; an organization whose applications could not be listed leaves `default_application_id` out.
+2. Without `default_application_id`, establish the target before any change or billable action: use the application the person named, or ask which one.
+3. Scope ids follow each tool's schema:
+   - Always send the ids a tool requires (for example `didit_org_list_api_keys` requires `application_id`). Read them from `didit_context_get`.
+   - Send an optional `organization_id` or `application_id` only when the context shows several organizations or applications. With one of each, leave optional ids out and the defaults apply.
+   - Never send an id the tool does not declare. `didit_docs_search` and `didit_session_get_decision` take neither; `didit_org_get_balance` and the member tools take only `organization_id`.
+   - For a call through `didit_tool_call_read` or `didit_tool_call_write`, put the target's arguments, ids included, inside `arguments`, never next to `name`.
 4. Read sandbox or live from `mode` only. Never decide it from an application's name. If `mode` is missing, say the environment is unknown and treat the application as live (billable) until the person confirms otherwise.
 
 ## Calling tools
@@ -32,13 +36,13 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 
 ## Confirmations
 
-- Every change (status updates, deletions, invitations, webhooks, exports) needs the person's agreement first: describe what will change and wait for a clear yes before calling the tool. Irreversible ones (overwriting a decision, deleting a webhook or a member) get the same question, said plainly as irreversible.
-- A few tools also declare a `confirm` argument, for example `didit_case_manage` (filing a SAR), `didit_session_delete` and `didit_org_create_api_key`. Send `confirm: true` only to a tool whose arguments declare it, and only after the person has agreed to that exact action in this conversation. Never add `confirm` to a tool that does not declare it.
+- Every change (status updates, deletions, invitations, webhooks, exports) needs the person's agreement first: describe what will change and wait for a clear yes before calling the tool. Say plainly when a change cannot be undone (overwriting a decision, deleting a webhook or a member).
+- Only some tools declare a `confirm` argument, for example `didit_case_manage` (filing a SAR), `didit_session_delete` and `didit_org_create_api_key`. Send `confirm: true` only to a tool whose schema declares it, and only after the person agreed to that exact action in this conversation. Never add `confirm` to any other tool: rule, webhook and list deletions take none.
 
 ## Billable actions
 
-- Checks in a sandbox application are free.
-- In a live application, sessions and standalone checks use the organization's Didit credits. Say so before running anything billable in a live application, and wait for the person to agree.
+- Sandbox applications never bill.
+- In a live application, or one whose mode is unknown, creating a verification session, running a standalone check, submitting a transaction and screening a wallet use the organization's Didit credits. Say so before the call and wait for the person to agree.
 - Never state a price. For pricing, link https://didit.me/pricing. To see what is left, use `didit_org_get_balance` (see didit-reports).
 
 ## How-to questions

@@ -25,7 +25,7 @@ Show the name, type and entry type and wait for a yes before creating or renamin
 
 ## 3. Add and remove entries
 
-- `didit_lists_entry_create`: `list_uuid`, then either `value` (for example a phone, email or IP) or `reference_session_id` to take the value from a session. Optional: `reference_object_uuid`, `display_label`, `comment`, `metadata`. For a face list with a session, `face_image_source` picks which face (`liveness` by default, or `front_image_camera_front` / `back_image_camera_front`), and `reference_node_id` picks the ID verification step when there are several.
+- `didit_lists_entry_create`: `list_uuid`, then either `value` (for example a phone, email or IP) or `reference_session_id` to take the value from a session. Optional: `reference_object_uuid`, `display_label`, `comment`, `metadata`. Only for a face blocklist entry taken from a session (`reference_session_id`), `face_image_source` picks which face (`liveness` by default, or `front_image_camera_front` / `back_image_camera_front`), and `reference_node_id` picks the ID verification step when there are several.
 - `didit_lists_entry_upload_face`: `list_uuid` of a face list plus the image as `image_base64` (or an attachment reference) on the hosted server. Use it only with real image bytes the person attached; never ask them to paste base64 text.
 - `didit_lists_entry_delete`: `list_uuid` and `entry_uuid`. It also unblocks the underlying user or business when that applies. Show the entry and wait for the person to confirm.
 

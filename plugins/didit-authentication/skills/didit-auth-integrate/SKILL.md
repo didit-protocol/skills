@@ -56,7 +56,7 @@ Useful claims: `sub` (the identity in this application), `vendor_data` (the same
 
 ## 5. Check the session when it matters
 
-Offline checks cannot see a session that just ended. Before a sensitive step (a payout, for example), call `GET {issuer}/session/` with the access token as a Bearer token. A `401 invalid_token` means the session is no longer valid. It is rate limited, so do not call it on every request.
+Offline checks cannot see a session that just ended. Before a sensitive step (a payout, for example), call `GET {issuer}/session/` with the access token as a Bearer token. A `401 invalid_token` means this access token is no longer accepted: the session may have ended, or the token expired. Refresh once; if the refresh also fails, treat the person as signed out. It is rate limited, so do not call it on every request.
 
 ## 6. Refresh
 
@@ -69,7 +69,7 @@ Send `grant_type = refresh_token` and `refresh_token` to `{issuer}/token/`. Acce
 
 ## 7. Sign out
 
-`DELETE {issuer}/session/` with the current access token ends the session (`204`). A `401` means it did not end: refresh, then sign out with the new token. Then send the person to the configured `post_logout_redirect_uri`, if any. There is no end-session endpoint.
+`DELETE {issuer}/session/` with the current access token ends the session (`204`). A `401` here means the access token was rejected, not that the person is signed out: the session may still be open. Refresh, then sign out with the new token; if the refresh fails, the session is already over. Then send the person to the configured `post_logout_redirect_uri`, if any. There is no end-session endpoint.
 
 ## 8. Store tokens by purpose
 

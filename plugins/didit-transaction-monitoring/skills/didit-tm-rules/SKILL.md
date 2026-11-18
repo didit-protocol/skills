@@ -59,7 +59,9 @@ Confirm the title, conditions, actions and mode with the person before creating 
 
 ## 5. Install or remove presets
 
-- `didit_transaction_rule_install` installs presets by `library_keys`, `bundle`, or both (at least one). Installed rules start `ACTIVE` when transaction monitoring is on for the application, otherwise `DISABLED`. Suggest setting them to `TEST` first. Confirm the list of rules before installing.
+- `didit_transaction_rule_install` installs presets by `library_keys`, `bundle`, or both (at least one). It takes no `mode`: installed rules start `ACTIVE` when transaction monitoring is on for the application, otherwise `DISABLED`. With monitoring on, an installed preset acts at once.
+- To watch presets before they act: read the entries with `didit_transaction_rule_library_list`, back-test each entry's config with `didit_transaction_rule_backtest` and report the hit rates. Then stop before installing, or offer CUSTOM copies created with `mode: "TEST"` and `metadata.based_on` (see section 3). Never install for a watch-only request while monitoring is on.
+- Install only after the person confirms the list of rules and accepts the mode they will start in.
 - `didit_transaction_rule_uninstall` removes installed presets by `library_keys` or `bundle`. To pause without removing, set `mode` to `DISABLED` instead. Name the rules that will go and wait for the person to confirm.
 
 ## 6. Delete a custom rule

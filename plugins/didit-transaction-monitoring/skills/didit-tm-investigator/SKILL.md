@@ -7,7 +7,7 @@ description: Used when someone wants to work the Didit AI Investigator queue, re
 
 Follow the rules of didit-tm-start first: call `didit_context_get` and pick the application.
 
-The Investigator reviews verifications, businesses, transactions and cases and recommends an action. Every decision stays with a person: accepting, overriding, re-reviewing and answering policy questions all take `confirm: true`, sent only after the person agreed to that exact action in this conversation.
+The Investigator reviews verifications, businesses, transactions and cases and recommends an action. Every decision stays with a person. Get the person's agreement to the exact item and action before each decision tool. The tools that declare `confirm` are named below; send `confirm: true` to them only after that agreement in this conversation.
 
 ## 1. Read the queue and reports
 
@@ -28,12 +28,12 @@ Before each call, state the item, the recommendation and the exact action, and w
 ## 3. Add a fact or review again
 
 - `didit_investigator_add_note`: `run_id` and `note` (up to 2,000 characters, in the person's words). The Investigator reads it on its next review; it does not re-evaluate by itself.
-- `didit_investigator_rereview`: `run_id`, optional `note`, `confirm: true`. A fresh review starts in the background and replaces the open report. Only an open, finished report can be re-reviewed (`409 not_rereviewable`), one at a time (`409 rereview_pending`). Read the new report from the queue once it is ready.
+- `didit_investigator_rereview`: `run_id`, optional `note`, `confirm: true`. Name the report and wait for the person to confirm the re-review first. A fresh review starts in the background and replaces the open report. Only an open, finished report can be re-reviewed (`409 not_rereviewable`), one at a time (`409 rereview_pending`). Read the new report from the queue once it is ready.
 
 ## 4. Policy questions
 
 - `didit_investigator_question_list` (filter `status`: `open`, `answered`, `dismissed`) and `didit_investigator_question_get` (`question_id`) show situations the policy does not cover, with the team's last 30 days on it.
-- `didit_investigator_question_answer`: `question_id`, `answer` (`approve`, `decline`, `request`, `person`), optional `detail`, `confirm: true`. An answer writes a new policy version and re-checks waiting reports in that queue. Say so before the person confirms.
+- `didit_investigator_question_answer`: `question_id`, `answer` (`approve`, `decline`, `request`, `person`), optional `detail`, `confirm: true`. An answer writes a new policy version and re-checks waiting reports in that queue. Say so, then wait for the person to confirm.
 - `didit_investigator_question_dismiss`: `question_id`, `confirm: true`. Closes it with no policy change. Ask the person to confirm first.
 
 ## 5. Back-tests and performance
