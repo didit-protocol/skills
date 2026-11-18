@@ -425,19 +425,31 @@ def fence_lead_problems(text: str) -> list[str]:
     return problems
 
 
+CONFIRM_RULE = "Send `confirm: true` only to a tool whose schema declares `confirm`, and only after the person agreed to that exact action."
+CONFIRM_LIST_LEAD = "In this plugin's recipes those tools are:"
+CONFIRM_OUTSIDE = ("Any other tool you reach by name or through discovery follows its own schema: "
+                   "if it declares `confirm`, the same rule applies.")
+
+
 def confirm_list(text: str) -> set[str] | None:
-    """Tools a start skill lists as declaring `confirm` (empty when it says none does); None when it has no list."""
-    if "None of the tools these skills use declares a `confirm` argument" in text:
-        return set()
-    if "Only some tools declare a `confirm` argument" not in text:
+    """Tools a start skill lists as the `confirm` tools of its recipes (empty for "none").
+
+    None when the binding rule, the list or the clause for tools outside the recipes is missing.
+    """
+    if CONFIRM_RULE not in text or CONFIRM_OUTSIDE not in text or CONFIRM_LIST_LEAD not in text:
         return None
-    span = text.split("Only some tools declare a `confirm` argument", 1)[1].split("Send `confirm", 1)[0]
+    span = text.split(CONFIRM_LIST_LEAD, 1)[1].split(CONFIRM_OUTSIDE, 1)[0]
     return set(TOOL_TOKEN.findall(span))
 
 
 def confirm_list_problems(listed: set[str] | None, used: set[str], known: dict[str, dict]) -> list[str]:
+    """`listed` must equal the tools named in this plugin's skills that declare `confirm`.
+
+    A tool that declares `confirm` but is outside the recipes is not listed: the clause for tools
+    reached by name or discovery covers it.
+    """
     if listed is None:
-        return ["no list of the tools that take `confirm`"]
+        return ["no binding `confirm` rule with a recipe list and a clause for tools outside the recipes"]
     declares = {name for name, tool in known.items() if tool["confirm"]}
     problems = [f"{t} is named in the plugin's skills and takes `confirm`, but the start list omits it" for t in sorted((used & declares) - listed)]
     problems += [f"{t} is in the start list but does not take `confirm`" for t in sorted(listed - declares)]
@@ -823,7 +835,7 @@ class SkillTests(TreeCase):
         self.assertGreater(seen, 0)
 
     def test_start_skill_confirm_list_matches_catalog(self):
-        """Each start skill lists exactly the catalog's `confirm` tools that the plugin's skills name."""
+        """Each start skill lists exactly the tools named in this plugin's skills that declare `confirm`."""
         known = self.t.known_tools()
         starts = {"didit": "didit-connect", **START_SKILL}
         for base in self.t.plugin_dirs():
@@ -833,6 +845,24 @@ class SkillTests(TreeCase):
             start = (base / "skills" / starts[base.name] / "SKILL.md").read_text(encoding="utf-8")
             with self.subTest(plugin=base.name):
                 self.assertEqual(confirm_list_problems(confirm_list(start), used, known), [])
+
+    def test_confirm_tool_outside_the_recipes(self):
+        """The umbrella plugin's hosted connection exposes `confirm` tools its recipes never name; the start skill must allow them by schema."""
+        known = self.t.known_tools()
+        base = self.t.plugins / "didit"
+        used: set[str] = set()
+        for _, text in self.t.skill_texts(base)[:-1]:
+            used |= set(TOOL_TOKEN.findall(text))
+        start = (base / "skills" / "didit-connect" / "SKILL.md").read_text(encoding="utf-8")
+        listed = confirm_list(start)
+        for tool in ("didit_org_reveal_application_api_key", "didit_session_batch_delete"):
+            with self.subTest(tool=tool):
+                self.assertTrue(known[tool]["confirm"])
+                self.assertNotIn(tool, used)
+                self.assertNotIn(tool, listed)
+        self.assertIn(CONFIRM_OUTSIDE, start)
+        self.assertNotIn("Never add `confirm` to any other tool", start)
+
 
     def test_conditional_instruction_is_not_agreement(self):
         texts = {}
@@ -1014,7 +1044,8 @@ class SkillTests(TreeCase):
                     "proxy call",
                     "wait for a clear yes before calling the tool",
                     "`confirm: true`",
-                    "only after the person agreed to that exact action in this conversation",
+                    CONFIRM_RULE,
+                    CONFIRM_OUTSIDE,
                     "a password, an API key or a one-time code",
                     "`didit_docs_search`",
                     "https://didit.me/pricing",
@@ -1024,8 +1055,7 @@ class SkillTests(TreeCase):
                 for skill in EXPECTED_SKILLS[plugin]:
                     if skill != start:
                         self.assertIn(skill, text, f"{start} must route to {skill}")
-                if plugin != "didit-authentication":
-                    self.assertIn("Never add `confirm` to any other tool", text)
+                self.assertNotIn("Never add `confirm` to any other tool", text)
         auth = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-start" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Products page of the Didit console", auth)
 
@@ -1312,12 +1342,19 @@ class LintSelfTests(unittest.TestCase):
 
     def test_confirm_list_defects_are_rejected(self):
         known = {"didit_a": {"confirm": True}, "didit_b": {"confirm": True}, "didit_c": {"confirm": False}}
-        listed = confirm_list("Only some tools declare a `confirm` argument; in this plugin: `didit_a` and `didit_c`. Send `confirm: true` only")
+        start = f"{CONFIRM_RULE} {CONFIRM_LIST_LEAD} `didit_a` and `didit_c`. {CONFIRM_OUTSIDE}"
+        listed = confirm_list(start)
         self.assertEqual(listed, {"didit_a", "didit_c"})
+        self.assertEqual(confirm_list(f"{CONFIRM_RULE} {CONFIRM_LIST_LEAD} none. {CONFIRM_OUTSIDE}"), set())
+        # Without the clause for tools outside the recipes, a discovered `confirm` tool would be forbidden.
+        self.assertIsNone(confirm_list(f"{CONFIRM_RULE} {CONFIRM_LIST_LEAD} `didit_a`."))
+        self.assertIsNone(confirm_list("Only some tools declare a `confirm` argument: `didit_a`. Never add `confirm` to any other tool."))
         problems = confirm_list_problems(listed, {"didit_a", "didit_b"}, known)
         self.assertTrue(any("didit_b" in p for p in problems) and any("didit_c" in p for p in problems), problems)
         self.assertNotEqual(confirm_list_problems(None, set(), known), [])
         self.assertEqual(confirm_list_problems({"didit_a"}, {"didit_a", "didit_c"}, known), [])
+        # didit_b declares `confirm` but no recipe names it: it stays off the list and is not a defect.
+        self.assertEqual(confirm_list_problems({"didit_a"}, {"didit_a"}, known), [])
 
     def test_nested_example_defects_are_rejected(self):
         tools = {"didit_questionnaire_create": {"properties": ["form_elements", "status", "title"], "required": ["form_elements", "title"]},

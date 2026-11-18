@@ -45,7 +45,7 @@ The same fields go to `didit_transaction_rule_backtest`, `didit_transaction_rule
 - `scope`: `transaction_types`, `directions` (`INBOUND`, `OUTBOUND`) and `action_types`, each a list. Left out, nothing is restricted.
 - `period_days` (back-test only): 1 to 365, default 90. "Last quarter" is `period_days: 90`; say it is the last 90 days, not a calendar quarter, and that at most the 10,000 most recent transactions are replayed.
 
-Amounts are compared as stored on each transaction. When the person gives a threshold with no currency, say which reading you used (for example "10,000 in the transaction's own currency, every currency counted") and run the back-test: it changes nothing. When they name one, add a `currency` condition and put the same `currency` in the aggregation `filters` so the historical total counts only that currency.
+Amounts are compared as stored on each transaction, with no currency conversion. When the person gives a threshold with no currency, say which reading you used and run the back-test: it changes nothing. The total example below adds raw amounts across every currency, so describe its result as a raw sum of mixed currencies. To total only in the evaluated transaction's own currency, add `"currency": "__current__"` to the aggregation `filters`. When they name one, add a `currency` condition and put the same `currency` in the aggregation `filters` so the historical total counts only that currency.
 
 Total sent by one customer in a day above 10,000:
 
@@ -86,7 +86,7 @@ Confirm the title, conditions, actions and mode with the person before creating 
 
 `didit_transaction_rule_update` with `rule_uuid` changes only the fields you send.
 
-- PRESET rules only allow mode changes. To change a preset's conditions, read the preset with `didit_transaction_rule_get` and create a CUSTOM copy of its whole definition (conditions, aggregation, evaluation mode, scope and actions, changing only what the person asked) in `TEST`, with `metadata.based_on` (its library key) and `metadata.based_on_rule_uuid`. Leave the preset enforcing. Only after the person reviews the copy's test hits and agrees to the switch, set the copy to `ACTIVE` and then the preset to `DISABLED`, so a transaction does not alert twice and nothing goes unenforced. See `references/rule-definition.md`.
+- PRESET rules only allow mode changes. To change a preset's conditions, read the preset with `didit_transaction_rule_get` and create a CUSTOM copy of its whole definition (conditions, aggregation, evaluation mode, scope and actions, changing only what the person asked) in `TEST`, with `metadata.based_on` (its library key) and `metadata.based_on_rule_uuid`. Leave the preset enforcing. Only after the person reviews the copy's test hits and agrees to the switch, set the copy to `ACTIVE` and then the preset to `DISABLED`, so nothing goes unenforced. These are two separate updates: before asking for agreement, say that while both are `ACTIVE` a transaction can match both and their actions can run twice, and that the overlap stays if the second update fails. Afterwards read both rules and report their modes; if the preset is still `ACTIVE`, report the switch as incomplete. See `references/rule-definition.md`.
 - Before raising a rule's impact (new conditions, or `TEST` to `ACTIVE`), back-test the exact candidate definition.
 - Ask the person to confirm the exact change, mode included, before calling it.
 

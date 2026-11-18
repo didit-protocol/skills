@@ -1,6 +1,6 @@
 # Rule definition: more examples
 
-Every example is the full argument object of the tool named on its code fence. Replace each `<...>` placeholder with an id read from a tool result; never invent one. The field rules are in section 2 of SKILL.md.
+Every example is the full argument object of the tool named on its code fence. Replace each `<...>` placeholder with the value read from a tool result; never invent one. Use a UUID only for a UUID field; text placeholders such as `<preset title>`, `<preset category>` and `<library_key>` take the preset's returned `title`, `category` and `library_key`. The field rules are in section 2 of SKILL.md.
 
 ## Grouped conditions
 
@@ -44,6 +44,6 @@ To change a PRESET rule, read it with `didit_transaction_rule_get` and build a C
 {"title": "<preset title> (custom)", "category": "<preset category>", "mode": "TEST", "conditions": [{"field": "amount", "operator": "gt", "value": 15000}], "actions": [{"type": "change_status", "value": "IN_REVIEW"}], "metadata": {"based_on": "<library_key>", "based_on_rule_uuid": "<rule_uuid>"}}
 ```
 
-After the person has reviewed the copy's test hits and agreed to the switch, set the copy to `ACTIVE` first, then the preset to `DISABLED`, so one of them is always enforcing and a transaction does not alert twice. Back-test the copy's exact definition before it goes `ACTIVE`.
+Back-test the copy's exact definition before it goes `ACTIVE`. The switch is two separate `didit_transaction_rule_update` calls, one per rule: set the copy to `ACTIVE` first, then the preset to `DISABLED`, so one of them is always enforcing. Before asking for agreement, say that between the two calls both rules are `ACTIVE`, so a transaction can match both and their actions can run twice, and that this overlap stays if the second call fails. After the person agrees, make both calls, then read both rules with `didit_transaction_rule_get` and report each mode. If the preset is still `ACTIVE`, report the switch as incomplete and offer to retry disabling it.
 
 Source: the rule schemas of the Didit MCP server (`conditions`, `aggregation`, `scope`, `actions`, `evaluation_mode`, `period_days`).

@@ -44,7 +44,7 @@ The same fields go to `didit_transaction_rule_backtest`, `didit_transaction_rule
 - `scope`: `transaction_types`, `directions` (`INBOUND`, `OUTBOUND`) and `action_types`, each a list. Left out, nothing is restricted.
 - `period_days` (back-test only): 1 to 365, default 90. "Last quarter" is `period_days: 90`; say it is the last 90 days, not a calendar quarter, and that at most the 10,000 most recent transactions are replayed.
 
-Amounts are compared as stored on each transaction. When the person gives a threshold with no currency, say which reading you used (for example "10,000 in the transaction's own currency, every currency counted") and run the back-test: it changes nothing. When they name one, add a `currency` condition and put the same `currency` in the aggregation `filters` so the historical total counts only that currency.
+Amounts are compared as stored on each transaction, with no currency conversion. When the person gives a threshold with no currency, say which reading you used and run the back-test: it changes nothing. The total example below adds raw amounts across every currency, so describe its result as a raw sum of mixed currencies. To total only in the evaluated transaction's own currency, add `"currency": "__current__"` to the aggregation `filters`. When they name one, add a `currency` condition and put the same `currency` in the aggregation `filters` so the historical total counts only that currency.
 
 Total sent by one customer in a day above 10,000:
 
