@@ -1,15 +1,15 @@
 ---
 name: didit-mcp-server
 description: >
-  Connect an AI assistant to the Didit identity platform through the Didit MCP server
-  (Model Context Protocol). Use when the user wants to install or configure the Didit MCP
-  server in Claude Code, Claude Desktop or claude.ai, Cursor, VS Code, Windsurf, Zed or any
-  MCP client; sign in with a Didit console account (OAuth 2.1); run the server headless over
-  stdio with a user access token or self-host it; or have an agent act in the Didit Business
-  Console as the signed-in user: build workflows, create and review verification sessions,
-  run standalone checks, manage users, transactions and rules, lists, cases, webhooks,
-  reports and billing. Covers scopes, roles, confirmations and file inputs.
-version: 1.0.0
+  Use when connecting an AI assistant or agent to a Didit account through the Didit MCP server
+  (Model Context Protocol), not for backend REST integration code. Covers installing the hosted
+  server in Claude Code, claude.ai, Claude Desktop, ChatGPT, OpenAI Codex, Cursor, VS Code,
+  Windsurf, Zed or any MCP client; signing in with a Didit console account (OAuth 2.1) or
+  connecting with an application API key; device-code login for the local server; toolsets and
+  read-only mode; and having an agent act in the Didit Business Console: workflows, sessions,
+  standalone checks, users, transactions and rules, lists, cases, webhooks, reports and billing.
+  Covers scopes, roles, confirmations and file inputs.
+version: 1.1.0
 metadata:
   openclaw:
     requires:
@@ -21,25 +21,31 @@ metadata:
 
 # Didit MCP Server
 
+> This skill is for an AI client working inside a Didit account. Writing backend code that calls the Didit REST API with an application API key? Use **didit-verification-management**, **didit-sdk-integration** and the standalone API skills instead.
+
 ## Overview
 
-The Didit MCP server lets an MCP client call the Didit platform through tools. It acts as the **signed-in Didit user**, across every organization and application that user belongs to, with that user's console role permissions. It is read-and-write: agents can create sessions, change workflows, update statuses and delete data.
+The Didit MCP server lets an MCP client call the Didit platform through tools. It is read-and-write: agents can create sessions, change workflows, update statuses and delete data. Facts and counts below are for server version 5.1.67 (`@didit-protocol/mcp-server@5.1.67`).
 
 **Key facts:**
-- Hosted endpoint: `https://mcp.didit.me/mcp` (Streamable HTTP, stateless, `POST` only; `GET` and `DELETE` answer `405`). Health check: `GET https://mcp.didit.me/healthz` returns `{"status": "ok", "service": "didit-mcp-server", "version": "..."}`.
-- Sign-in is OAuth 2.1 with PKCE against your Didit Business Console account (the docs call it **Log in with Didit**). There is **no API-key mode**: the server always calls Didit as the signed-in user, never with an application API key.
-- Tools return the verbatim JSON of the underlying Didit endpoints.
+- Hosted endpoint: `https://mcp.didit.me/mcp` (Streamable HTTP, stateless). `GET https://mcp.didit.me/healthz` returns the server status, its version and the `features` it supports (for example `toolsets`, `read_only`, `api_key`).
+- Two ways to connect:
+  - **Log in with Didit** (OAuth 2.1 with PKCE, the default and recommended path): the server acts as the signed-in person, across every organization and application they belong to, with their console role permissions.
+  - **Application API key** (headless agents and CI with no person present): the connection is that one application, with the key's own access. See Connect with an API key.
+- Tool results are processed, not raw endpoint JSON: each tool returns compact JSON text plus `structuredContent`, API keys and webhook secrets are redacted, large payloads (for example workflow feature configs) are summarized, and errors come back sanitized with a code, field and hint.
 - Open source (MIT): https://github.com/didit-protocol/mcp, published on npm as `@didit-protocol/mcp-server` (binary `didit-mcp-server`).
 
-**When to use the REST skills instead:** a backend integration that runs with an application API key (creating sessions for your users, receiving webhooks, submitting transactions) does not use this server; see **didit-verification-management**, **didit-sdk-integration** and the standalone API skills. The MCP server is for an AI assistant working in the console on a person's behalf.
+**When to use the REST skills instead:** a backend integration that runs with an application API key in your own code (creating sessions for your users, receiving webhooks, submitting transactions) calls the REST API directly; see **didit-verification-management**, **didit-sdk-integration** and the standalone API skills.
 
-**Pricing:** The MCP server has no list price of its own. Tools that run billable operations (for example `didit_session_create` on a live application and the `didit_verify_*` standalone checks) use your credits like the same API calls. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** The MCP server has no list price of its own. Tools that run billable operations (for example `didit_session_create` on a live application and the `didit_verify_*` standalone checks) use your credit like the same API calls. Prices: [didit.me/pricing](https://didit.me/pricing).
 
-**Docs:** https://docs.didit.me/integration/mcp/overview · Installation: https://docs.didit.me/integration/mcp/installation · Authentication: https://docs.didit.me/integration/mcp/authentication · Tools reference: https://docs.didit.me/integration/mcp/tools · Advanced: https://docs.didit.me/integration/mcp/advanced
+**Docs:** https://docs.didit.me/integration/mcp/overview · Per client: [Claude](https://docs.didit.me/integration/mcp/claude), [ChatGPT](https://docs.didit.me/integration/mcp/chatgpt), [Cursor](https://docs.didit.me/integration/mcp/cursor), [VS Code](https://docs.didit.me/integration/mcp/vscode), [OpenAI Codex](https://docs.didit.me/integration/mcp/codex) · Toolsets: https://docs.didit.me/integration/mcp/toolsets · Authentication: https://docs.didit.me/integration/mcp/authentication · Tools reference: https://docs.didit.me/integration/mcp/tools
 
 ---
 
 ## Authentication
+
+### Log in with Didit (OAuth 2.1)
 
 The hosted server is an OAuth 2.1 resource server; the Didit Business Console (`https://business.didit.me`) is the authorization server. Your client runs the whole flow:
 
@@ -48,14 +54,17 @@ The hosted server is an OAuth 2.1 resource server; the Didit Business Console (`
 3. It opens the browser for the authorization code flow with an S256 PKCE challenge; the user signs in (or registers) and approves the scopes. Clients are public: no client secret.
 4. It sends `Authorization: Bearer <access_token>` on every `POST /mcp`. Access tokens are short-lived and refreshed automatically with the refresh token.
 
+The server advertises three scopes:
+
 | Scope | Grants |
 |---|---|
 | `didit:verification` | Run and review verifications: sessions, businesses, cases, transactions, blocklist, analytics |
 | `didit:management` | Manage the workspace: organization, members, subscription, users, applications, workflows, customization, questionnaires, lists, webhooks, integrations, API keys, audit logs, roles, analytics |
+| `didit:staff` | Didit staff accounts only. The authorization server never issues it to anyone else; customers never request it |
 
 - Effective access is the **intersection** of the approved scopes and the user's console role in each organization. A `READER` can list and read; an `OWNER` or `ADMIN` can write and delete.
 - `didit_session_create` needs the `didit:verification` scope **and** a role with `create:sessions` or `write:sessions` (the Developer role has `create:sessions`).
-- Disconnect an app in the console under **Settings > Authentication > Connected apps**: its access and refresh tokens stop working at once. A client can also revoke its own token (RFC 7009):
+- Disconnect an app in the console under **Settings > Authentication > Connected apps**, or revoke a token yourself (RFC 7009). Revoking stops the refresh token at once, so the client cannot get new access tokens. The MCP server remembers an accepted access token for up to 60 seconds (default `MCP_INTROSPECTION_CACHE_TTL_MS`), so a revoked access token can keep reaching the server for that long; each Didit API call a tool makes still re-checks the token at the API.
 
 ```bash
 curl -X POST https://business.didit.me/api/auth/oauth-revoke \
@@ -65,23 +74,45 @@ curl -X POST https://business.didit.me/api/auth/oauth-revoke \
 
 `200` is returned whether or not the token was still live; `503` means it was not revoked (retry).
 
+### Connect with an API key
+
+An agent that runs with no person present (CI, a scheduled job, a backend agent) can connect to the hosted server with an application API key instead of signing in. Send it as `x-api-key: <key>` (or `Authorization: Bearer <key>`) on every request to `https://mcp.didit.me/mcp`:
+
+```bash
+claude mcp add --transport http didit https://mcp.didit.me/mcp --header "x-api-key: $DIDIT_API_KEY"
+```
+
+```json
+{"mcpServers": {"didit": {"url": "https://mcp.didit.me/mcp", "headers": {"x-api-key": "${env:DIDIT_API_KEY}"}}}}
+```
+
+- **One application.** The connection acts on the key's application; no ids to pass. `didit_context_get` reports `connection.type: "api_key"` and the app's `mode`. A call that names another organization or application is refused.
+- **The key's own access.** The key is forwarded to the Didit API as on a direct call; a restricted key reaches only what it was given. Give an agent a restricted key with an expiry.
+- **Sandbox first.** Build and test with the sandbox application's key.
+- **Not for person-only tools.** Members, roles and API key management, plan, cards, receipts and billing details, the audit log, `didit_workflow_build_graph`, and PDF or e-signature download links are neither listed nor run on an API key connection.
+- A key limited to specific IP addresses is refused (the API would see the server's address). Revoking or rotating the key stops the connection within a minute.
+
 ## Getting Started (No Account Yet?)
 
-No key or install is needed for the hosted server. Add `https://mcp.didit.me/mcp` to your client (next section); on first use the browser opens **Log in with Didit**, where you can also create a Didit account. For a headless run you need a user access token (see Headless and self-hosting).
+No key or install is needed for the hosted server. Add `https://mcp.didit.me/mcp` to your client (next section); on first use the browser opens **Log in with Didit**, where you can also create a Didit account. For a machine with no browser, use the device code login (Local server and self-hosting).
 
 ---
 
 ## Install in a Client
 
+In Claude Code, the Didit plugin bundles the server connection and these skills: `/plugin install didit --marketplace didit-protocol/skills`.
+
 | Client | Setup |
 |---|---|
 | Claude Code | `claude mcp add --transport http didit https://mcp.didit.me/mcp`, then run `/mcp` in Claude Code to sign in |
-| claude.ai and Claude Desktop | **Settings > Connectors > Add custom connector**, name `Didit`, URL `https://mcp.didit.me/mcp`, then **Connect**. Pre-filled link: `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Didit&connectorUrl=https://mcp.didit.me/mcp` |
-| Cursor | `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project), see below |
-| VS Code (agent mode) | `.vscode/mcp.json`, see below, or **MCP: Add Server** > **HTTP**. Use the full `/mcp` URL, not the bare origin |
+| claude.ai and Claude Desktop | **Settings > Connectors > Add custom connector**, name `Didit`, URL `https://mcp.didit.me/mcp`, then **Connect**. Pre-filled link: `https://claude.ai/customize/connectors?modal=add-custom-connector&connectorName=Didit&connectorUrl=https://mcp.didit.me/mcp`. Guide: https://docs.didit.me/integration/mcp/claude |
+| ChatGPT | Guide: https://docs.didit.me/integration/mcp/chatgpt |
+| OpenAI Codex | `codex mcp add didit --url https://mcp.didit.me/mcp`. Guide: https://docs.didit.me/integration/mcp/codex |
+| Cursor | `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project), see below. Guide: https://docs.didit.me/integration/mcp/cursor |
+| VS Code (agent mode) | `.vscode/mcp.json`, see below, or **MCP: Add Server** > **HTTP**. Guide: https://docs.didit.me/integration/mcp/vscode |
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` with the `mcp-remote` bridge, see below |
 | Zed | `settings.json` `context_servers` with the `mcp-remote` bridge, see below |
-| Any other client | Streamable HTTP + OAuth 2.1 directly against `https://mcp.didit.me/mcp`; a stdio-only client uses `npx -y mcp-remote@latest https://mcp.didit.me/mcp` |
+| Any other client | Streamable HTTP + OAuth 2.1 directly against `https://mcp.didit.me/mcp`; a stdio-only client uses `npx -y mcp-remote@0.16.6 https://mcp.didit.me/mcp` |
 
 Cursor:
 
@@ -98,53 +129,117 @@ VS Code:
 Windsurf:
 
 ```json
-{"mcpServers": {"didit": {"command": "npx", "args": ["-y", "mcp-remote@latest", "https://mcp.didit.me/mcp"]}}}
+{"mcpServers": {"didit": {"command": "npx", "args": ["-y", "mcp-remote@0.16.6", "https://mcp.didit.me/mcp"]}}}
 ```
 
 Zed:
 
 ```json
-{"context_servers": {"didit": {"source": "custom", "command": "npx", "args": ["-y", "mcp-remote@latest", "https://mcp.didit.me/mcp"]}}}
+{"context_servers": {"didit": {"source": "custom", "command": "npx", "args": ["-y", "mcp-remote@0.16.6", "https://mcp.didit.me/mcp"]}}}
 ```
 
-Any MCP client that supports remote HTTP servers, or stdio through `mcp-remote`, works the same way. Keep the client's "review tool calls before running" setting on.
+The launcher versions are pinned to the releases checked for this skill (`mcp-remote@0.16.6`, `@didit-protocol/mcp-server@5.1.67`); change them deliberately when you upgrade. Keep the client's "review tool calls before running" setting on.
 
-## Headless and Self-Hosting
+### Endpoint behaviour
 
-**Stdio with a user token** (local agents and CI that cannot run a browser sign-in):
+- `POST /mcp` carries the MCP protocol. The bare origin `https://mcp.didit.me` answers MCP `POST` requests exactly like `/mcp`, so a client given the address without the path still connects.
+- `GET /mcp` from a browser navigation shows a page with connect links for each client; any other `GET /mcp` (a client asking for a stream) answers `405`, because the server is stateless and has no server-initiated stream.
+- `GET` on the bare origin shows the same page unless the request asks for an MCP media type, which gets `405`.
+- `DELETE` on `/mcp` or the bare origin answers `405`: there is no session to end.
+
+## Toolsets and Read-Only Mode
+
+By default a connection lists every tool the person's role may use. Tool definitions are sent to the model on every request, so a shorter list saves tokens. Name toolsets on the server URL:
+
+```
+https://mcp.didit.me/mcp?toolsets=core
+https://mcp.didit.me/mcp?toolsets=core,workflows
+https://mcp.didit.me/mcp?toolsets=core,transactions,cases&read_only=true
+```
+
+| Toolset | What it holds |
+|---|---|
+| `core` | The short list: organizations and applications, sessions (create, find, decide, explain, simulate in the sandbox, webhook deliveries), finding workflows, analytics and balance, the application's API key and webhooks, finding cases, users, businesses and transactions, documentation search (29 tools in v5.1.67, discovery tools included) |
+| `account` | Organizations, applications, API keys, members and roles |
+| `billing` | Plan, credit balance, payment methods, receipts and billing details |
+| `sessions` | Verification sessions: create, find, decide, review, share, import, PDFs and webhook deliveries |
+| `workflows` | Verification workflows and questionnaires: build, edit, validate and publish |
+| `lists` | Custom lists, the blocklist and the allowlist |
+| `vendors` | Vendor users and vendor businesses |
+| `transactions` | Transactions, wallet screening and rules with backtesting |
+| `cases` | Case management |
+| `investigator` | The AI Investigator: review queue, reports, decisions, policy questions and performance |
+| `webhooks` | Webhook destinations and alerts |
+| `reports` | Analytics, exports and the audit log |
+| `branding` | White-label branding of the verification flow |
+| `verification` | Standalone verification APIs: ID document, face, AML, proof of address, phone, email, database and business checks |
+| `docs` | Search the Didit documentation |
+| `all` | Every tool the role may use (the default) |
+
+- A toolset decides what is **listed**, not what may run: a tool outside the selection still runs when called by name, with the same permission checks.
+- When a connection does not load every toolset, it also gets four discovery tools: `didit_tool_search` (find a tool or list a toolset), `didit_tool_describe` (its full schema), `didit_tool_call_read` and `didit_tool_call_write` (run it). Calls through them are checked exactly like direct calls.
+- `read_only=true` lists only tools that read and refuses every call that would change data, whatever the client remembers. In v5.1.67 a signed-in person with every toolset sees 77 tools in read-only mode.
+- Clients that cannot edit the URL send the `X-MCP-Toolsets` and `X-MCP-Readonly` headers. The local server takes `--toolsets=core,workflows` and `--read-only`, or `DIDIT_TOOLSETS` and `DIDIT_READ_ONLY`. An unknown toolset is ignored, not an error.
+- `didit_docs_search` searches the live documentation at docs.didit.me; use it for "how does Didit work" questions instead of answering from memory.
+
+## Local Server and Self-Hosting
+
+### Device code login (no browser on this machine)
+
+For the local (stdio) server on a remote machine, in a container or in CI:
 
 ```bash
-DIDIT_ACCESS_TOKEN=<user-access-token> npx -y @didit-protocol/mcp-server
+npx -y @didit-protocol/mcp-server@5.1.67 login
+```
+
+The terminal prints a short code and a link to `https://business.didit.me/device`. Open it on any device, sign in, check that the code matches and approve. Approve only a code you started yourself.
+
+- Credentials are stored in `~/.config/didit/mcp-credentials.json` (override with `DIDIT_MCP_CREDENTIALS_FILE`), readable by you only. The command prints the granted scopes, never the token.
+- The local server uses the stored credentials when `DIDIT_ACCESS_TOKEN` is not set, and refreshes them before they expire. Refresh tokens rotate, so do not share one credentials file between jobs that run at the same time.
+- `npx -y @didit-protocol/mcp-server@5.1.67 logout` revokes the grant and deletes the stored credentials.
+- With no shell, an agent can call `didit_account_device_login_start`, show the link and code, then `didit_account_device_login_poll` after approval.
+- `didit_account_login` (then `didit_account_verify_2fa`), `didit_account_register` and `didit_account_verify_email` sign in with an email and password on the local server only, and keep the sign-in in the same credentials file. The hosted server never takes a password.
+
+### Stdio with a user token
+
+```bash
+DIDIT_ACCESS_TOKEN=<user-access-token> npx -y @didit-protocol/mcp-server@5.1.67
 
 # Register it in Claude Code
-claude mcp add didit-local -e DIDIT_ACCESS_TOKEN=<user-access-token> -- npx -y @didit-protocol/mcp-server
+claude mcp add didit-local -e DIDIT_ACCESS_TOKEN=<user-access-token> -- npx -y @didit-protocol/mcp-server@5.1.67
 ```
 
 ```json
-{"mcpServers": {"didit-local": {"command": "npx", "args": ["-y", "@didit-protocol/mcp-server"], "env": {"DIDIT_ACCESS_TOKEN": "<user-access-token>"}}}}
+{"mcpServers": {"didit-local": {"command": "npx", "args": ["-y", "@didit-protocol/mcp-server@5.1.67"], "env": {"DIDIT_ACCESS_TOKEN": "<user-access-token>"}}}}
 ```
 
-- `DIDIT_ACCESS_TOKEN` is a Didit **user** access token, not an application API key. Treat it as a secret: keep it in the client's env config, never in a prompt or a repository.
-- Without a token, a stdio server can sign in with `didit_account_login` (then `didit_account_verify_2fa` when the account has two-factor authentication).
+- `DIDIT_ACCESS_TOKEN` is a Didit **user** access token, not an application API key, and takes precedence over stored credentials. Treat it as a secret: keep it in the client's env config, never in a prompt or a repository.
 - `MCP_DEFAULT_ORG` and `MCP_DEFAULT_APP` pin the organization and application for single-tenant setups.
 
-**Self-hosted HTTP server:** clone https://github.com/didit-protocol/mcp, `npm install && npm run build`, then `node dist/http.js` (or `docker build -t didit-mcp .` and `docker run -p 3000:3000 --env-file .env didit-mcp`). It is an OAuth resource server only and still acts as a Didit user.
+### Self-hosted HTTP server
+
+Clone https://github.com/didit-protocol/mcp at a release tag, `npm install && npm run build`, then `node dist/http.js` (or `docker build -t didit-mcp .` and `docker run -p 3000:3000 --env-file .env didit-mcp`). It is an OAuth resource server and also accepts application API keys in the default `introspection` verify mode.
 
 | Variable | Mode | Purpose |
 |---|---|---|
 | `DIDIT_ACCESS_TOKEN` | stdio | User Bearer token for headless runs |
+| `DIDIT_MCP_CREDENTIALS_FILE` | stdio | Where `login` stores credentials (default `~/.config/didit/mcp-credentials.json`) |
+| `DIDIT_TOOLSETS`, `DIDIT_READ_ONLY` | stdio | Toolsets and read-only mode for the local server |
 | `DIDIT_API_BASE_URL` | both | Verification API base (default `https://verification.didit.me/v3`) |
 | `DIDIT_AUTH_BASE_URL` | both | Auth API base (default `https://apx.didit.me/auth/v2`) |
 | `MCP_PORT` | HTTP | Listen port (default `3000`) |
 | `MCP_RESOURCE_URI` | HTTP | Full public URL of the transport, path included (`https://mcp.example.com/mcp`) |
 | `MCP_AUTHORIZATION_SERVER_ORIGIN` | HTTP | Authorization server (default `https://business.didit.me`) |
-| `MCP_TOKEN_VERIFY_MODE` | HTTP | `introspection` (default, opaque tokens) or `jwks` |
+| `MCP_TOKEN_VERIFY_MODE` | HTTP | `introspection` (default, opaque tokens and API keys) or `jwks` |
 | `MCP_OAUTH_INTROSPECT_URL`, `MCP_OAUTH_CLIENT_ID`, `MCP_OAUTH_CLIENT_SECRET` | HTTP | RFC 7662 introspection endpoint and its credentials (from a secret manager) |
-| `MCP_SCOPES_SUPPORTED` | HTTP | Scopes advertised (default `didit:management didit:verification`) |
+| `MCP_INTROSPECTION_CACHE_TTL_MS` | HTTP | How long an accepted token is remembered before it is introspected again (default `60000`) |
+| `MCP_SCOPES_SUPPORTED` | HTTP | Scopes advertised (default `didit:management didit:verification didit:staff`) |
+| `MCP_DEFAULT_TOOLSETS` | HTTP | Toolsets a connection gets when it names none |
 | `MCP_DEFAULT_ORG`, `MCP_DEFAULT_APP` | both | Default organization and application |
 | `DIDIT_AUTH_ISSUER`, `DIDIT_OIDC_DISCOVERY_URL`, `DIDIT_OIDC_AUTHORIZE_URL`, `DIDIT_OIDC_TOKEN_URL`, `DIDIT_OIDC_REGISTRATION_URL`, `DIDIT_JWKS_URL` | HTTP | Authorization server overrides; `DIDIT_JWKS_URL` for `jwks` mode |
 | `MCP_PERMISSION_MODE` | both | Per-tool role pre-check: `shadow` (default: list everything, the backend answers `403`), `enforce` (hide tools the role cannot run; calls return `missing_scope`), `off` |
 | `MCP_JSON_BODY_LIMIT` | HTTP | JSON-RPC body limit (default `25mb`) |
+| `MCP_PDF_DOWNLOAD_KEY` | HTTP | 64 hex characters, shared by all replicas; required for session PDF and e-signature download links |
 
 ---
 
@@ -152,31 +247,40 @@ claude mcp add didit-local -e DIDIT_ACCESS_TOKEN=<user-access-token> -- npx -y @
 
 Tool names start with `didit_`. Annotations mark each tool read-only, write or destructive (`destructiveHint`), and clients ask before running destructive ones.
 
+**Coverage in v5.1.67:** a signed-in person on the hosted server with every toolset sees 167 tools: 77 read, 62 write and 28 destructive (fewer if their role or `MCP_PERMISSION_MODE=enforce` hides some). The local stdio server adds 9 more: the 7 account sign-in tools (`didit_account_register`, `_verify_email`, `_resend_otp`, `_login`, `_verify_2fa`, `_device_login_start`, `_device_login_poll`), `didit_org_top_up` and `didit_org_reveal_application_api_key`. With `?toolsets=core` the list is 29 tools.
+
 | Group | Main tools |
 |---|---|
-| Discovery and cross-app | `didit_context_get` (call first: every organization and application, with each app's `mode` `live` or `sandbox`), `didit_session_search`, `didit_transaction_search`, `didit_case_search`, `didit_vendor_user_search`, `didit_vendor_business_search`, `didit_workflow_search`, `didit_analytics` |
-| Sessions (KYC and KYB) | `didit_session_create` (returns `session_id`, `url`, `session_token`), `_list`, `_get_decision`, `_explain_decision`, `_update_status`, `_update_data`, `_update_poa_data`, `_add_review`, `_list_reviews`, `_generate_pdf`, `_share`, `_import_shared`, `_create_import`, `_get_import`, `_get_import_errors`, `_get_import_template`, `_webhooks`, `_webhook_resend`, `_delete`, `_batch_delete` |
-| Workflows | `didit_workflow_list`, `_get`, `_create`, `_update`, `_delete` (drafts), `_get_graph`, `_edit_graph`, `_set_graph`, `_validate_graph`, `_build_graph`, `_get_branch_fields`, `_get_field_definitions`, `_get_feature_config_schema`, `_get_id_verification_methods_catalog`, `_get_kyb_registry_catalog`, `_create_draft`, `_publish` |
-| Questionnaires | `didit_questionnaire_list`, `_get`, `_create`, `_append_choices`, `_update`, `_delete` |
-| Standalone verification APIs | `didit_verify_id`, `_poa`, `_database`, `_kyb_search`, `_kyb_select`, `_passive_liveness`, `_face_match`, `_face_search`, `_age`, `_aml`, `_email_send`, `_email_check`, `_phone_send`, `_phone_check` |
-| Vendor users and businesses | `didit_vendor_user_list`, `_get`, `_create`, `_update`, `_update_status`, `_delete`, and the same set for `didit_vendor_business_*` |
-| Transaction monitoring | `didit_transaction_list`, `_get`, `_create`, `_screen_wallet`, `didit_transaction_rule_list`, `_get`, `_create`, `_update`, `_delete`, `_backtest`, `_library_list`, `_install`, `_uninstall` |
+| Discovery and cross-app | `didit_context_get` (call first: every organization and application, with each app's `mode` `live` or `sandbox`), `didit_session_search`, `didit_transaction_search`, `didit_case_search`, `didit_vendor_user_search`, `didit_vendor_business_search`, `didit_workflow_search`, `didit_analytics`, `didit_docs_search` |
+| Sessions, imports and signatures | `didit_session_create` (returns `session_id`, `url`, `session_token`), `_simulate` (finish a sandbox session with a chosen outcome), `_list`, `_get_decision`, `_explain_decision`, `_update_status`, `_update_data`, `_update_poa_data`, `_add_review`, `_list_reviews`, `_generate_pdf`, `_share`, `_import_shared`, `_get_location_evidence`, `_webhooks`, `_webhook_resend`, `_delete`, `_batch_delete`; imports: `_create_import`, `_get_import`, `_get_import_errors`, `_get_import_template`, `_manage_import`, `_list_import_providers`, `_check_import_provider`; e-signatures: `_get_signature_evidence`, `_get_signed_document`, `_get_signature_field_image`, `_validate_signatures` |
+| Workflows and questionnaires | `didit_workflow_list`, `_get`, `_create`, `_update`, `_delete`, `_get_graph`, `_edit_graph`, `_set_graph`, `_validate_graph`, `_build_graph`, `_get_branch_fields`, `_get_field_definitions`, `_get_feature_config_schema`, `_get_id_verification_methods_catalog`, `_get_kyb_registry_catalog`, `_create_draft`, `_publish`; `didit_questionnaire_list`, `_get`, `_create`, `_append_choices`, `_update`, `_delete` |
+| Vendors | `didit_vendor_user_list`, `_get`, `_create`, `_update`, `_update_status`, `_delete`, and the same set for `didit_vendor_business_*` |
+| Transactions, rules and wallet screening | `didit_transaction_list`, `_get`, `_create`, `_screen_wallet`, `didit_transaction_rule_list`, `_get`, `_create`, `_update`, `_delete`, `_backtest`, `_library_list`, `_install`, `_uninstall` |
 | Cases | `didit_case_list`, `_get`, `_create`, `_statistics`, `_manage` |
-| Lists, blocklist and allowlist | `didit_lists_list`, `_get`, `_create`, `_update`, `_delete`, `_entries_list`, `_entry_create`, `_entry_upload_face`, `_entry_delete`, `didit_blocklist_get`, `_add`, `_remove`, `didit_allowlist_add` |
-| Webhooks | `didit_webhook_list`, `_get`, `_create`, `_update`, `_delete` |
-| Reports, audit log and alerts | `didit_report_list`, `_get`, `_get_download_url`, `_export`, `didit_audit_log_list`, `didit_alert_list`, `didit_alert_configure` |
-| Organization, members, billing and branding | `didit_org_list`, `_list_applications`, `_get_application`, `_get_balance`, `_list_members`, `_invite_member`, `_update_member`, `_remove_member`, `_list_roles`, `_list_api_keys` (values redacted), `didit_branding_get`, `didit_branding_update` |
-| Local stdio only | `didit_org_top_up` (Stripe checkout link), `didit_org_reveal_application_api_key` (raw key), `didit_account_register`, `didit_account_verify_email`, `didit_account_resend_otp`, `didit_account_login`, `didit_account_verify_2fa` |
+| Investigator | `didit_investigator_queue_list`, `_report_get`, `_record_get`, `_add_note`, `_question_list`, `_question_get`, `_backtest_start`, `_backtest_get`, `_performance_get`, `_dashboard_get`, `_activity_list`; decisions (`_accept`, `_batch_accept`, `_override`, `_question_answer`, `_question_dismiss`, `_rereview`) need `confirm: true` |
+| Lists | `didit_lists_list`, `_get`, `_create`, `_update`, `_delete`, `_entries_list`, `_entry_create`, `_entry_upload_face`, `_entry_delete`, `didit_blocklist_get`, `_add`, `_remove`, `didit_allowlist_add` |
+| Webhooks and alerts | `didit_webhook_list`, `_get`, `_create`, `_update`, `_delete`, `didit_alert_list`, `didit_alert_configure` |
+| Reports and audit log | `didit_report_list`, `_get`, `_get_download_url`, `_export`, `didit_audit_log_list` |
+| Account and organization | `didit_org_list`, `_list_applications`, `_get_application` (API key masked), `_list_members`, `_invite_member`, `_update_member`, `_remove_member`, `_list_roles`, `_list_api_keys` (values redacted), `_create_api_key` (one scoped key per connected app and application; the secret is returned once) |
+| Billing | `didit_org_get_balance`, `didit_billing_get_plan`, `_quote_plan`, `_list_payment_methods`, `_list_receipts`, `_get_details`, `_update_details` |
+| Branding | `didit_branding_get`, `didit_branding_update` |
+| Standalone verification | `didit_verify_id`, `_poa`, `_database`, `_kyb_search`, `_kyb_select`, `_passive_liveness`, `_face_match`, `_face_search`, `_age`, `_aml`, `_email_send`, `_email_check`, `_phone_send`, `_phone_check`, `_account_check` |
 
-The public tools reference also lists Compliance assistant, Fraud networks, Travel Rule and Marketplace groups on the hosted server: see https://docs.didit.me/integration/mcp/tools for the full per-tool table with the scope and role permission of each tool.
+See https://docs.didit.me/integration/mcp/tools for the per-tool table with the scope and role permission of each tool.
+
+### Top-ups and secrets: hosted vs local
+
+- On the hosted `/mcp` endpoint no tool charges a card. When credit is needed, `didit_org_get_balance` and the billing tools return console links (`next_steps.top_up_url` opens the top-up dialog with the amount filled in) and the person pays in the console.
+- `didit_org_top_up` is offered by the local stdio server and by the separate, unlisted `https://mcp.didit.me/mcp/payments` endpoint; it is not in the `/mcp` catalog, and a call to it there is refused with the console link. Charging a saved card also needs a person to turn on agent top-ups in the console (off by default).
+- `didit_org_reveal_application_api_key` (the raw key of an application) is local stdio only. On the hosted server, `didit_org_create_api_key` creates a new scoped key instead.
 
 ### Scope resolution
 
-Every tool accepts optional `organization_id` and `application_id`. With one organization and one application they are filled in for you. With several, the `*_search` tools and `didit_analytics` aggregate over all of them (each row tagged with its organization and application), and the per-app `*_list` tools span every app when you pass no scope. Pass both ids to narrow to one app. Read the environment from `didit_context_get` (`mode`), never from an app's name; on a sandbox application `didit_session_create` accepts `sandbox_scenario` (`approve`, `decline_*`, `review_*`) for unbilled test runs.
+`organization_id` and `application_id` are optional on the tools that act on an organization or application: they default to the person's only organization and application. With several, the `*_search` tools and `didit_analytics` aggregate over all of them (each row tagged with its organization and application), and the per-app `*_list` tools span every app when you pass no scope. Pass both ids to narrow to one app. Tools that address one record by its id (for example the session tools that take a `session_id`), `didit_context_get`, `didit_docs_search` and the discovery tools do not take them; on an API key connection they are never needed. Read the environment from `didit_context_get` (`mode`), never from an app's name. In a sandbox application, `didit_session_create` accepts `sandbox_scenario` and `didit_session_simulate` finishes a session with the outcome you choose, unbilled.
 
 ### Confirmations
 
-These tools refuse to run without `confirm: true` (a real boolean) in their arguments: `didit_session_delete`, `didit_session_batch_delete`, `didit_vendor_user_delete` and `didit_vendor_business_delete` with `delete_all: true`, `didit_case_manage` when filing a SAR, and on stdio `didit_org_reveal_application_api_key` and `didit_org_top_up`. **An agent must ask the human and get explicit approval for that exact action before passing `confirm: true`.** Deletion is permanent.
+These tools refuse to run without `confirm: true` (a real boolean): `didit_session_delete`, `didit_session_batch_delete`, `didit_vendor_user_delete` and `didit_vendor_business_delete`, `didit_case_manage` for consequential actions such as filing a SAR, `didit_org_create_api_key`, the Investigator decision tools, and on the local server `didit_org_reveal_application_api_key` and `didit_org_top_up`. **An agent must ask the human and get explicit approval for that exact action before passing `confirm: true`.** Deletion is permanent.
 
 ### File inputs
 
@@ -185,13 +289,13 @@ Tools that take files (ID, proof of address, liveness, face match, face search, 
 - `*_base64`: raw base64 or a `data:` URL; use this with the hosted server.
 - Maximum 15 MB; PNG, JPG/JPEG, WebP, GIF, BMP, ICO or PDF, checked by file content, not extension.
 
-### Session PDF reports
+### Session PDF reports and e-signature files
 
-`didit_session_generate_pdf` returns `download_url`, `expires_at` and `expires_in` (300 seconds). Fetch the URL without an `Authorization` header to get the PDF. Treat the link as a secret.
+`didit_session_generate_pdf` returns `download_url`, `expires_at` and `expires_in` (300 seconds). Fetch the URL without an `Authorization` header to get the PDF. The e-signature tools return the same kind of link plus `content_type`. Treat the links as secrets.
 
 ### Responses
 
-Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final result. `didit_session_create` returns a `url` the end user must complete; the decision arrives later by webhook or `didit_session_get_decision`. Decision keys are plural arrays (`id_verifications[]`, `liveness_checks[]`, `face_matches[]`, `aml_screenings[]`, ...), one entry per workflow node. API keys and webhook signing secrets are redacted in tool output: copy the signing secret from **Webhooks** in the console.
+Each tool returns compact JSON text (the channel the model reads) and the same object as `structuredContent`. Results are shaped by the server, not passed through raw: API keys and webhook signing secrets are redacted (copy the signing secret from **Webhooks** in the console), large workflow configs are summarized, and errors return a sanitized code, field, hint and allowed values without backend secrets or local paths. Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final result. `didit_session_create` returns a `url` the end user must complete; the decision arrives later by webhook or `didit_session_get_decision`. Decision keys are plural arrays (`id_verifications[]`, `liveness_checks[]`, `face_matches[]`, `aml_screenings[]`, ...), one entry per workflow node.
 
 ---
 
@@ -199,14 +303,15 @@ Synchronous tools (workflows, billing, `didit_verify_*`, lists) return the final
 
 | Error | Meaning | Action |
 |---|---|---|
-| `401` from `/mcp` (`WWW-Authenticate: Bearer error="invalid_token"`) | Token missing, expired or revoked | Let the client refresh, or re-run **Log in with Didit** |
+| `401` from `/mcp` (`WWW-Authenticate: Bearer error="invalid_token"`) | Token or API key missing, expired or revoked | Let the client refresh, re-run **Log in with Didit**, or send a valid API key |
 | `403` from a tool | The user's role in that organization lacks the permission | Ask an owner or admin for the permission; an API key does not help |
 | `missing_scope` | The role lacks the named permission (`enforce` mode), or the connection was approved without the scope the tool needs | Change the role, or reconnect and approve both scopes |
-| `405` | `GET` or `DELETE` on `/mcp` | Use `POST` |
+| `405` | `GET` (not from a browser) or `DELETE` on `/mcp` or the bare origin | Use `POST` |
 | `unsafe_operation` / `bad_request` on a delete | `confirm: true` missing or not a boolean | Ask the human, then retry with `confirm: true` |
 | File rejected | `*_path` sent to the hosted server, both forms sent, over 15 MB, or not an allowed file type | Send one `*_base64` value of an allowed type |
 | `organization_id is required` or empty results | Several apps and no scope | Use a `*_search` tool or `didit_context_get`, then pass `organization_id` and `application_id` |
 | Every tool fails | The app was disconnected in **Connected apps** | Approve the connection again |
+| Refused on an API key connection | The tool needs a person (members, billing, audit log, downloads) or names another application | Use an OAuth connection, or the console |
 | `invalid_redirect_uri` at sign-in | A remote client callback URL Didit has not reviewed | That client must be registered by an operator first |
 
 ---
