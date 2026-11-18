@@ -271,6 +271,10 @@ API_KEY_RULE = (
     "the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for "
     "the missing ones."
 )
+# Measured live with Reader, Developer and Compliance Officer accounts: the context lists no applications for them.
+ZERO_APPS_RULE = "If `didit_context_get` shows an organization with zero applications, do not conclude there are none."
+ROLE_REFUSAL_RULE = "refused with `forbidden` (sometimes `missing_scope`)"
+RECONNECT_RULE = "After a role change the person must reconnect Didit"
 # Recipes whose person-only tools need a note in the same section.
 PERSON_ONLY_SKILLS = {
     "didit": ["didit-workspace-admin", "didit-reports"],
@@ -1157,6 +1161,14 @@ class SkillTests(TreeCase):
                 self.assertNotIn("Never add `confirm` to any other tool", text)
         auth = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-start" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Products page of the Didit console", auth)
+
+    def test_non_admin_roles_rule_in_start_skills(self):
+        for plugin, start in (("didit", "didit-connect"), ("didit-transaction-monitoring", "didit-tm-start"),
+                              ("didit-user-management", "didit-users-start"), ("didit-authentication", "didit-auth-start")):
+            text = (self.t.plugins / plugin / "skills" / start / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=start):
+                for rule in (ZERO_APPS_RULE, ROLE_REFUSAL_RULE, RECONNECT_RULE, "`accessible_applications`"):
+                    self.assertIn(rule, text)
 
     def test_secrets_are_not_displayed_or_stored(self):
         team = (self.t.plugins / "didit-user-management" / "skills" / "didit-users-team" / "SKILL.md").read_text(encoding="utf-8")
