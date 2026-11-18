@@ -58,7 +58,7 @@ You can install `didit` on its own or a focused plugin alongside it; they share 
 | didit-reports | Analytics, credit balance, plan, and exports |
 | didit-workspace-admin | Members and roles, webhooks, lists, branding, questionnaires |
 
-Checked against the live server on 2026-11-18: 208 tools on the hosted server as of 2026-11-18 (97 read, 75 write, 36 destructive); the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
+Checked against the live server on 2026-11-18 with a customer account: 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
 
 ## Tested
 
@@ -74,7 +74,7 @@ Run end to end on the live server on 2026-11-18 with this plugin in Claude Code,
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
-- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
+- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
 - It reads data from your Didit account and writes back only the changes you approve.
 - Verification sessions, standalone checks, transactions and wallet screening: in a live application this can use your Didit credits. Sandbox applications are free to test in. The skills tell the assistant to say so and wait for your agreement before running anything billable in a live application. See https://didit.me/pricing.
 

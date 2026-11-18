@@ -21,15 +21,15 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
    - For example `didit_org_list_api_keys` requires `application_id`; read ids from `didit_context_get`.
    - `didit_docs_search` and `didit_session_get_decision` take neither id; `didit_org_get_balance` and the member tools take only `organization_id`.
 4. Read sandbox or live from `mode` only. Never decide it from an application's name. If `mode` is missing, say the environment is unknown and treat the application as live (billable) until the person confirms otherwise.
+5. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing, compliance and audit-log tools are not available. Say so and point the person to sign in with OAuth for those.
 
 ## Calling tools
 
 - If a tool is in your tool list, call it directly.
 - If it is not listed, use the discovery tools, but only when they are themselves in your tool list: `didit_tool_search` to find it, `didit_tool_describe` to read its arguments, then `didit_tool_call_read` for a read or `didit_tool_call_write` for a change.
 - The discovery tools are listed only when the connection does not load every toolset (for example `?toolsets=core`). A full connection lists every tool directly.
-- A tool can also be missing for two other reasons. Say which one, and tell the person what to change:
-  - The connection is read-only. On a read-only connection that loads every toolset, no write tool and no discovery tool is listed. Tell the person to reconnect without `read_only` to make changes.
-  - Their role lacks the permission. Tell them to ask an organization admin for a role that allows it.
+- A tool can also be missing because the connection is read-only. On a read-only connection that loads every toolset, no write tool and no discovery tool is listed. Tell the person to reconnect without `read_only` to make changes.
+- The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. Name that permission and tell the person to ask an organization admin for a role that allows it.
 - In both cases never attempt a proxy call through another tool to get around it.
 - The hosted server also lists tool groups no skill here covers in depth: Travel Rule (23 tools, for example `didit_travel_rule_get_settings`), Compliance (9, for example `didit_compliance_requirements`), Marketplace (3, for example `didit_marketplace_list_catalog`) and Networks (3, for example `didit_network_list`). Call them by name when they are listed, or find them with `didit_tool_search`, and read each schema before the first call. The same rules apply: context first, agreement before any change.
 
@@ -37,7 +37,7 @@ The Didit MCP server acts as the signed-in person, with the permissions of their
 
 - Every change (status updates, deletions, invitations, webhooks, exports) needs the person's agreement first: describe what will change and wait for a clear yes before calling the tool. Say plainly when a change cannot be undone (overwriting a decision, deleting a webhook or a member).
 - An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. Report what you found, say exactly what you would change and in which application (sandbox or live), then wait for a yes.
-- Send `confirm: true` only to a tool whose schema declares `confirm`, and only after the person agreed to that exact action. In this plugin's recipes those tools are: `didit_case_manage` (filing a SAR), `didit_session_delete`, `didit_org_create_api_key` and `didit_org_top_up`. Any other tool you reach by name or through discovery follows its own schema: if it declares `confirm`, the same rule applies. Rule, webhook and list deletions take none.
+- Send `confirm: true` only to a tool whose schema declares `confirm`, and only after the person agreed to that exact action. In this plugin's recipes those tools are: `didit_case_manage` (filing a SAR), `didit_session_delete` and `didit_org_create_api_key`. Any other tool you reach by name or through discovery follows its own schema: if it declares `confirm`, the same rule applies. Rule, webhook and list deletions take none.
 
 ## Billable actions
 

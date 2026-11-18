@@ -11,6 +11,8 @@ Every change in this skill is confirmed with the person first: show what will ch
 
 ## 1. Members and roles
 
+Needs a person sign-in: on an API key connection these member and role tools are not available (see didit-connect).
+
 - `didit_org_list_members` lists members. `didit_org_list_roles` lists roles with their ids.
 - `didit_org_invite_member`: `emails` (1 to 5), `role` (a role id from `didit_org_list_roles`) and `app_ids` (the applications they may access, from `didit_context_get`). The invitees receive an email.
 

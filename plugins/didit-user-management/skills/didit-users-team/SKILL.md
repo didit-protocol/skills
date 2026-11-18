@@ -16,6 +16,8 @@ Follow the rules of didit-users-start first: call `didit_context_get` and pick t
 
 ## 2. Members and roles
 
+Needs a person sign-in: on an API key connection these member and role tools are not available (see didit-users-start).
+
 - `didit_org_list_members` lists members. Each row has a `uuid` (what remove and update take) and a `user_id` (what case assignment takes).
 - `didit_org_list_roles` lists the roles with their ids.
 - `didit_org_invite_member`: `emails` (1 to 5), `role` (a role id from `didit_org_list_roles`) and `app_ids` (application ids from `didit_context_get` or `didit_org_list_applications`). Repeat the emails, role name and applications and wait for the person to confirm before inviting.
@@ -30,6 +32,8 @@ Follow the rules of didit-users-start first: call `didit_context_get` and pick t
 
 ## 3. API keys
 
+Needs a person sign-in: on an API key connection these API key tools are not available (see didit-users-start).
+
 - `didit_org_list_api_keys` with `application_id` lists one application's key metadata. Raw key values are redacted.
 - `didit_org_create_api_key` issues a credential for one application. Required: `organization_id`, `application_id`, `confirm: true`. Optional: `label`, `scopes` (resource to `read` or `write`), `workflow_ids` (needs `scopes`), `expires_at`.
 
@@ -41,11 +45,7 @@ Before creating a key:
 
 Didit allows one live key per connected app and application, scoped to what the signed-in person can do. The person can revoke it in the console.
 
-When the person asks to see an application's existing key ("I lost our key"), the hosted server lists `didit_org_reveal_application_api_key`. It returns that application's raw, live key. Required: `organization_id`, `application_id` (no defaults, even with one application) and `confirm: true`.
-
-1. Read both ids from `didit_context_get` and name the application and its mode. Offer a new scoped key with `didit_org_create_api_key` when a fresh key would do.
-2. Wait for the person to confirm that they want this exact application's key shown. Send `confirm: true` only after that yes.
-3. Show the key to the person once. It is a credential: never store it, log it, write it to a file or memory, or repeat it later.
+When the person asks to see an application's existing key ("I lost our key"): `didit_org_reveal_application_api_key` is local server only; on the hosted server a new key is created with `didit_org_create_api_key`. Say that an existing key cannot be shown again here, name the application and its mode from `didit_context_get`, and offer a new scoped key with the steps above. The person can revoke the lost key in the console.
 
 ## What good output looks like
 

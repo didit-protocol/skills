@@ -5,7 +5,7 @@ description: Reads usage, analytics, credits and plan details and exports data f
 
 # Reports, analytics and billing
 
-Follow the rules of didit-connect first: call `didit_context_get`. Everything here is read-only except starting an export and a top-up (`didit_org_top_up`), which is a write that needs the person's agreement and `confirm: true`.
+Follow the rules of didit-connect first: call `didit_context_get`. Everything here is read-only except starting an export, which is a write that needs the person's agreement.
 
 ## 1. Analytics
 
@@ -19,12 +19,14 @@ Answer the question asked first (for example "312 sessions, 81% approved"), then
 
 ## 2. Balance and plan
 
+Needs a person sign-in: on an API key connection `didit_billing_get_plan` is not available (see didit-connect); `didit_org_get_balance` is.
+
 - `didit_org_get_balance` returns the credit balance, auto-refill settings and the monthly credit the organization receives. Answer from its fields. If a field is missing, say you could not read it.
 - `didit_billing_get_plan` returns the plan, its status, the next charge, the last payment and any unpaid invoice. `next_steps.plans_url` is where the person changes plan.
 
 Report balances and plan details only as the tools return them. For list prices, link https://didit.me/pricing.
 
-To add credit, `didit_org_top_up` is listed on the hosted server: `amount_in_dollars` and `confirm: true`, optional `payment_method` and `idempotency_key`. With `payment_method: "checkout"` (the default) it returns a checkout page link (`checkout_session_url`) for the person to pay and charges nothing by itself. With `saved_card` it charges the organization's saved card at once, only when a person turned on agent top-ups in the console (`agent_top_up.enabled` in the balance), and it needs one `idempotency_key` per intended top-up, reused on any retry of that same top-up. State the organization, the amount and the payment method and wait for a clear yes before calling it. A refusal carries `next_step.url`: give the person that link to finish in the console. `next_steps.top_up_url` from the balance opens the same dialog.
+To add credit: `didit_org_top_up` is local server only; on the hosted server credit is added in the Didit console. Give the person `next_steps.top_up_url` from `didit_org_get_balance`, which opens the top-up dialog, and never charge or top up from chat.
 
 ## 3. Exports
 

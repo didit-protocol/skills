@@ -37,7 +37,7 @@ These send account data to an address outside Didit or stop deliveries. Show the
 
 - `subject`: `type` (`user` or `business`) and `uuid`, the record's `didit_internal_id` from `didit_vendor_user_get` or `didit_vendor_business_get`. It is not their `vendor_data`.
 - `links`: up to 20 items with `entity_type` (`session`, `business_session`, `transaction`) and `entity_uuid`.
-- Optional: `priority` (`LOW`, `MEDIUM` default, `HIGH`), `assigned_to` (a member's `user_id` from `didit_org_list_members`), `due_at`, `tags`, `blueprint`, `review_duplicates`.
+- Optional: `priority` (`LOW`, `MEDIUM` default, `HIGH`), `assigned_to` (a member's `user_id` from `didit_org_list_members`, which needs a person sign-in: on an API key connection leave `assigned_to` out unless the person gives the id), `due_at`, `tags`, `blueprint`, `review_duplicates`.
 - With `review_duplicates: true`, a `409 case_duplicate_review_required` means a case about the same subject is already open. Show it. Send `separate_incident_reason` only if the person still wants a separate case.
 
 ```json didit_case_create

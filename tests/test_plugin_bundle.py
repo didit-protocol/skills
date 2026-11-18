@@ -232,8 +232,6 @@ CONFIRM_TOOLS = {
     "didit_investigator_question_dismiss",
     "didit_investigator_rereview",
     "didit_org_create_api_key",
-    "didit_org_reveal_application_api_key",
-    "didit_org_top_up",
     "didit_session_batch_delete",
     "didit_session_delete",
     "didit_vendor_business_delete",
@@ -263,6 +261,22 @@ BLANKET_RULES = [
     (re.compile(r"\b(deletions?|deleting|deletes|overwrit\w+|irreversible|credentials?)\b[^\n.]{0,60}\b(take|takes|need|needs|require|requires)\s+`confirm", re.I),
      "attaches `confirm` to a class of actions"),
 ]
+# Tools the hosted server does not list to customers (HOSTED_APP_EXCLUDED_TOOLS); a local stdio server has them.
+LOCAL_ONLY_TOOLS = ("didit_org_reveal_application_api_key", "didit_org_top_up")
+LOCAL_ONLY = re.compile(r"local (?:\(stdio\) )?server only", re.I)
+# The rule for an application API key connection, word for word, in all four start skills.
+API_KEY_RULE = (
+    "If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: "
+    "member, role, API key, billing, compliance and audit-log tools are not available. Say so and point the person "
+    "to sign in with OAuth for those."
+)
+# Recipes whose person-only tools need a note in the same section.
+PERSON_ONLY_SKILLS = {
+    "didit": ["didit-workspace-admin", "didit-reports"],
+    "didit-user-management": ["didit-users-team"],
+}
+PERSON_SIGN_IN_NOTE = "Needs a person sign-in"
+ROLE_SENTENCE = "The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error."
 CONFIRM_TICK = re.compile(r"`confirm(: true)?`")
 ARG_LINE_COLON = re.compile(r"^\s*(?:-|\d+\.)\s+`(didit_[a-z0-9_]+)`:\s*(.*)$")
 ARG_LINE_WITH = re.compile(r"`(didit_[a-z0-9_]+)`\s+(?:with|takes|needs)\s+((?:`[^`]+`(?:\s*(?:,|and/or|and|or)\s*)?)+)")
@@ -569,6 +583,28 @@ def full_url_problems(text: str) -> list[str]:
             for n, line in enumerate(text.split("\n"), 1) if FULL_URL_DISPLAY.search(line)]
 
 
+def local_only_problems(text: str) -> list[str]:
+    """Every sentence (or table cell) that names a local-only tool says it is local server only."""
+    problems = []
+    for line in text.split("\n"):
+        for cell in line.split("|"):
+            for sentence in re.split(r"(?<=[.!?])\s+", cell):
+                named = [tool for tool in LOCAL_ONLY_TOOLS if tool in sentence]
+                if named and not LOCAL_ONLY.search(sentence):
+                    problems.append(f"{', '.join(named)} outside a 'local server only' sentence: {sentence.strip()[:120]}")
+    return problems
+
+
+def person_note_problems(text: str, person_only: set[str]) -> list[str]:
+    """A section that names a tool absent from an API key connection carries the person sign-in note."""
+    problems = []
+    for section in sections(text):
+        missing = sorted(person_only & set(TOOL_TOKEN.findall(section)))
+        if missing and PERSON_SIGN_IN_NOTE not in section:
+            problems.append(f"{section.split(chr(10), 1)[0]}: {', '.join(missing)} without '{PERSON_SIGN_IN_NOTE}'")
+    return problems
+
+
 def readme_section(text: str, heading: str) -> str:
     """The section from `heading` up to the next level-2 heading (or the end)."""
     start = text.index(heading + "\n")
@@ -787,7 +823,8 @@ class SkillTests(TreeCase):
                     seen[name] = plugin
 
     def test_every_tool_exists_in_catalog(self):
-        known = self.t.known_tools()
+        # The local-only tools are not in the hosted catalog; test_local_only_tools_are_named_only_as_local guards them.
+        known = {**self.t.known_tools(), **{name: {} for name in LOCAL_ONLY_TOOLS}}
         for base in self.t.plugin_dirs():
             for where, text in self.t.skill_texts(base):
                 for token in sorted(set(TOOL_TOKEN.findall(text)) - NOT_TOOLS):
@@ -855,7 +892,7 @@ class SkillTests(TreeCase):
             used |= set(TOOL_TOKEN.findall(text))
         start = (base / "skills" / "didit-connect" / "SKILL.md").read_text(encoding="utf-8")
         listed = confirm_list(start)
-        for tool in ("didit_org_reveal_application_api_key", "didit_session_batch_delete"):
+        for tool in ("didit_investigator_accept", "didit_session_batch_delete"):
             with self.subTest(tool=tool):
                 self.assertTrue(known[tool]["confirm"])
                 self.assertNotIn(tool, used)
@@ -965,6 +1002,46 @@ class SkillTests(TreeCase):
         self.assertIn("--data-urlencode 'token@-'", text)
         self.assertIn('"x-api-key": "${DIDIT_API_KEY}"', text)
         self.assertIn("`didit_org_reveal_application_api_key`", text)
+        self.assertIn("`didit_org_top_up` and `didit_org_reveal_application_api_key` are local server only; on the hosted server "
+                      "a new key is created with `didit_org_create_api_key`, and credit is added in the Didit console.", text)
+        self.assertNotIn("is listed on the hosted server", text)
+        self.assertIn(ROLE_SENTENCE, text)
+        self.assertIn("178 on an API key connection", text)
+        self.assertNotIn("208", text)
+
+    def test_local_only_tools_are_named_only_as_local(self):
+        """No skill or README tells an assistant to call the two local-only tools on a hosted connection."""
+        files = [self.t.root / "README.md", *sorted(self.t.rest.glob("*/SKILL.md")), *sorted(self.t.rest.glob("*/references/*.md"))]
+        for base in self.t.plugin_dirs():
+            files.append(base / "README.md")
+            files += sorted((base / "skills").rglob("*.md"))
+        for path in files:
+            with self.subTest(file=path.relative_to(self.t.root).as_posix()):
+                self.assertEqual(local_only_problems(path.read_text(encoding="utf-8")), [])
+        self.assertEqual(local_only_problems("Call `didit_org_top_up` with an amount."), [
+            "didit_org_top_up outside a 'local server only' sentence: Call `didit_org_top_up` with an amount."])
+
+    def test_api_key_rule_in_start_skills(self):
+        starts = {"didit": "didit-connect", **START_SKILL}
+        for plugin, skill in starts.items():
+            text = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIn(API_KEY_RULE, text)
+                self.assertNotIn("tools your role may use are listed", text)
+                if plugin != "didit-authentication":
+                    self.assertIn(ROLE_SENTENCE, text)
+
+    def test_person_only_recipes_are_marked(self):
+        profiles = self.t.catalog()["profiles"]
+        person_only = {t["name"] for t in profiles["all"]["tools"]} - {t["name"] for t in profiles["api_key_all"]["tools"]}
+        for plugin, skills in PERSON_ONLY_SKILLS.items():
+            for skill in skills:
+                text = (self.t.plugins / plugin / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+                with self.subTest(skill=skill):
+                    self.assertTrue(person_only & set(TOOL_TOKEN.findall(text)), "no person-only tool named")
+                    self.assertEqual(person_note_problems(text, person_only), [])
+        self.assertEqual(person_note_problems("## 1. Members\n\n`didit_org_list_members` lists members.", person_only),
+                         ["## 1. Members: didit_org_list_members without 'Needs a person sign-in'"])
 
     def test_focused_plugins_skip_business_update(self):
         # No recipe uses it (its route does not exist as coded); prompts.md may list it as forbidden.
@@ -979,15 +1056,36 @@ class SkillTests(TreeCase):
         read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
         self.assertTrue(read_only, "all_read_only is empty")
-        # The hosted server as measured on 2026-11-18 (v5.1.67, signed-in person, staff-only tools removed).
-        self.assertEqual(len(full), 208)
+        # The hosted server as measured on 2026-11-18 (v5.1.67) with a new customer account (organization owner, not staff).
+        self.assertEqual(len(full), 206)
         self.assertEqual(len(core), 29)
         self.assertEqual(len(read_only), 97)
-        types = [tool["type"] for tool in full.values()]
-        self.assertEqual((types.count("read"), types.count("write"), types.count("destructive")), (97, 75, 36))
+        expected = {
+            "all": (206, 97, 75, 34),
+            "core": (29, 22, 3, 4),
+            "all_read_only": (97, 97, 0, 0),
+            "api_key_all": (178, 81, 66, 31),
+            "api_key_core": (27, 21, 3, 3),
+            "api_key_read_only": (81, 81, 0, 0),
+        }
+        self.assertEqual(set(profiles), set(expected))
         for name, profile in profiles.items():
-            self.assertEqual(profile["total"], len(profile["tools"]), name)
-        self.assertEqual([n for n in full if n.startswith("didit_staff")], [], "staff-only tools in the catalog")
+            with self.subTest(profile=name):
+                types = [tool["type"] for tool in profile["tools"]]
+                counts = (len(types), types.count("read"), types.count("write"), types.count("destructive"))
+                self.assertEqual(counts, expected[name])
+                self.assertEqual((profile["total"], profile["read"], profile["write"], profile["destructive"]), expected[name])
+                names = {tool["name"] for tool in profile["tools"]}
+                self.assertEqual(names & set(LOCAL_ONLY_TOOLS), set(), "a local-only tool is listed")
+                self.assertEqual([n for n in names if n.startswith("didit_staff")], [], "staff-only tools in the catalog")
+        api_key = {tool["name"] for tool in profiles["api_key_all"]["tools"]}
+        self.assertTrue(api_key <= set(full))
+        person_only = set(full) - api_key
+        self.assertEqual(len(person_only), 28)
+        for name in ("didit_org_list_members", "didit_org_create_api_key", "didit_billing_get_plan",
+                     "didit_compliance_requirements", "didit_audit_log_list", "didit_workflow_build_graph"):
+            self.assertIn(name, person_only)
+        self.assertIn("didit_org_get_balance", api_key)
         travel = {n for n in full if n.startswith("didit_travel_rule_")}
         self.assertEqual(len(travel), 23)
         for tool in read_only:
