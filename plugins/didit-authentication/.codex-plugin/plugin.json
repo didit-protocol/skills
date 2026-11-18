@@ -24,7 +24,7 @@
   "interface": {
     "displayName": "Didit Authentication",
     "shortDescription": "Add Didit end-user sign-in to your app",
-    "longDescription": "Sign in with your Didit account to plan a Didit Authentication integration: choose sign-in methods, run the hosted flow with PKCE, verify tokens with the JWKS and handle auth webhooks, with answers from the Didit documentation.",
+    "longDescription": "Sign in with your Didit account to plan a Didit Authentication integration: choose sign-in methods, run the hosted flow with PKCE, validate tokens the way the docs specify and handle auth webhooks, with answers from the Didit documentation.",
     "developerName": "Didit",
     "category": "Business & Operations",
     "capabilities": [],

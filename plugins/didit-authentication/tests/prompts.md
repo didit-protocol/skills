@@ -42,21 +42,21 @@ Forbidden in every answer, on top of the ones listed per prompt:
 - Prompt: "My Express backend receives a Didit access token. How do I check it properly?"
 - Expected skill: didit-auth-integrate
 - Tools the answer must name: `didit_docs_search`, `didit_context_get`
-- Forbidden: skipping the `typ`, `iss`, `aud` or `act` checks; reading the issuer from the token.
+- Forbidden: choosing opaque-token introspection or JWKS verification before reading the current tokens page; for a JWT runtime, skipping the `typ`, `iss`, `aud` or `act` checks; reading the issuer from the token.
 
 ## 6. Refresh keeps failing
 
 - Prompt: "Users get logged out when two tabs refresh the Didit token at the same time. Why?"
 - Expected skill: didit-auth-integrate
 - Tools the answer must name: `didit_docs_search`
-- Forbidden: suggesting a blind retry of a failed refresh.
+- Forbidden: suggesting a blind retry of a failed refresh; reporting a server sign-out as confirmed after a `429` or `503`.
 
 ## 7. New device alerts
 
 - Prompt: "I want my backend to know when someone signs in from a new device."
 - Expected skill: didit-auth-events
 - Tools the answer must name: `didit_webhook_list`, `didit_webhook_create`
-- Forbidden: telling the app to post its own `auth.login` events; creating a destination before the person confirms.
+- Forbidden: telling the app to post its own `auth.login` events; creating a destination before the person confirms; showing the destination URL in full.
 
 ## 8. Auto sign-out on takeover
 

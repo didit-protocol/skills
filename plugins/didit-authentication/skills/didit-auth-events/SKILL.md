@@ -35,7 +35,7 @@ Each event carries the sign-in method, a reason for failures and locks, the IP a
 ## 3. Webhooks
 
 - Subscribe a webhook destination to the `auth.*` types the developer needs. Only subscribed destinations receive them.
-- With the MCP tools, `didit_webhook_list` shows existing destinations and `didit_webhook_create` adds one (`label`, HTTPS `url`, `subscribed_events`). Show the URL and the events and wait for the person to confirm before creating it. Never print a signing secret.
+- With the MCP tools, `didit_webhook_list` shows existing destinations and `didit_webhook_create` adds one (`label`, HTTPS `url`, `subscribed_events`). A destination URL can carry a secret in its path or query, so never show it in full: show it masked (the host, then `...` and the last 4 characters), with the label and the subscribed events, and wait for the person to confirm before creating it. Never print a signing secret.
 - Deduplicate on `auth_event.event_id`; it stays the same across deliveries.
 - `vendor_data`, `vendor_user_id` and `authentication` are null for an attempt that names no known person.
 - Verify the signature as for every Didit webhook. Read the webhooks page with `didit_docs_search` for the method.

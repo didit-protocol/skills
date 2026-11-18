@@ -153,19 +153,22 @@ Developer account registration is not end-user sign-up. Confirm the application'
 runtime URL and exact registered redirects/origins. The documented early-access
 hosted sign-in/ flow uses random state and S256 PKCE, handles configured sign-up,
 login, reset and MFA, and returns a code. Check callback state, then exchange the
-code at token/ with the original verifier and redirect URI. Validate the resulting
-opaque access token via GET session/; do not decode it as a JWT or invent JWKS.
+code at token/ with the original verifier and redirect URI. The access token format
+depends on the application's Authentication runtime as documented: read the current
+tokens page before choosing. An opaque token is validated via GET session/ (never
+decoded as a JWT); an ES256 JWT is verified against the issuer's published JWKS.
 Serialize refreshes through token/ and replace both tokens together: replay of a
 consumed refresh token revokes the session. Do not blindly retry uncertain refreshes.
-DELETE session/ revokes logout; clear local user state and report revocation failures.
+DELETE session/ asks the server to revoke the session. Clear local user state, and report
+server revocation as confirmed only on success; after 429/503 it is not confirmed.
 Use secure HttpOnly cookies with CSRF protection for server sessions, and protected
 native token storage. Authentication-only must not create verification workflows
 or mint transaction/monitoring tokens. Never fabricate a step-up or event subscription.
 Read https://docs.didit.me/authentication/tokens-and-jwks and
 https://docs.didit.me/authentication/events-and-webhooks for the release gates.
-When JWTs become available, use a trusted configured issuer/JWKS, validate signature,
-algorithm, issuer, audience and time claims, and use a live session check when immediate
-revocation matters. An ID token is not an API access token.
+For a JWT runtime, use a trusted configured issuer/JWKS, validate signature, algorithm,
+issuer, audience and time claims, and use a live session check when immediate
+revocation matters. Never invent a JWKS URL. An ID token is not an API access token.
 
 Test the selected products alone and together using one server-resolved vendor_data.
 Cover cross-user/application rejection, callback state/replay, expiry, refresh races,

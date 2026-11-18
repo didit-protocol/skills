@@ -1,6 +1,6 @@
 ---
 name: didit-auth-integrate
-description: Used when a developer is wiring Didit sign-in into their app or backend, starting the hosted sign-in with PKCE, exchanging the authorization code, verifying ES256 access and ID tokens with the JWKS, checking a session, rotating refresh tokens, signing users out, or registering redirect URLs.
+description: Used when a developer is wiring Didit sign-in into their app or backend, starting the hosted sign-in with PKCE, exchanging the authorization code, validating access tokens the way the application's documented runtime requires (opaque session check or ES256 JWT with the JWKS), checking a session, rotating refresh tokens, signing users out, or registering redirect URLs.
 ---
 
 # Integrate the hosted sign-in
@@ -40,9 +40,14 @@ POST {issuer}/token/
 
 The answer holds `access_token`, `id_token`, `refresh_token`, `token_type`, `expires_in` and `session_id`. `400 invalid_grant` covers an unknown, used or expired code, a verifier or redirect mismatch, a blocked person, and similar cases. Do not send `client_secret`; it is rejected as an unknown field.
 
-## 4. Verify an access token on the server
+## 4. Validate an access token on the server
 
-Take the issuer and application ID from configuration, never from the token. Check all of these:
+The access token format depends on the application's Authentication runtime as documented. Before choosing a method, read the current tokens page with `didit_docs_search` (https://docs.didit.me/authentication/tokens-and-jwks) and follow what it says for this application:
+
+- **Opaque access token:** do not decode it. Validate it with `GET {issuer}/session/` (see step 5) and cache the answer only briefly.
+- **ES256 JWT access token** (`typ` `at+jwt`): verify it offline against the JWKS with the checks below.
+
+Do not mix the two, and never invent a JWKS URL for a runtime that does not publish one. Take the issuer and application ID from configuration, never from the token. For a JWT, check all of these:
 
 1. Header `alg` is `ES256` and `typ` is `at+jwt`. Reject anything else, `none` included.
 2. The `kid` is in `{issuer}/.well-known/jwks.json` and the signature verifies.
@@ -56,7 +61,7 @@ Useful claims: `sub` (the identity in this application), `vendor_data` (the same
 
 ## 5. Check the session when it matters
 
-Offline checks cannot see a session that just ended. Before a sensitive step (a payout, for example), call `GET {issuer}/session/` with the access token as a Bearer token. A `401 invalid_token` means this access token is no longer accepted: the session may have ended, or the token expired. Refresh once; if the refresh also fails, treat the person as signed out. It is rate limited, so do not call it on every request.
+Offline JWT checks cannot see a session that just ended. Before a sensitive step (a payout, for example), call `GET {issuer}/session/` with the access token as a Bearer token. A `401 invalid_token` means this access token is no longer accepted: the session may have ended, or the token expired. Refresh once; if the refresh answers `400 invalid_grant`, treat the person as signed out. A `429` or `503` proves nothing either way: block the sensitive step and retry later. It is rate limited, so do not call it on every request.
 
 ## 6. Refresh
 
@@ -69,7 +74,12 @@ Send `grant_type = refresh_token` and `refresh_token` to `{issuer}/token/`. Acce
 
 ## 7. Sign out
 
-`DELETE {issuer}/session/` with the current access token ends the session (`204`). A `401` here means the access token was rejected, not that the person is signed out: the session may still be open. Refresh, then sign out with the new token; if the refresh fails, the session is already over. Then send the person to the configured `post_logout_redirect_uri`, if any. There is no end-session endpoint.
+Signing out has two parts. Report them separately:
+
+- **Local sign-out:** clear the tokens and user state in the app. Always do this when the person signs out.
+- **Server revocation:** `DELETE {issuer}/session/` with the current access token. Only a `204` confirms the session was revoked on the server.
+
+A `401` here means the access token was rejected, not that the session ended: refresh, then send the `DELETE` again with the new token. If that refresh answers `400 invalid_grant`, the session cannot be refreshed; treat the person as signed out locally. A `429`, a `503` or no answer means revocation is not confirmed: say so, retry with backoff (respect `Retry-After`), and never report the server session as ended. Then send the person to the configured `post_logout_redirect_uri`, if any. There is no end-session endpoint.
 
 ## 8. Store tokens by purpose
 
