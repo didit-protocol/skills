@@ -41,47 +41,25 @@ FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[^\n]*\n(.*?)^```", re.S | re.M)
 API_PATH_RE = re.compile(r"(?<![\w.])/v[123]/[A-Za-z0-9_{}<>.\-/]*[A-Za-z0-9_{}<>\-/]")
 # Names that must never be published are NOT listed in this repository: it is
 # public, and a list of them would publish them. `tests/data/withheld-names.digests`
-# holds keyed digests (HMAC-SHA256) of those names, one per line. The key is the
-# CI secret DIDIT_NAME_GUARD_KEY, so the digests cannot be turned back into names
-# by trying candidates. With the key, every run of one to four consecutive words
-# of every text file in the repository is compared, as whole words joined by one
-# space, so a name that is also two ordinary words written together is matched
-# only when it is written together; without it the check is
-# skipped (a fork's pull request has no secrets), and a push to main requires it.
+# holds keyed digests (HMAC-SHA256) of those names, and `scripts/name_guard.py`
+# compares every file against them. The key is a secret that only the
+# `name-guard` workflow gets, and that workflow runs the script from the default
+# branch against a pull request's files as data. The tests here never get the
+# real key in CI: they prove the script's behaviour with a key and names made up
+# on the spot, and run the real check only when a maintainer sets the key locally.
+NAME_GUARD_SCRIPT = ROOT / "scripts" / "name_guard.py"
 NAME_GUARD_DIGESTS = ROOT / "tests" / "data" / "withheld-names.digests"
 NAME_GUARD_KEY = os.environ.get("DIDIT_NAME_GUARD_KEY", "")
-NAME_GUARD_REQUIRED = os.environ.get("DIDIT_NAME_GUARD_REQUIRED", "") == "1"
-NAME_GUARD_WORD_RE = re.compile(r"[a-z0-9]+")
-NAME_GUARD_MAX_WORDS = 4
-BINARY_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".pdf", ".woff", ".woff2", ".zip"}
 
 
-def repository_text_files():
-    """Every text file a clone or a plugin install puts on someone's disk."""
-    files = []
-    for path in sorted(ROOT.rglob("*")):
-        if not path.is_file() or ".git" in path.relative_to(ROOT).parts:
-            continue
-        if path.suffix.lower() in BINARY_SUFFIXES or path == NAME_GUARD_DIGESTS:
-            continue
-        files.append(path)
-    return files
+def load_name_guard():
+    spec = importlib.util.spec_from_file_location("name_guard", NAME_GUARD_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def withheld_name_lines(text, key, digests, cache):
-    """Line numbers where a run of 1 to 4 words is a withheld name. Never the words."""
-    words = [(m.group(0), text.count("\n", 0, m.start()) + 1) for m in NAME_GUARD_WORD_RE.finditer(text.lower())]
-    lines = []
-    for size in range(1, NAME_GUARD_MAX_WORDS + 1):
-        for start in range(len(words) - size + 1):
-            joined = " ".join(word for word, _ in words[start : start + size])
-            hit = cache.get(joined)
-            if hit is None:
-                hit = hmac.new(key, joined.encode("utf-8"), hashlib.sha256).hexdigest() in digests
-                cache[joined] = hit
-            if hit:
-                lines.append(words[start][1])
-    return sorted(set(lines))
+name_guard = load_name_guard()
 
 
 # Webhook test vector. The signatures were produced by Didit's own signing functions
@@ -266,24 +244,125 @@ class ContentTest(unittest.TestCase):
             with self.subTest(file=str(path.relative_to(ROOT))):
                 self.assertNotIn("@gmail.com", text, "use you@yourdomain.com or user@example.com")
 
-    def test_no_withheld_names_anywhere_in_the_repository(self):
-        digests = {line.strip() for line in NAME_GUARD_DIGESTS.read_text(encoding="utf-8").splitlines() if line.strip()}
-        self.assertTrue(digests, "the digest file is empty")
+    def test_the_digest_file_holds_digests_only(self):
+        digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
+        self.assertTrue(digests)
         for digest in digests:
             self.assertRegex(digest, r"^[0-9a-f]{64}$", "the digest file holds digests only, never a name")
+
+    def test_no_withheld_names_anywhere_in_the_repository(self):
+        # The `name-guard` workflow is what enforces this, from trusted code. This run
+        # is for a maintainer who has the key: CI never gives it to the tests.
         if not NAME_GUARD_KEY:
-            self.assertFalse(NAME_GUARD_REQUIRED, "DIDIT_NAME_GUARD_KEY is required on this run and is not set")
-            self.skipTest("name guard skipped: DIDIT_NAME_GUARD_KEY is not set (CI on the repository sets it)")
-        key = NAME_GUARD_KEY.encode("utf-8")
-        cache = {}
-        for path in repository_text_files():
-            try:
-                text = path.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                continue
-            with self.subTest(file=str(path.relative_to(ROOT))):
-                # The message names the file and the lines, never the words found.
-                self.assertEqual(withheld_name_lines(text, key, digests, cache), [], "a withheld name is on these lines")
+            self.skipTest("DIDIT_NAME_GUARD_KEY is not set: the name-guard workflow runs this check")
+        digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
+        _, found = name_guard.scan(ROOT, NAME_GUARD_KEY.encode("utf-8"), digests)
+        # The message names the files and the lines, never the words found.
+        self.assertEqual(found, [], "a withheld name is on these lines")
+
+
+class NameGuardTest(unittest.TestCase):
+    """The guard's behaviour, proven with a key and names invented here (no real name, no real key)."""
+
+    KEY = b"a key made up for this test"
+    NAMES = ("zorvex", "quill harbor")
+
+    def setUp(self):
+        self.digests = frozenset(hmac.new(self.KEY, name.encode(), hashlib.sha256).hexdigest() for name in self.NAMES)
+        self.folder = tempfile.TemporaryDirectory()
+        self.tree = Path(self.folder.name)
+        self.digest_file = self.tree.parent / (self.tree.name + ".digests")
+        self.digest_file.write_text("\n".join(sorted(self.digests)) + "\n", encoding="utf-8")
+
+    def tearDown(self):
+        self.digest_file.unlink()
+        self.folder.cleanup()
+
+    def run_guard(self, key=KEY, tree=None, digests=None):
+        output = io.StringIO()
+        environment = {name_guard.KEY_VARIABLE: key.decode()} if key else {}
+        with mock.patch.dict(os.environ, environment, clear=True), contextlib.redirect_stdout(output):
+            code = name_guard.main([str(tree or self.tree), "--digests", str(digests or self.digest_file)])
+        return code, output.getvalue()
+
+    def test_a_clean_tree_passes(self):
+        (self.tree / "README.md").write_text("Identity checks.\nNothing withheld here.\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked", output)
+
+    def test_a_name_fails_with_the_file_and_lines_and_never_the_words(self):
+        (self.tree / "docs").mkdir()
+        (self.tree / "docs" / "page.md").write_text(
+            "first line\nPowered by Zorvex today.\nthird\nUses Quill   Harbor, too.\n", encoding="utf-8"
+        )
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("docs/page.md: line 2, 4", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "the report names files and lines, never what it found")
+
+    def test_words_match_whole_and_in_order_only(self):
+        (self.tree / "a.txt").write_text(
+            "quillharbor\nharbor quill\nzorvexes\nquill\nand harbor apart\n", encoding="utf-8"
+        )
+        # Line 4 ends with "quill" and line 5 does not start with "harbor", so nothing here is a name.
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+
+    def test_a_name_split_over_two_lines_is_found_on_its_first_line(self):
+        (self.tree / "a.txt").write_text("we use quill\nharbor for this\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("a.txt: line 1", output)
+
+    def test_undecodable_bytes_do_not_hide_a_file(self):
+        (self.tree / "notes.txt").write_bytes(b"\xff\xfe broken bytes\nzorvex inside\n")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("notes.txt: line 2", output)
+
+    def test_symbolic_links_and_git_folders_are_never_read(self):
+        outside = self.tree.parent / (self.tree.name + ".outside")
+        outside.write_text("zorvex\n", encoding="utf-8")
+        self.addCleanup(outside.unlink)
+        (self.tree / "link.txt").symlink_to(outside)
+        (self.tree / ".git").mkdir()
+        (self.tree / ".git" / "packed.txt").write_text("zorvex\n", encoding="utf-8")
+        (self.tree / "plain.txt").write_text("nothing\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked", output)
+
+    def test_without_a_key_nothing_is_reported_as_checked(self):
+        (self.tree / "a.txt").write_text("zorvex\n", encoding="utf-8")
+        code, output = self.run_guard(key=b"")
+        self.assertEqual(code, 2, output)
+        self.assertIn("nothing was checked", output)
+
+    def test_a_digest_file_with_anything_but_digests_is_refused(self):
+        bad = self.tree.parent / (self.tree.name + ".bad")
+        bad.write_text("zorvex\n", encoding="utf-8")
+        self.addCleanup(bad.unlink)
+        code, output = self.run_guard(digests=bad)
+        self.assertEqual(code, 2, output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_the_workflow_runs_trusted_code_and_never_the_pull_request(self):
+        workflow = (ROOT / ".github" / "workflows" / "name-guard.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request_target:", workflow)
+        self.assertIn("environment: name-guard", workflow)
+        self.assertIn("path: checked", workflow)
+        self.assertEqual(workflow.count("secrets.DIDIT_NAME_GUARD_KEY"), 1)
+        # The one command that runs is the trusted script, with the trusted digest file.
+        runs = [line.strip() for line in workflow.splitlines() if line.strip().startswith("run:")]
+        self.assertEqual(
+            runs, ['run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests']
+        )
+        # No other workflow gets the key: tests and plugin checks run a pull request's own code.
+        for other in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+            if other.name != "name-guard.yml":
+                self.assertNotIn("DIDIT_NAME_GUARD_KEY", other.read_text(encoding="utf-8"), other.name)
 
     def test_json_examples_parse(self):
         for skill in SKILLS:

@@ -17,12 +17,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Skill structure (offline)
-        # The name guard compares keyed digests, so the names it protects are
-        # in no file of this public repository. A fork's pull request has no
-        # secrets and skips it; a push to main requires it.
-        env:
-          DIDIT_NAME_GUARD_KEY: ${{ secrets.DIDIT_NAME_GUARD_KEY }}
-          DIDIT_NAME_GUARD_REQUIRED: ${{ github.event_name == 'push' && '1' || '' }}
+        # No secret here: these tests are code a pull request controls. The name
+        # guard runs in its own workflow (name-guard.yml), from trusted code.
         run: python3 tests/test_skill_structure.py
       - name: Plugin bundle (offline)
         run: python3 tests/test_plugin_bundle.py

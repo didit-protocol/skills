@@ -1,0 +1,49 @@
+name: name-guard
+
+# Checks that no file holds a name that must never be published (scripts/name_guard.py).
+#
+# The check needs a key, and code from a pull request must never run with it.
+# So this workflow runs for the base branch (pull_request_target): the script and
+# the digest file come from the default branch, and the pull request's files are
+# checked out next to them as data that is read and never executed. That also
+# covers pull requests from forks, which an ordinary pull_request run cannot,
+# because a fork gets no secrets.
+#
+# The key is a secret of the `name-guard` environment, and that environment
+# accepts the default branch only, so a branch that edits a workflow cannot
+# read it either.
+on:
+  pull_request_target:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  name-guard:
+    runs-on: ubuntu-latest
+    environment: name-guard
+    steps:
+      - name: Trusted code (the branch this workflow runs for)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Pull request files (data only, never executed)
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: checked
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Name guard
+        env:
+          DIDIT_NAME_GUARD_KEY: ${{ secrets.DIDIT_NAME_GUARD_KEY }}
+          TREE: ${{ github.event_name == 'pull_request_target' && 'checked' || '.' }}
+        # -I: Python ignores its environment variables and the current folder.
+        # The digest file is the trusted copy, never the pull request's.
+        run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests
