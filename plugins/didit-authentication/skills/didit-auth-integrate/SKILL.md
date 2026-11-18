@@ -79,7 +79,12 @@ Signing out has two parts. Report them separately:
 - **Local sign-out:** clear the tokens and user state in the app. Always do this when the person signs out.
 - **Server revocation:** `DELETE {issuer}/session/` with the current access token. Only a `204` confirms the session was revoked on the server.
 
-A `401` here means the access token was rejected, not that the session ended: refresh, then send the `DELETE` again with the new token. If that refresh answers `400 invalid_grant`, the session cannot be refreshed; treat the person as signed out locally. A `429`, a `503` or no answer means revocation is not confirmed: say so, retry with backoff (respect `Retry-After`), and never report the server session as ended. Then send the person to the configured `post_logout_redirect_uri`, if any. There is no end-session endpoint.
+A `401` here means the access token was rejected, not that the session ended: refresh once, then send the `DELETE` again with the new token. If that refresh answers `400 invalid_grant`, the session cannot be refreshed; treat the person as signed out locally. Never report the server session as ended without a `204`. A lost answer means different things for the two requests:
+
+- **No answer to the `DELETE` (or a `429` or `503`):** revocation is not confirmed. Retrying the same `DELETE` with the same access token is safe, because it replays no refresh token: retry with backoff and respect `Retry-After`. If the retry answers `401`, the first one may have ended the session; report server sign-out as not confirmed.
+- **No answer to the refresh made for sign-out:** the server may already have rotated the token, and sending the old refresh token again is a reuse that revokes the session. Never resend it. Clear local state, report server sign-out as not confirmed, and have the person sign in again.
+
+Then send the person to the configured `post_logout_redirect_uri`, if any. There is no end-session endpoint.
 
 ## 8. Store tokens by purpose
 

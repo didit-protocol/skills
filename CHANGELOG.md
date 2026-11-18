@@ -19,9 +19,13 @@ proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), tr
 - **didit-mcp-server (1.0.0 to 1.1.0):** matches server v5.1.67. Documents API key connections (one
   application, the key's own access, person-only tools refused) next to OAuth, which stays the default;
   the three advertised scopes, with `didit:staff` for Didit staff only; that a successful tool result is
-  compact JSON plus `structuredContent` (arrays and scalars wrapped as `{value}`), with secrets redacted (on
-  the hosted server except the one-time secret from `didit_org_create_api_key`; a local server also returns
-  credentials from key reveal and email verification) and large payloads summarized, while handler errors are
+  compact JSON plus `structuredContent` (arrays and scalars wrapped as `{value}`), with redaction limited to
+  the fields the handlers redact (application `api_key`, `client_secret` and `secret`; API key list `api_key`,
+  `key`, `secret`, `token` and `value`; the webhook destination signing secret), webhook destination URLs and
+  alert destinations (for Slack the posting URL) returned as stored and masked by the assistant (host plus the
+  last 4 characters) before it shows them, the one-time secret from `didit_org_create_api_key` on the hosted
+  server, and on a local server also credentials from key reveal and email verification; setup examples keep
+  secrets out of process arguments (client-expanded `${VAR}` config references, revocation token on stdin) and large payloads summarized, while handler errors are
   sanitized text with a code and server refusals plain text, neither with `structuredContent`; single-session
   and batch session deletion documented separately, a SAR filed as `resolve` with `data.status: "SAR_FILED"`,
   and `missing_scope` routed by its field and hint; that revoking stops refresh while an accepted access token can reach the

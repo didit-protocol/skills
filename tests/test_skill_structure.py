@@ -534,6 +534,35 @@ class SetupAccountSecretsTest(unittest.TestCase):
         self.assertEqual(self.mod.safe_uuid(VERIFY_RESPONSE["organization"]["uuid"]),
                          VERIFY_RESPONSE["organization"]["uuid"])
 
+    def test_uuid_shaped_credential_repeated_in_a_display_id_is_hidden(self):
+        token = "2d9e4f1a-6b7c-4d8e-9f0a-1b2c3d4e5f60"
+        response = dict(VERIFY_RESPONSE, refresh_token=token,
+                        organization={"uuid": token, "name": "Example"})
+        result = self.run_main(["verify", "user@example.com"], response)
+        self.assertEqual(result[0], 0)
+        self.assert_streams_clean(result, token)
+        self.assertIn("Organization UUID: [hidden]", result[1])
+        self.assertIn(VERIFY_RESPONSE["application"]["uuid"], result[1])
+        nested = dict(VERIFY_RESPONSE, extra={"deep": [{"client_secret": token}]},
+                      organization={"uuid": token})
+        output = self.mod.format_result("verify", nested, "user@example.com")
+        self.assertNotIn(token, output)
+        self.assertIn("Organization UUID: [hidden]", output)
+        self.assertEqual(self.mod.guard_display("prefix-" + token, {token}), "[hidden]")
+
+    def test_trailing_newline_is_rejected(self):
+        uuid = VERIFY_RESPONSE["organization"]["uuid"]
+        self.assertEqual(self.mod.safe_uuid(uuid + "\n"), "(unavailable)")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            with self.assertRaises(self.mod.SetupError):
+                self.mod.write_env(str(env_path), {"DIDIT_API_KEY": FAKE_API_KEY + "\n"})
+            self.assertFalse(env_path.exists())
+        response = dict(VERIFY_RESPONSE, organization={"uuid": uuid + "\n"})
+        result = self.run_main(["verify", "user@example.com"], response)
+        self.assertEqual(result[0], 1)
+        self.assertIn("unexpected response", result[2])
+
     def test_known_error_codes_only(self):
         self.assertEqual(self.mod.safe_error_code("invalid_credentials"), "invalid_credentials")
         for value in (FAKE_ACCESS, "some_new_code", None, 7):

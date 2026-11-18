@@ -33,7 +33,9 @@ Notes:
     - Output is a fixed summary: response bodies, server messages and exception text are never
       printed. A value from a response is echoed only after a structural check: UUIDs must be
       canonical 8-4-4-4-12 hex, error codes must be in a known list (anything else prints
-      `unknown_error`), and an email is echoed only when it equals the one you passed. Success
+      `unknown_error`), and an email is echoed only when it equals the one you passed. A display
+      value that equals or contains any credential in the response (any value under a key
+      matching token, secret, key or password, at any depth) prints as `[hidden]`. Success
       is announced only when the expected fields are present; otherwise the script says
       "unexpected response" and exits 1. Credentials in the summary are masked (first 4 and last
       4 characters; values under 12 characters are hidden completely). `--write-env <path>`
@@ -75,7 +77,8 @@ LABELS = {
     "DIDIT_REFRESH_TOKEN": "Refresh token",
 }
 # A UUID from a response is echoed only in canonical 8-4-4-4-12 hex form.
-UUID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+# Always applied with fullmatch, so a trailing newline is rejected.
+UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 # Error codes echoed from a response; any other value prints as unknown_error.
 KNOWN_ERROR_CODES = frozenset({
     "bad_request", "invalid_credentials", "invalid_code", "code_expired", "invalid_password",
@@ -84,7 +87,10 @@ KNOWN_ERROR_CODES = frozenset({
     "sso_required", "forbidden", "unauthorized", "server_error", "temporarily_unavailable",
 })
 # Characters allowed in a credential written by --write-env (no quoting is ever needed).
-ENV_VALUE_RE = re.compile(r"^[A-Za-z0-9._~+/=-]+$")
+ENV_VALUE_RE = re.compile(r"[A-Za-z0-9._~+/=-]+")  # applied with fullmatch: no trailing newline
+# Response keys whose string values are treated as credentials, at any depth.
+CREDENTIAL_KEY_RE = re.compile(r"token|secret|key|password", re.IGNORECASE)
+HIDDEN = "[hidden]"
 STATUS_HINTS = {
     400: "the request was rejected; check the email, password rules or code",
     401: "the email, password or code was not accepted",
@@ -109,7 +115,7 @@ def mask_secret(value):
 
 
 def safe_uuid(value) -> str:
-    return value if isinstance(value, str) and UUID_RE.match(value) else "(unavailable)"
+    return value if isinstance(value, str) and UUID_RE.fullmatch(value) else "(unavailable)"
 
 
 def safe_error_code(value) -> str:
@@ -119,6 +125,29 @@ def safe_error_code(value) -> str:
 def safe_email(value, supplied: str) -> str:
     """The email is echoed only when it is exactly the one the user passed."""
     return supplied if isinstance(value, str) and value == supplied else "the address you entered"
+
+
+def collect_credentials(value) -> set:
+    """Every credential-like string in a response, at any depth: the values of keys matching
+    token|secret|key|password (api_key, access_token, refresh_token, temp_token, client_secret...)."""
+    found = set()
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if isinstance(item, str) and item and CREDENTIAL_KEY_RE.search(str(key)):
+                found.add(item)
+            else:
+                found |= collect_credentials(item)
+    elif isinstance(value, list):
+        for item in value:
+            found |= collect_credentials(item)
+    return found
+
+
+def guard_display(text: str, credentials: set) -> str:
+    """A display value (id, email, code) is printed only when it neither equals nor contains a credential."""
+    if not isinstance(text, str):
+        return text
+    return HIDDEN if any(secret in text for secret in credentials) else text
 
 
 def missing_success_fields(command: str, result: dict) -> bool:
@@ -131,9 +160,9 @@ def missing_success_fields(command: str, result: dict) -> bool:
     if command == "verify":
         organization = result.get("organization")
         application = result.get("application")
-        if not (isinstance(organization, dict) and UUID_RE.match(str(organization.get("uuid", "")))):
+        if not (isinstance(organization, dict) and UUID_RE.fullmatch(str(organization.get("uuid", "")))):
             return True
-        if not (isinstance(application, dict) and UUID_RE.match(str(application.get("uuid", "")))):
+        if not (isinstance(application, dict) and UUID_RE.fullmatch(str(application.get("uuid", "")))):
             return True
         if "DIDIT_API_KEY" not in found:
             return True
@@ -167,19 +196,20 @@ def format_result(command: str, result: dict, email: str, show_secrets: bool = F
         result = {}
     if result.get("2fa_required"):
         return second_factor_message(result)
+    credentials = collect_credentials(result)
     if command == "register":
-        return (f"Registered. Check {safe_email(email, email)} for your 6-character verification code "
-                "(valid 10 minutes).")
+        return (f"Registered. Check {guard_display(safe_email(email, email), credentials)} for your 6-character "
+                "verification code (valid 10 minutes).")
     if command == "resend-otp":
-        return f"New code sent to {safe_email(email, email)} (valid 10 minutes)."
+        return f"New code sent to {guard_display(safe_email(email, email), credentials)} (valid 10 minutes)."
     shown = (lambda value: value) if show_secrets else mask_secret
     lines = []
     if command == "verify":
         organization = result.get("organization") if isinstance(result.get("organization"), dict) else {}
         application = result.get("application") if isinstance(result.get("application"), dict) else {}
         lines.append("Account ready.")
-        lines.append(f"Organization UUID: {safe_uuid(organization.get('uuid'))}")
-        lines.append(f"Application UUID:  {safe_uuid(application.get('uuid'))}")
+        lines.append(f"Organization UUID: {guard_display(safe_uuid(organization.get('uuid')), credentials)}")
+        lines.append(f"Application UUID:  {guard_display(safe_uuid(application.get('uuid')), credentials)}")
     elif command == "login":
         expires = result.get("expires_in")
         expires = expires if isinstance(expires, int) and not isinstance(expires, bool) else "?"
@@ -208,7 +238,7 @@ def check_env_destination(path: str) -> str:
 
 def _env_literal(name: str, value: str) -> str:
     """KEY=value, unquoted. Values outside [A-Za-z0-9._~+/=-] are refused so no quoting is needed."""
-    if not isinstance(value, str) or not ENV_VALUE_RE.match(value):
+    if not isinstance(value, str) or not ENV_VALUE_RE.fullmatch(value):
         raise SetupError(f"{name} contains characters outside [A-Za-z0-9._~+/=-]; it was not written. "
                          "Create a key in the console instead.")
     return f"{name}={value}"
@@ -286,7 +316,7 @@ def _post(path: str, payload: dict, ok_statuses: tuple) -> dict:
     if status == 403 and code == "sso_required":
         raise SetupError("SSO required: this account's organization enforces SSO, so no token or API key "
                          f"is issued here. Sign in at {CONSOLE_URL} through the organization's SSO.")
-    message = f"HTTP {status} ({safe_error_code(code)})"
+    message = f"HTTP {status} ({guard_display(safe_error_code(code), collect_credentials(body))})"
     hint = STATUS_HINTS.get(status)
     raise SetupError(f"{message}: {hint}." if hint else f"{message}.")
 

@@ -678,6 +678,9 @@ class SkillTests(TreeCase):
         self.assertIn("read the current tokens page with `didit_docs_search`", integrate)
         self.assertIn("Local sign-out", integrate)
         self.assertIn("revocation is not confirmed", integrate)
+        self.assertIn("No answer to the refresh made for sign-out", integrate)
+        self.assertIn("Never resend it", integrate)
+        self.assertNotIn("A `429`, a `503` or no answer means revocation is not confirmed: say so, retry", integrate)
         self.assertNotIn("the session is already over", integrate)
         self.assertNotIn("do not decode it as a JWT or invent JWKS", sdk)
 
@@ -693,7 +696,16 @@ class SkillTests(TreeCase):
         self.assertIn("`didit_session_delete` (one session): `session_id` and `confirm: true`", text)
         self.assertIn("`didit_session_batch_delete` (several sessions): `session_numbers`", text)
         self.assertIn("only when the tool declares `confirm` and the error names it", text)
-        self.assertIn("On the hosted server the only exception is `didit_org_create_api_key`", text)
+        self.assertIn("On the hosted server `didit_org_create_api_key` also returns the new key's secret once", text)
+        self.assertNotIn("API keys and webhook secrets are redacted in what tools read", text)
+        self.assertIn("Nothing else is redacted", text)
+        self.assertIn("for Slack, the posting URL in `value`", text)
+        self.assertIn("host plus the last 4 characters", text)
+        # No secret in process arguments: no shell-expanded header, no token in curl or `-e` arguments.
+        self.assertNotRegex(text, r"(?m)^claude mcp add .*(\$DIDIT_|-e DIDIT_ACCESS_TOKEN=)")
+        self.assertNotIn('"token=<refresh-token>"', text)
+        self.assertIn("--data-urlencode 'token@-'", text)
+        self.assertIn('"x-api-key": "${DIDIT_API_KEY}"', text)
         self.assertIn("`didit_org_reveal_application_api_key`", text)
 
     def test_focused_plugins_skip_business_update(self):
