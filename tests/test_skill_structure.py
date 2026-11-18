@@ -11,16 +11,22 @@ Usage:
     python3 tests/test_skill_structure.py
 """
 
+import contextlib
 import hashlib
 import hmac
+import importlib.util
+import io
 import json
+import os
 import py_compile
 import re
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = ROOT / "skills"
@@ -287,6 +293,93 @@ class WebhookSignatureTest(unittest.TestCase):
     def test_vector_matches_the_documented_algorithm(self):
         expected = hmac.new(WEBHOOK_SECRET.encode(), WEBHOOK_RAW_BODY.encode(), hashlib.sha256).hexdigest()
         self.assertEqual(expected, WEBHOOK_HEADERS["X-Signature"])
+
+
+def load_setup_account():
+    """Import setup_account.py without the network. A stub stands in for requests when it is missing."""
+    path = SKILLS_DIR / "didit-verification-management" / "scripts" / "setup_account.py"
+    stub = {} if importlib.util.find_spec("requests") else {"requests": types.ModuleType("requests")}
+    with mock.patch.dict(sys.modules, stub):
+        spec = importlib.util.spec_from_file_location("setup_account_under_test", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    return module
+
+
+# Synthetic credentials: long, distinctive values that are not real secrets.
+FAKE_API_KEY = "dk_test_SYNTHETIC_api_key_value_0123456789abcdef"
+FAKE_ACCESS = "eyJSYNTHETIC.access.token.value.0123456789abcdef"
+FAKE_REFRESH = "rt_SYNTHETIC_refresh_token_value_0123456789abcdef"
+FAKE_PASSWORD = "Synthetic-Passw0rd!-not-real"
+VERIFY_RESPONSE = {
+    "access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400,
+    "organization": {"uuid": "org-uuid", "name": "Example"},
+    "application": {"uuid": "app-uuid", "name": "Default", "client_id": "client-1", "api_key": FAKE_API_KEY},
+}
+LOGIN_RESPONSE = {"access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400}
+SECRETS = (FAKE_API_KEY, FAKE_ACCESS, FAKE_REFRESH, FAKE_PASSWORD)
+
+
+class SetupAccountSecretsTest(unittest.TestCase):
+    """setup_account.py never prints a full credential unless --show-secrets is passed."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_setup_account()
+
+    def assert_no_secret(self, text):
+        for secret in SECRETS:
+            self.assertNotIn(secret, text, "a full credential appeared in normal output")
+
+    def test_masked_form_is_first_and_last_four(self):
+        self.assertEqual(self.mod.mask_secret(FAKE_API_KEY), "dk_t...cdef")
+        self.assertEqual(self.mod.mask_secret("short"), "****")
+
+    def test_format_result_masks_every_command(self):
+        cases = {
+            "verify": VERIFY_RESPONSE,
+            "login": LOGIN_RESPONSE,
+            "register": {"message": "code sent", "password": FAKE_PASSWORD},
+            "resend-otp": {"message": "code sent", "access_token": FAKE_ACCESS},
+        }
+        for command, response in cases.items():
+            with self.subTest(command=command):
+                output = self.mod.format_result(command, response, "user@example.com")
+                self.assert_no_secret(output)
+        self.assertIn("dk_t...cdef", self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com"))
+
+    def test_show_secrets_prints_the_full_values(self):
+        output = self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com", show_secrets=True)
+        self.assertIn(FAKE_API_KEY, output)
+
+    def run_main(self, argv, response):
+        out, err = io.StringIO(), io.StringIO()
+        handler = "verify_email" if argv[0] == "verify" else "login"
+        env = {"DIDIT_PASSWORD": FAKE_PASSWORD}
+        with mock.patch.object(self.mod, handler, return_value=response), \
+                mock.patch.object(sys, "argv", ["setup_account.py", *argv]), \
+                mock.patch.dict(os.environ, env), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            self.mod.main()
+        return out.getvalue() + err.getvalue()
+
+    def test_main_output_is_masked(self):
+        self.assert_no_secret(self.run_main(["verify", "user@example.com", "A3K9F2"], VERIFY_RESPONSE))
+        self.assert_no_secret(self.run_main(["login", "user@example.com"], LOGIN_RESPONSE))
+
+    def test_write_env_stores_full_values_with_mode_0600(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text('OTHER="kept"\nDIDIT_API_KEY="old"\n', encoding="utf-8")
+            output = self.run_main(["verify", "user@example.com", "A3K9F2", "--write-env", str(env_path)],
+                                   VERIFY_RESPONSE)
+            self.assert_no_secret(output)
+            written = env_path.read_text(encoding="utf-8")
+            self.assertIn(f'DIDIT_API_KEY="{FAKE_API_KEY}"', written)
+            self.assertIn(f'DIDIT_REFRESH_TOKEN="{FAKE_REFRESH}"', written)
+            self.assertIn('OTHER="kept"', written)
+            self.assertNotIn('DIDIT_API_KEY="old"', written)
+            self.assertEqual(env_path.stat().st_mode & 0o777, 0o600)
 
 
 if __name__ == "__main__":

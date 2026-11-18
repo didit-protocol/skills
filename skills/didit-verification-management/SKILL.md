@@ -941,10 +941,17 @@ pip install requests
 read -rs DIDIT_PASSWORD && export DIDIT_PASSWORD   # optional: otherwise each command prompts
 python scripts/setup_account.py register you@yourdomain.com
 # (check email for the 6-character code)
-python scripts/setup_account.py verify you@yourdomain.com A3K9F2      # prints org uuid, app uuid, api_key
+python scripts/setup_account.py verify you@yourdomain.com A3K9F2 --write-env .env   # saves DIDIT_API_KEY and tokens
 python scripts/setup_account.py resend-otp you@yourdomain.com
-python scripts/setup_account.py login you@yourdomain.com
+python scripts/setup_account.py login you@yourdomain.com --write-env .env
 ```
+
+The script never prints a full API key, access token, refresh token or password. Output shows each one
+masked (first 4 and last 4 characters, for example `dk_t...cdef`). To keep the full values:
+- `--write-env <path>` writes `DIDIT_API_KEY`, `DIDIT_ACCESS_TOKEN` and `DIDIT_REFRESH_TOKEN` to that file,
+  created or updated with mode `0600`; other lines in the file are kept. Keep the file out of version control.
+- `--show-secrets` prints the full response to stdout. Pass it only on purpose: terminals, shell
+  recordings and agent logs keep what is printed.
 
 The password comes from the `DIDIT_PASSWORD` environment variable or a no-echo prompt. Never put it on the
 command line: other local users can read it in the process list, and it stays in shell history and agent logs.
