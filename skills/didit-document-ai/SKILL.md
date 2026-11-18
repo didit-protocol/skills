@@ -7,7 +7,7 @@ description: >
   get typed values (text, number, date) for their own field list; compare the name on a
   document with an expected person or company; detect tampered or edited PDFs and images;
   decode QR codes and barcodes on a document; or add a DOCUMENT_AI step to a verification
-  workflow using Didit. $0.20 per document, synchronous, multipart upload.
+  workflow using Didit. Synchronous, multipart upload.
 version: 1.0.0
 metadata:
   openclaw:
@@ -34,7 +34,7 @@ Send one document and the list of fields you want read from it. Didit runs its d
 
 **Use cases:** proof of funds, bank statements, payslips, source-of-wealth letters, tax documents, invoices, contracts, any document without a fixed template.
 
-**Pricing:** $0.20 per document (billed per `200` response, when the document is processed and a status is returned; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.20 per document (billed per `200` response, when the document is processed and a status is returned), paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/standalone-apis/document-ai
 **Feature Guide:** https://docs.didit.me/core-technology/document-ai/overview
@@ -322,7 +322,7 @@ To have the user upload documents in the hosted flow instead, add the `DOCUMENT_
 - The name is compared with the verified subject: the ID-verification name (or the session's expected details) on a person workflow, the verified company on a business workflow.
 - `status_rules` can target `document_ai.<key>` and cross-reference other steps with `value_type: "field"` (e.g. `document_ai.account_holder` `fuzzy_match` `kyc.full_name`).
 - Results arrive in the session decision (`GET /v3/session/{sessionId}/decision/`) and webhooks.
-- Same $0.20 per document.
+- Same $0.20 per document (list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
 
 Full config reference: https://docs.didit.me/management-api/workflows/feature-configs
 

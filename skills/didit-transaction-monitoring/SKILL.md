@@ -9,7 +9,7 @@ description: >
   (originator/beneficiary exchange with counterparty VASPs), verify self-hosted wallet
   ownership, register after-deposit (sunrise) transfers, mint SDK transaction tokens for
   client-side submission, or step up risky transactions with biometric re-verification using
-  Didit. $0.02 per transaction.
+  Didit.
 version: 1.1.0
 metadata:
   openclaw:
@@ -34,7 +34,7 @@ Scores every transaction in real time against a rule engine (conditions, velocit
 - Sandbox applications store transactions but skip rules, crypto screening, webhooks and billing (they stay `APPROVED`).
 - Non-monetary activity (logins, gameplay, bonuses, chargebacks) goes to the events API: see the **didit-event-monitoring** skill.
 
-**Pricing:** $0.02 per transaction (Transaction Screening); a Travel Rule transfer is billed $0.02 per outbound transfer on its own line instead of the screening fee, never both; Wallet Verification & Screening (transaction-coupled or on-demand) from $0.15 with Didit-managed analytics, $0.02 with your own provider key, charged once even when Travel Rule attribution needs the same lookup. Sandbox is never billed. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): each plan includes monitored transactions every calendar month (Free 1,000, Growth 10,000, Scale 100,000; Enterprise by contract), then Transaction Screening is $0.001 per transaction ($0.0009 on Scale). An outbound Travel Rule transfer that starts an exchange is billed $0.02 on its own line instead of Transaction Screening, never both; Wallet Verification & Screening (transaction-coupled or on-demand) is from $0.15, or $0.02 with your own provider key (Growth and up), charged once even when Travel Rule attribution needs the same lookup. The sandbox is free. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/management-api/transactions/create
 **Feature guides:** https://docs.didit.me/transaction-monitoring/overview | https://docs.didit.me/transaction-monitoring/rules-api | https://docs.didit.me/transaction-monitoring/travel-rule | https://docs.didit.me/transaction-monitoring/wallet-screening

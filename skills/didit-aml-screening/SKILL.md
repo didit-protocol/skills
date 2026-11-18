@@ -45,7 +45,7 @@ Screens a person or company against 1,300+ global watchlists and databases in on
 
 **Sandbox:** sandbox API keys skip screening and billing and return a mocked result: `"Approved"` with zero hits unless you pass `sandbox_scenario` (`decline_aml_hit` returns one hit and `"Declined"`, `review_aml_possible_match` returns `"In Review"`; catalog at `GET /v1/sandbox/scenarios/`). `sandbox_scenario` is rejected on live applications.
 
-**Pricing:** AML Screening $0.20 per screening (one credit charged after a successful screening; idempotent replays are not charged again; standalone calls have no free tier). AML Monitoring $0.07 per monitored profile per year. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): AML Screening $0.20 per screening (one credit charged after a successful screening; idempotent replays are not charged again); AML Monitoring $0.07 per monitored profile per year. Standalone calls are paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **API Reference:** https://docs.didit.me/standalone-apis/aml-screening
 **Feature Guide:** https://docs.didit.me/core-technology/aml-screening/overview
@@ -384,7 +384,7 @@ PATCH https://verification.didit.me/v3/session/{sessionId}/bulk-update-aml-hit-s
 
 ## Continuous Monitoring
 
-Off by default. Once on, the profile is re-screened as the watchlists update; a status change fires `status.updated` and a hit change fires `data.updated`. Billed as AML Monitoring ($0.07 per monitored profile per year).
+Off by default. Once on, the profile is re-screened as the watchlists update; a status change fires `status.updated` and a hit change fires `data.updated`. Billed as AML Monitoring ($0.07 per monitored profile per year, list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
 
 Ways to turn it on:
 - `include_ongoing_monitoring: true` on `POST /v3/aml/` (with `save_api_request: true`).

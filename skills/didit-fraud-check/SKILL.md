@@ -36,7 +36,7 @@ Submit typed identifiers (email, phone, government ID numbers, your own external
 - `client_reference` is your idempotency key: same body returns the stored result with no new charge; a different body returns `409`.
 - Sandbox applications get sample responses with no supplier calls and no charges.
 
-**Pricing:** No list price is published for Fraud Check or the IP Risk API; check [didit.me/pricing](https://didit.me/pricing). Each paid module bills at your organization's current prepaid or contract rate for that check, skipped and unavailable modules are not billed, and `networks_same_org` and `networks_cross_org` have no per-check charge. Read the exact amount from `estimated_price` in the plan response.
+**Pricing:** No list price is published for Fraud Check itself; the IP Risk API is $0.02 per request (list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)). Current prices: [didit.me/pricing](https://didit.me/pricing). Each paid module bills at your organization's current prepaid or contract rate for that check, skipped and unavailable modules are not billed, and `networks_same_org` and `networks_cross_org` have no per-check charge. Read the exact amount from `estimated_price` in the plan response.
 
 **API Reference:** [Fraud Check](https://docs.didit.me/standalone-apis/fraud-check) | [Plan](https://docs.didit.me/standalone-apis/fraud-check-plan) | [Get](https://docs.didit.me/standalone-apis/fraud-check-result) | [IP Risk](https://docs.didit.me/standalone-apis/ip-risk)
 

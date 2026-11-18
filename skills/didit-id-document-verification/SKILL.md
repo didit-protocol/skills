@@ -32,7 +32,7 @@ Verifies an identity document from images (or PDFs) of its front and back in one
 
 **Coverage:** 14,000+ document types from 220+ countries and territories: passports, national ID cards, driver's licenses, residence permits and more.
 
-**Pricing:** $0.20 per call that returns `200` (Approved or Declined); `400` responses are not billed, and standalone calls have no free tier. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices. Digital ID wallets are billed separately (see [Digital ID Wallets](#digital-id-wallets-standalone)).
+**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.20 per standalone call that returns `200` (Approved or Declined); `400` responses are not billed. Calls are paid from your plan credit or top-ups. Digital ID wallets are billed separately (see [Digital ID Wallets](#digital-id-wallets-standalone)). Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Sandbox:** sandbox API keys skip processing and billing and return a static `Approved` mock (a fictional "Sandbox User" USA identity card) after request validation. Nothing is stored.
 
@@ -336,16 +336,16 @@ Verify a person through a national or bank digital ID they already hold, from yo
 
 **Wallets available in production** (per the docs; always confirm with the catalog call, which reports availability for your application and environment):
 
-| Wallet | Start endpoint | Countries | Interaction | List price per verified sign-in |
+| Wallet | Start endpoint | Countries | Interaction | List price per verified sign-in (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing#digital-id-wallet-pricing)) |
 |---|---|---|---|---|
 | MitID | `POST /v3/id-verification/wallets/mitid/` | DNK | redirect | $0.25 |
 | BankID Sweden | `POST /v3/id-verification/wallets/bankid-se/` | SWE | redirect | $0.20 |
-| iDIN | `POST /v3/id-verification/wallets/idin/` | NLD | redirect | $0.85 (full identification) |
+| iDIN | `POST /v3/id-verification/wallets/idin/` | NLD | redirect | $0.95 (full identification) |
 | Finnish Trust Network | `POST /v3/id-verification/wallets/ftn/` | FIN | redirect | $0.25 |
-| Smart-ID | `POST /v3/id-verification/wallets/smart-id/` | EST, LVA, LTU, BEL | in app | see [pricing](https://docs.didit.me/getting-started/pricing#digital-id-wallet-pricing) |
-| Mobile-ID | `POST /v3/id-verification/wallets/mobile-id/` | EST, LTU | in app | see [pricing](https://docs.didit.me/getting-started/pricing#digital-id-wallet-pricing) |
+| Smart-ID | `POST /v3/id-verification/wallets/smart-id/` | EST, LVA, LTU, BEL | in app | $0.21 |
+| Mobile-ID | `POST /v3/id-verification/wallets/mobile-id/` | EST, LTU | in app | $0.21 |
 
-Other wallets have start endpoints but are **Coming soon**: they fail closed with `403` `wallet_unavailable`. Billing: once per request, only when the identity is verified; cancelled, expired or failed sign-ins are free, and the 500 free document checks do not apply.
+Other wallets have start endpoints but are **Coming soon**: they fail closed with `403` `wallet_unavailable`. Billing: once per request, only when the identity is verified; cancelled, expired or failed sign-ins are free. Wallet verifications are priced separately from document capture.
 
 | Operation | Endpoint |
 |---|---|
@@ -452,7 +452,7 @@ if "ftn" in live:
 
 These are not available on the standalone endpoints; use a workflow and session (see the **didit-kyc-onboarding** skill):
 
-- **NFC chip reading:** workflow feature `NFC`, placed after `OCR`. The chip is read by the native iOS/Android SDK during a session; web browsers skip it. $0.15 per completed read.
+- **NFC chip reading:** workflow feature `NFC`, placed after `OCR`. The chip is read by the native iOS/Android SDK during a session; web browsers skip it. $0.15 per completed read (list price as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
 - **Non-document lookup and wallets inside a workflow:** set `config.methods` per country on the `OCR` feature (document capture, lookup against a government register or other authoritative source, digital ID wallets, with fallback rules). See https://docs.didit.me/management-api/workflows/feature-configs and https://docs.didit.me/core-technology/id-verification/non-doc-lookup.
 
 ---

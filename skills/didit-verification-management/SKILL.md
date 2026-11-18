@@ -40,7 +40,7 @@ The hub skill for the Didit platform: account and application setup, workflows, 
 | Web and mobile SDKs, SDK tokens | `didit-sdk-integration` |
 | Didit from an MCP client | `didit-mcp-server` |
 
-**Pricing:** a session costs the sum of the features its workflow runs, and only features that finish are charged (the workflow's `total_price`, which excludes variable-priced features such as `DATABASE_VALIDATION` and `PHONE_VERIFICATION`); each organization gets 500 free checks a month for each core KYC feature (document capture, passive liveness, face match, Device & IP Analysis). No list price is published for the management endpoints themselves. These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** a session costs the sum of the features its workflow runs, and only features that finish are charged (the workflow's `total_price`, which excludes variable-priced features such as `DATABASE_VALIDATION` and `PHONE_VERIFICATION`). No list price is published for the management endpoints themselves. As of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)), the Free plan includes $10 of credit a month for organizations that signed up with a work email in the console; an organization created through the API (as `setup_account.py` does) starts at $0, and the Free credit does not pay for phone verification. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Base URLs:** `https://verification.didit.me/v3` (everything with `x-api-key`), `https://apx.didit.me/auth/v2` (account setup).
 
@@ -616,7 +616,7 @@ POST /v3/businesses/aml-monitoring/
 GET  /v3/aml-monitoring/jobs/{job_id}/
 ```
 
-Body: `is_enabled` (required), `estimate_only` (default `false`: return the cost estimate without changing anything), `vendor_data_list` and/or `didit_internal_id_list` (up to 1000 identifiers in total). Up to 20 profiles run inline (`200` with the finished job); more return `202` and run in the background. Job: `job_id`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), `is_enabled`, `target_type`, `total`, `processed`, `outcomes`, `results[]`, `error`, `created_at`, `completed_at`. Not enough credits: `403` with the `estimate`. AML Monitoring is listed at $0.07 a year on the pricing page.
+Body: `is_enabled` (required), `estimate_only` (default `false`: return the cost estimate without changing anything), `vendor_data_list` and/or `didit_internal_id_list` (up to 1000 identifiers in total). Up to 20 profiles run inline (`200` with the finished job); more return `202` and run in the background. Job: `job_id`, `status` (`PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`), `is_enabled`, `target_type`, `total`, `processed`, `outcomes`, `results[]`, `error`, `created_at`, `completed_at`. Not enough credits: `403` with the `estimate`. AML Monitoring is listed at $0.07 per profile a year (as of 2026-11-18, [pricing](https://docs.didit.me/getting-started/pricing)).
 
 ### Biometric Templates
 
@@ -648,10 +648,12 @@ POST   /v3/businesses/aml-monitoring/               # see AML Ongoing Monitoring
 
 ### KYB Registry (no session)
 
+List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing), [KYB prices by country](https://docs.didit.me/getting-started/kyb-registry-pricing)).
+
 | Endpoint | Body | Price |
 |---|---|---|
 | `POST /v3/kyb/search/` | `country_code` (required; ISO alpha-2, US needs a state such as `US-CA`), `name` and/or `registration_number`, `search_type` (`contains`), `vendor_data`, `metadata`, `webhook_url` | $0.50 per successful search with paid-source results |
-| `POST /v3/kyb/select/` | `kyb_response_id` (required), `vendor_data`, `metadata` | Lite profile and officers, $2.00 (prices by country) |
+| `POST /v3/kyb/select/` | `kyb_response_id` (required), `vendor_data`, `metadata` | Lite profile and officers, $2.00-$3.00 by country |
 | `POST /v3/kyb/shareholders/` | same as select | Lite plus direct shareholders, $5.00-$22.00 by country |
 | `POST /v3/kyb/ubo/` | same as select | Shareholders plus ultimate beneficial owners, $9.00-$96.00 by country |
 
@@ -678,9 +680,9 @@ GET   /v3/transactions/{uuid}/   # Didit's transaction uuid from the create resp
 | Endpoint | Body | Response |
 |---|---|---|
 | `GET /v3/billing/balance/` | - | `{"balance": "142.5000", "auto_refill_enabled": true, "auto_refill_amount": "100.0000", "auto_refill_threshold": "10.0000"}`; the auto-refill values are `null` when unset |
-| `POST /v3/billing/top-up/` | `amount_in_dollars` (required, minimum 50), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
+| `POST /v3/billing/top-up/` | `amount_in_dollars` (required, $50 to $20,000), `success_url`, `cancel_url` (pass both explicitly) | `200` `{"checkout_session_id": "cs_...", "checkout_session_url": "https://checkout.stripe.com/..."}` |
 
-Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Organizations on an annual plan get `400` and top up through their account manager.
+Present `checkout_session_url` to the user to pay; the balance rises when the payment settles. Top-up errors (`400`) come as a JSON array, e.g. `["Amount must be at least $50."]`. Enterprise organizations cannot buy top-ups: usage beyond their contract credit is invoiced as overage ([pricing](https://docs.didit.me/getting-started/pricing#credit-and-top-ups)).
 
 ---
 

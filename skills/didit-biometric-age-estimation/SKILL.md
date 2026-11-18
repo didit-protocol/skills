@@ -31,7 +31,7 @@ Estimates a person's age from a facial image and runs a passive liveness check i
 - One clear, front-facing, well-lit face. The **largest** detected face drives `age_estimation`
 - Accuracy: mean absolute error (MAE) 3.5 years overall; 1.5 years for under-18 (see the table below)
 
-**Pricing:** $0.10 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.10 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Decision:** **any** warning declines. `status` is `Approved` only when `warnings` is empty. There is no `In Review` on this endpoint. `method` is always `PASSIVE`.
 

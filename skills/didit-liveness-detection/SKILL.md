@@ -31,7 +31,7 @@ Verifies that a user is physically present by analyzing a single captured image.
 - One clearly visible face. With several faces the largest one is scored and `MULTIPLE_FACES_DETECTED` is added
 - Original real-time capture (no screenshots, prints or photos of screens)
 
-**Pricing:** $0.05 (per successful call; standalone calls have no free tier). These are the list prices until 1 November 2026, when Didit pricing changes and the 500 free checks a month become $10 of free credit a month. Check [didit.me/pricing](https://didit.me/pricing) for current prices.
+**Pricing:** List prices as of 2026-11-18 ([pricing](https://docs.didit.me/getting-started/pricing)): $0.05 per successful standalone call, paid from your plan credit or top-ups. Current prices: [didit.me/pricing](https://didit.me/pricing).
 
 **Accuracy:** 99.9% liveness detection accuracy, <0.1% false acceptance rate (FAR).
 
