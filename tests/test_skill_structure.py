@@ -4,7 +4,7 @@
 Checks that each skill keeps the repository format (frontmatter, naming, Getting Started),
 that the README table and tree match the skills folder, that every script compiles and is
 referenced, that code examples parse, that API paths keep their trailing slash, that no
-supplier names or em dashes slip in, and that the documented webhook signature verifier
+withheld name or em dash slips in, and that the documented webhook signature verifier
 accepts signatures produced by Didit's signing algorithm.
 
 Usage:
@@ -20,11 +20,13 @@ import json
 import os
 import py_compile
 import re
+import struct
 import subprocess
 import sys
 import tempfile
 import types
 import unittest
+import zlib
 from pathlib import Path
 from unittest import mock
 
@@ -39,13 +41,28 @@ SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[^\n]*\n(.*?)^```", re.S | re.M)
 # Didit API paths, e.g. /v3/session/{id}/decision/ or https://verification.didit.me/v1/events/
 API_PATH_RE = re.compile(r"(?<![\w.])/v[123]/[A-Za-z0-9_{}<>.\-/]*[A-Za-z0-9_{}<>\-/]")
-# Supplier names that must never be published (same guard as the public docs repository).
-SUPPLIER_RE = re.compile(
-    r"\b(prelude|monnai|ipqualityscore|twilio|vonage|sinch|telnyx|plivo|hibp|have.?i.?been.?pwned|"
-    r"haveibeenpwned|aml ?watcher|amlwatcher|maxmind|seon|ekata|ipdata|ipgeolocation|iproov|facetec|"
-    r"innovatrics|regula|endesa|opensanctions|dilisense|complyadvantage|google maps|mapbox)\b",
-    re.I,
-)
+# Names that must never be published are NOT listed in this repository: it is
+# public, and a list of them would publish them. `tests/data/withheld-names.digests`
+# holds keyed digests (HMAC-SHA256) of those names, and `scripts/name_guard.py`
+# compares every file against them. The key is a secret that only the
+# `name-guard` workflow gets, and that workflow runs the script from the default
+# branch against a pull request's files as data. The tests here never get the
+# real key in CI: they prove the script's behaviour with a key and names made up
+# on the spot, and run the real check only when a maintainer sets the key locally.
+NAME_GUARD_SCRIPT = ROOT / "scripts" / "name_guard.py"
+NAME_GUARD_DIGESTS = ROOT / "tests" / "data" / "withheld-names.digests"
+NAME_GUARD_KEY = os.environ.get("DIDIT_NAME_GUARD_KEY", "")
+
+
+def load_name_guard():
+    spec = importlib.util.spec_from_file_location("name_guard", NAME_GUARD_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+name_guard = load_name_guard()
+
 
 # Webhook test vector. The signatures were produced by Didit's own signing functions
 # (generate_signature, generate_signature_v2 and generate_signature_simple) for this payload.
@@ -221,14 +238,473 @@ class ContentTest(unittest.TestCase):
                     self.assertNotIn(EM_DASH, line, "em dash")
                     self.assertNotIn(EN_DASH, line, "en dash")
 
-    def test_no_supplier_names_or_personal_emails(self):
+    def test_no_personal_emails(self):
         for path in public_files():
             if path.name == "test_skill_structure.py":
                 continue
             text = path.read_text(encoding="utf-8")
             with self.subTest(file=str(path.relative_to(ROOT))):
-                self.assertIsNone(SUPPLIER_RE.search(text), "supplier names must not be published")
                 self.assertNotIn("@gmail.com", text, "use you@yourdomain.com or user@example.com")
+
+    def test_the_digest_file_holds_digests_only(self):
+        digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
+        self.assertTrue(digests)
+        for digest in digests:
+            self.assertRegex(digest, r"^[0-9a-f]{64}$", "the digest file holds digests only, never a name")
+
+    def test_no_withheld_names_anywhere_in_the_repository(self):
+        # The `name-guard` workflow is what enforces this, from trusted code. This run
+        # is for a maintainer who has the key: CI never gives it to the tests.
+        if not NAME_GUARD_KEY:
+            self.skipTest("DIDIT_NAME_GUARD_KEY is not set: the name-guard workflow runs this check")
+        digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
+        # What a push would publish: tracked files and new ones git does not ignore. A working
+        # copy also holds build output (bytecode caches) that no clone ever gets.
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            cwd=ROOT, capture_output=True, check=True,
+        ).stdout.decode("utf-8")  # fmt: skip
+        with tempfile.TemporaryDirectory() as folder:
+            for name in filter(None, listed.split("\0")):
+                source = ROOT / name
+                if source.is_file() and not source.is_symlink():
+                    target = Path(folder) / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(source.read_bytes())
+            approved = name_guard.load_approved(name_guard.DEFAULT_APPROVED)
+            _, found, unapproved = name_guard.scan(folder, NAME_GUARD_KEY.encode("utf-8"), digests, approved)
+        # The message says where a name is, never what it is.
+        self.assertEqual(found, [], "a withheld name is in these places")
+        self.assertEqual(unapproved, [], "these binary files are not on the approved list, so they cannot be published")
+
+
+class NameGuardTest(unittest.TestCase):
+    """The guard's behaviour, proven with a key and names invented here (no real name, no real key)."""
+
+    KEY = b"a key made up for this test"
+    NAMES = ("zorvex", "quill harbor")
+
+    def setUp(self):
+        self.digests = frozenset(hmac.new(self.KEY, name.encode(), hashlib.sha256).hexdigest() for name in self.NAMES)
+        self.folder = tempfile.TemporaryDirectory()
+        self.tree = Path(self.folder.name)
+        self.digest_file = self.tree.parent / (self.tree.name + ".digests")
+        self.digest_file.write_text("\n".join(sorted(self.digests)) + "\n", encoding="utf-8")
+        # The approved binaries live OUTSIDE the tree, as in the workflow: the tree cannot approve itself.
+        self.approved_file = self.tree.parent / (self.tree.name + ".approved")
+        self.approved_file.write_text("# nothing approved\n", encoding="utf-8")
+
+    def tearDown(self):
+        self.digest_file.unlink()
+        self.approved_file.unlink()
+        self.folder.cleanup()
+
+    def approve(self, *files):
+        lines = [f"{hashlib.sha256((self.tree / name).read_bytes()).hexdigest()}  {name}" for name in files]
+        self.approved_file.write_text("# looked at by a maintainer\n" + "\n".join(lines) + "\n", encoding="utf-8")
+
+    def run_guard(self, key=KEY, tree=None, digests=None, approved=None, extra=()):
+        output = io.StringIO()
+        environment = {name_guard.KEY_VARIABLE: key.decode()} if key else {}
+        arguments = [str(tree or self.tree), "--digests", str(digests or self.digest_file)]
+        arguments += ["--approved", str(approved or self.approved_file), *extra]
+        with mock.patch.dict(os.environ, environment, clear=True), contextlib.redirect_stdout(output):
+            code = name_guard.main(arguments)
+        return code, output.getvalue()
+
+    def test_a_clean_tree_passes(self):
+        (self.tree / "README.md").write_text("Identity checks.\nNothing withheld here.\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked", output)
+
+    def test_a_name_fails_with_the_file_and_lines_and_never_the_words(self):
+        (self.tree / "docs").mkdir()
+        (self.tree / "docs" / "page.md").write_text(
+            "first line\nPowered by Zorvex today.\nthird\nUses Quill   Harbor, too.\n", encoding="utf-8"
+        )
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("docs/page.md: line 2, 4", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "the report names files and lines, never what it found")
+
+    def test_a_log_anyone_can_read_gives_the_count_and_never_a_place(self):
+        (self.tree / "docs").mkdir()
+        (self.tree / "docs" / "page.md").write_text("first line\nPowered by Zorvex today.\n", encoding="utf-8")
+        (self.tree / "zorvex-notes.txt").write_text("nothing here\n", encoding="utf-8")
+        (self.tree / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16)
+        code, output = self.run_guard(extra=["--no-places"])
+        self.assertEqual(code, 1, output)
+        self.assertIn("a withheld name is in 2 of 3 files", output)
+        self.assertIn("1 of 3 files are binary and not approved", output)
+        # Nothing says where: no path, no line number, no replaced part of a path, and never the words.
+        for place in ("docs", "page.md", "notes.txt", "logo", "line ", name_guard.WITHHELD, "zorvex"):
+            self.assertNotIn(place, output.lower(), "a reader who knows the place knows the name")
+        # The person who added the binary can still tell which file it is.
+        self.assertIn("sha256 " + hashlib.sha256((self.tree / "logo.png").read_bytes()).hexdigest()[:16], output)
+        # Without the option the same tree is reported with its places, for a run where the key is.
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("docs/page.md: line 2", output)
+        self.assertIn("logo.png", output)
+
+    def test_a_clean_tree_passes_in_a_log_anyone_can_read(self):
+        (self.tree / "README.md").write_text("Identity checks.\n", encoding="utf-8")
+        code, output = self.run_guard(extra=["--no-places"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked, no withheld name", output)
+
+    def test_words_match_whole_and_in_order_only(self):
+        (self.tree / "a.txt").write_text(
+            "quillharbor\nharbor quill\nzorvexes\nquill\nand harbor apart\n", encoding="utf-8"
+        )
+        # Line 4 ends with "quill" and line 5 does not start with "harbor", so nothing here is a name.
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+
+    def test_line_numbers_stay_right_deep_in_a_large_file(self):
+        # 60,000 lines and 240,000 words: the line of a name near the end, in the middle and at the
+        # start, with blank lines and a line that holds several words before the name.
+        lines = ["plain words on this line"] * 60000
+        lines[0] = "zorvex starts the file"
+        lines[29999] = ""
+        lines[30000] = "three words then quill harbor here"
+        lines[59998] = "the end is near: zorvex"
+        (self.tree / "big.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output[:300])
+        self.assertIn("  big.txt: line 1, 30001, 59999\n", output)
+
+    def test_a_name_split_over_two_lines_is_found_on_its_first_line(self):
+        (self.tree / "a.txt").write_text("we use quill\nharbor for this\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("a.txt: line 1", output)
+
+    def test_a_file_that_is_not_valid_utf8_is_a_binary_whatever_it_is_called(self):
+        # Text is valid UTF-8 and nothing else. Another encoding can spell a name in bytes that are not
+        # ASCII letters and hold no zero byte (EBCDIC here), so such a file is never read in part: it is refused.
+        (self.tree / "stray.txt").write_bytes(b"\xff\xfe broken bytes\nzorvex inside\n")
+        (self.tree / "legacy.txt").write_bytes("zorvex".encode("cp037"))
+        (self.tree / "latin.md").write_bytes("a clean café\n".encode("latin-1"))
+        (self.tree / "plain.md").write_text("a clean café, in UTF-8\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("3 of 4 files are binary and not approved", output)
+        self.assertNotIn("a withheld name", output)
+        self.assertNotIn("zorvex", output.lower())
+        self.approve("stray.txt", "legacy.txt", "latin.md")
+        self.assertEqual(self.run_guard()[0], 0, "a maintainer who has looked at the bytes can still approve them")
+
+    def test_invisible_characters_accents_and_wide_letters_do_not_hide_a_name(self):
+        lines = [
+            "zor​vex",  # a zero-width space
+            "zor­vex",  # a soft hyphen
+            "zor️vex",  # a variation selector
+            "zor⁠vex",  # a word joiner
+            "Ｚｏｒｖｅｘ",  # full-width letters
+            "Zörvex",  # an accent, written as one character
+            "Zörvex",  # the same accent, written as a combining mark
+            "quill harbor",  # a no-break space between the two words
+            "﻿zorvex",  # a byte order mark
+            "nothing on this line",
+        ]
+        (self.tree / "a.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (self.tree / "zor​vex.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  a.txt: line 1, 2, 3, 4, 5, 6, 7, 8, 9\n", output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertIn("a withheld name is in 2 of 2 files", output)
+        self.assertNotIn("vex", output.lower())
+
+    def test_what_the_guard_says_it_does_not_see_stays_what_it_does_not_see(self):
+        # The limits the script's own description states. If one of these starts to match, update that text.
+        lines = [
+            "zоrvex",  # a look-alike letter from another alphabet (Cyrillic)
+            "em9ydmV4",  # base64
+            "&#122;orvex",  # an escape
+            "prezorvexed",  # inside a longer word
+        ]
+        (self.tree / "a.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        self.assertEqual(self.run_guard()[0], 0)
+
+    def test_a_path_that_is_not_valid_utf8_can_still_be_reported(self):
+        # Git accepts such a file name on Linux; Python holds its bad bytes as lone surrogates, which
+        # cannot be printed as they are.
+        shown = name_guard.printable("docs/caf\udce9.md")
+        self.assertEqual(shown, "docs/caf\\udce9.md")
+        shown.encode("utf-8")
+        self.assertEqual(name_guard.printable("docs/plain.md"), "docs/plain.md")
+
+    def test_a_symbolic_link_is_never_followed_and_git_folders_are_never_read(self):
+        outside = self.tree.parent / (self.tree.name + ".outside")
+        outside.write_text("zorvex\n", encoding="utf-8")
+        self.addCleanup(outside.unlink)
+        (self.tree / "link.txt").symlink_to(outside)
+        (self.tree / ".git").mkdir()
+        (self.tree / ".git" / "packed.txt").write_text("zorvex\n", encoding="utf-8")
+        (self.tree / "plain.txt").write_text("nothing\n", encoding="utf-8")
+        code, output = self.run_guard()
+        # The file the link points at holds a name, and it is outside the tree: it is not opened.
+        self.assertEqual(code, 0, output)
+        self.assertIn("2 files checked", output)
+
+    def test_a_symbolic_link_is_checked_by_its_name_and_its_stored_target(self):
+        (self.tree / "real").mkdir()
+        (self.tree / "real" / "page.md").write_text("clean\n", encoding="utf-8")
+        (self.tree / "zorvex-link.md").symlink_to("real/page.md")
+        (self.tree / "alias.md").symlink_to("../elsewhere/Quill-Harbor/page.md")
+        (self.tree / "folder-alias").symlink_to("/opt/zorvex/docs", target_is_directory=True)
+        (self.tree / "honest.md").symlink_to("real/page.md")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        lines = output.splitlines()
+        self.assertIn("  <withheld>: in its path", lines, output)
+        self.assertIn("  alias.md: in its link target", lines, output)
+        self.assertIn("  folder-alias: in its link target", lines, output)
+        self.assertIn("a withheld name is in 3 of 5 files", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "a link target that holds a name is never printed")
+
+    def test_an_empty_folder_is_checked_by_its_name(self):
+        (self.tree / "docs" / "zorvex").mkdir(parents=True)
+        (self.tree / "docs" / "empty-but-fine").mkdir()
+        (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  docs/<withheld>/: in its path", output.splitlines(), output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_name_in_a_file_or_folder_name_fails_and_the_report_hides_that_part(self):
+        (self.tree / "zorvex-notes.md").write_text("nothing here\n", encoding="utf-8")
+        (self.tree / "docs" / "Quill_Harbor").mkdir(parents=True)
+        (self.tree / "docs" / "Quill_Harbor" / "readme.md").write_text("clean\n", encoding="utf-8")
+        (self.tree / "docs" / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertIn("  docs/<withheld>/readme.md: in its path", output)
+        self.assertIn("a withheld name is in 2 of 3 files", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "a path that holds a name is never printed whole")
+
+    def test_a_name_in_both_the_path_and_the_text_is_reported_once_with_both(self):
+        (self.tree / "zorvex.md").write_text("first\nzorvex again\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path; line 2", output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_binary_file_is_refused_not_skipped(self):
+        # A PDF by its suffix, an archive by its first bytes whatever it is called, and any file with a zero byte.
+        (self.tree / "guide.pdf").write_bytes(b"%PDF-1.7\nstream\nx\x9c+\nendstream\n")
+        (self.tree / "renamed.txt").write_bytes(b"PK\x03\x04\x14\x00\x00\x00 archive bytes")
+        (self.tree / "blob.bin").write_bytes(b"\x00\x01\x02 zorvex \x00")
+        (self.tree / "zorvex.zip").write_bytes(b"PK\x03\x04")
+        (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("4 of 5 files are binary and not approved", output)
+        refused = [line.split("  (sha256 ")[0] for line in output.splitlines() if "  (sha256 " in line]
+        self.assertEqual(sorted(refused), sorted(["  guide.pdf", "  renamed.txt", "  blob.bin", "  <withheld>"]), output)
+        self.assertNotIn("zorvex", output.lower())
+
+    @staticmethod
+    def png(*chunks, end=b"", tail=b""):
+        """A PNG file made of the given (type, body) chunks between a header and an end marker."""
+
+        def chunk(kind, body):
+            return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+        header = chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0))
+        pixels = chunk(b"IDAT", zlib.compress(b"\x00\x00"))
+        return b"\x89PNG\r\n\x1a\n" + header + b"".join(chunk(k, b) for k, b in chunks) + pixels + chunk(b"IEND", end) + tail
+
+    def test_a_binary_is_never_inspected_so_no_place_inside_one_can_hide_a_name(self):
+        # Every way a review found to carry a name inside a PNG, and a clean PNG: none is read, all are refused.
+        cases = {
+            "clean.png": self.png((b"sRGB", b"\x00")),
+            "text-chunk.png": self.png((b"tEXt", b"Comment\x00made with Zorvex")),
+            "compressed-chunk.png": self.png((b"zTXt", b"Comment\x00\x00" + zlib.compress(b"made with Zorvex"))),
+            "profile.png": self.png((b"iCCP", b"sRGB\x00\x00" + zlib.compress("Zorvex".encode("utf-16-be")))),
+            "exif.png": self.png((b"eXIf", b"MM\x00*\x00\x00\x00\x08" + "by Zorvex".encode("utf-16-le"))),
+            "unknown-chunk.png": self.png((b"prVt", b"zorvex")),
+            "after-the-stream.png": self.png((b"zTXt", b"Comment\x00\x00" + zlib.compress(b"fine") + b"zorvex")),
+            "in-the-end-marker.png": self.png(end=b"zorvex"),
+            "in-the-palette.png": self.png((b"PLTE", b"zorvex")),
+            "after-the-end.png": self.png(tail=b"zorvex"),
+            "in-the-pixels.png": self.png((b"IDAT", zlib.compress(b"zorvex"))),
+        }
+        for name, data in cases.items():
+            (self.tree / name).write_bytes(data)
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn(f"{len(cases)} of {len(cases)} files are binary and not approved", output)
+        for name in cases:
+            self.assertTrue(any(line.startswith(f"  {name}  (sha256 ") for line in output.splitlines()), name)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_an_approved_binary_passes_and_one_changed_byte_refuses_it(self):
+        (self.tree / "assets").mkdir()
+        (self.tree / "assets" / "icon.png").write_bytes(self.png((b"sRGB", b"\x00")))
+        (self.tree / "readme.md").write_text("clean\n", encoding="utf-8")
+        self.approve("assets/icon.png")
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        self.assertIn("2 files checked", output)
+        # The same bytes under another name are the same approved file; one more byte is a new file.
+        (self.tree / "assets" / "copy.png").write_bytes((self.tree / "assets" / "icon.png").read_bytes())
+        self.assertEqual(self.run_guard()[0], 0)
+        (self.tree / "assets" / "icon.png").write_bytes(self.png((b"sRGB", b"\x00"), tail=b"x"))
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("1 of 3 files are binary and not approved", output)
+        self.assertTrue(any(line.startswith("  assets/icon.png  (sha256 ") for line in output.splitlines()), output)
+
+    def test_an_approved_binary_still_has_its_path_compared(self):
+        (self.tree / "zorvex-logo.png").write_bytes(self.png())
+        self.approve("zorvex-logo.png")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertNotIn("not approved", output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_tree_cannot_approve_its_own_binary(self):
+        # The list is a file of its own, given to the guard from outside the tree it checks. A copy of the
+        # list inside the tree, at the very path the repository keeps it, approves nothing.
+        (self.tree / "picture.png").write_bytes(self.png())
+        (self.tree / "tests" / "data").mkdir(parents=True)
+        sha = hashlib.sha256((self.tree / "picture.png").read_bytes()).hexdigest()
+        (self.tree / "tests" / "data" / "approved-binaries.sha256").write_text(sha + "  picture.png\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("1 of 2 files are binary and not approved", output)
+
+    def test_the_approved_list_holds_digests_notes_and_comments_and_nothing_else(self):
+        (self.tree / "a.md").write_text("clean\n", encoding="utf-8")
+        good = self.tree.parent / (self.tree.name + ".good")
+        good.write_text("# a comment\n\n" + "a" * 64 + "  assets/icon.png\n" + "b" * 64 + "\n", encoding="utf-8")
+        self.addCleanup(good.unlink)
+        self.assertEqual(name_guard.load_approved(good), frozenset({"a" * 64, "b" * 64}))
+        self.assertEqual(self.run_guard(approved=good)[0], 0)
+        for text in ("assets/icon.png\n", "A" * 64 + "\n", "a" * 63 + "\n", "zorvex\n"):
+            bad = self.tree.parent / (self.tree.name + ".bad-approved")
+            bad.write_text(text, encoding="utf-8")
+            self.addCleanup(bad.unlink, missing_ok=True)
+            code, output = self.run_guard(approved=bad)
+            self.assertEqual(code, 2, output)
+            self.assertIn("approved binary files cannot be used", output)
+            self.assertNotIn("zorvex", output.lower())
+        self.assertEqual(self.run_guard(approved=self.tree.parent / "no-such-list")[0], 2)
+
+    def test_other_images_and_fonts_are_refused_whatever_they_are_called(self):
+        cases = {
+            "photo.jpg": b"\xff\xd8\xff\xe0\x00\x10JFIF",
+            "anim.gif": b"GIF89a\x01\x00\x01\x00",
+            "picture.webp": b"RIFF\x24\x00\x00\x00WEBPVP8 ",
+            "font.otf": b"OTTO\x00\x0b\x00\x80",
+            "font.woff2": b"wOF2\x00\x01\x00\x00",
+            "truetype.ttf": b"\x00\x01\x00\x00\x00\x0f",
+            "renamed.md": b"GIF89a plain looking",
+            "renamed.txt": b"\x89PNG\r\n\x1a\n plain looking",
+        }
+        for name, data in cases.items():
+            (self.tree / name).write_bytes(data)
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("8 of 8 files are binary and not approved", output)
+
+    def test_every_binary_this_repository_publishes_is_on_the_approved_list(self):
+        # Needs no key: it is the list against the files, so an unapproved binary fails ordinary CI too.
+        approved = name_guard.load_approved(name_guard.DEFAULT_APPROVED)
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT, capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+        binaries = {}
+        for name in listed:
+            path = ROOT / name
+            if path.is_file() and not path.is_symlink():
+                data = path.read_bytes()
+                if name_guard.is_binary(path, data):
+                    binaries[name] = hashlib.sha256(data).hexdigest()
+        self.assertTrue(binaries, "the repository publishes at least its icons")
+        self.assertEqual({name for name, sha in binaries.items() if sha not in approved}, set())
+        # An approval no file uses yet is allowed on purpose: it is merged first, on its own, and the
+        # pull request that adds the binary comes after it (the guard reads the list from the default branch).
+
+    def test_without_a_key_nothing_is_reported_as_checked(self):
+        (self.tree / "a.txt").write_text("zorvex\n", encoding="utf-8")
+        code, output = self.run_guard(key=b"")
+        self.assertEqual(code, 2, output)
+        self.assertIn("nothing was checked", output)
+
+    def test_a_digest_file_with_anything_but_digests_is_refused(self):
+        bad = self.tree.parent / (self.tree.name + ".bad")
+        bad.write_text("zorvex\n", encoding="utf-8")
+        self.addCleanup(bad.unlink)
+        code, output = self.run_guard(digests=bad)
+        self.assertEqual(code, 2, output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_the_workflow_runs_trusted_code_and_never_the_pull_request(self):
+        workflow = (ROOT / ".github" / "workflows" / "name-guard.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request_target:", workflow)
+        self.assertIn("environment: name-guard", workflow)
+        self.assertIn("path: checked", workflow)
+        self.assertEqual(workflow.count("secrets.DIDIT_NAME_GUARD_KEY"), 1)
+        # Two commands and no more: the refusal of a fork's pull request, which runs nothing from it, and
+        # the trusted script with the trusted digest file and approved list, in a log that gives no place.
+        runs = [line.strip() for line in workflow.splitlines() if line.strip().startswith("run:")]
+        self.assertEqual(len(runs), 2, runs)
+        self.assertTrue(runs[0].startswith('run: echo "::error::The name guard does not run on a pull request'), runs[0])
+        self.assertTrue(runs[0].endswith('" && exit 1'), runs[0])
+        self.assertNotIn("$", runs[0], "the refusal prints fixed words: nothing from the pull request reaches a shell")
+        self.assertEqual(
+            runs[1],
+            'run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests'
+            " --approved tests/data/approved-binaries.sha256 --no-places",
+        )
+        # No other workflow gets the key: tests and plugin checks run a pull request's own code.
+        for other in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+            if other.name != "name-guard.yml":
+                self.assertNotIn("DIDIT_NAME_GUARD_KEY", other.read_text(encoding="utf-8"), other.name)
+
+    def test_the_workflow_never_answers_a_pull_request_from_a_fork(self):
+        # A fork's author chooses the content, so a keyed run on it would answer "is this word on the
+        # list?" for any word they like. Three locks, each enough alone: the first step fails for a
+        # fork, the pull request's files are fetched only from this repository, and the step with the
+        # key has its own condition.
+        workflow = (ROOT / ".github" / "workflows" / "name-guard.yml").read_text(encoding="utf-8")
+        steps = workflow.split("    steps:\n", 1)[1].split("\n      - ")
+        steps[0] = steps[0].removeprefix("      - ")
+        from_a_fork = "github.event.pull_request.head.repo.full_name != github.repository"
+        from_here = "github.event.pull_request.head.repo.full_name == github.repository"
+
+        refusal = steps[0]
+        self.assertIn(f"if: github.event_name == 'pull_request_target' && {from_a_fork}\n", refusal)
+        self.assertIn("&& exit 1", refusal)
+        self.assertNotIn("uses:", refusal, "the refusal comes before anything is fetched")
+        # A skipped job counts as passed, so the job itself has no condition: the refusal is a failed step.
+        job = workflow.split("  name-guard:\n", 1)[1].split("    steps:\n", 1)[0]
+        self.assertNotIn("if:", job)
+        # Nothing lets the job go on after a failed step.
+        for word in ("continue-on-error", "always()", "failure()", "cancelled()"):
+            self.assertNotIn(word, workflow)
+
+        fetch = [step for step in steps if "path: checked" in step]
+        self.assertEqual(len(fetch), 1)
+        self.assertIn(f"if: github.event_name == 'pull_request_target' && {from_here}\n", fetch[0])
+        self.assertIn("repository: ${{ github.repository }}\n", fetch[0])
+        self.assertEqual(workflow.count("repository:"), 1, "no step names another repository to fetch from")
+
+        keyed = [step for step in steps if "secrets.DIDIT_NAME_GUARD_KEY" in step]
+        self.assertEqual(len(keyed), 1)
+        self.assertIn(f"if: github.event_name != 'pull_request_target' || {from_here}\n", keyed[0])
+        self.assertLess(steps.index(refusal), steps.index(fetch[0]))
+        self.assertLess(steps.index(fetch[0]), steps.index(keyed[0]))
 
     def test_json_examples_parse(self):
         for skill in SKILLS:

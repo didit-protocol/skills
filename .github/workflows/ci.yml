@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Skill structure (offline)
+        # No secret here: these tests are code a pull request controls. The name
+        # guard runs in its own workflow (name-guard.yml), from trusted code.
         run: python3 tests/test_skill_structure.py
       - name: Plugin bundle (offline)
         run: python3 tests/test_plugin_bundle.py
