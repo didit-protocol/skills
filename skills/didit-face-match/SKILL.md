@@ -8,7 +8,7 @@ description: >
   0-100 similarity score and an Approved/Declined status against a configurable decline
   threshold (default 30), with optional image rotation. Does not enroll faces or run blocklist
   or duplicate checks.
-version: 1.5.0
+version: 1.6.0
 metadata:
   openclaw:
     requires:

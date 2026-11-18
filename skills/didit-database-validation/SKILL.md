@@ -10,7 +10,7 @@ description: >
   120+ live services in 45 countries plus a global group (strongest in Latin America, plus
   Spain, South Africa, Kenya and other markets) with per-service pricing and per-field match
   results.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

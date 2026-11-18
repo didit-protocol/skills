@@ -8,7 +8,7 @@ description: >
   scoring, review AML hits (Confirmed Match, False Positive, Inconclusive), or turn on ongoing
   AML monitoring using Didit. Covers POST /v3/aml/ (1,300+ watchlists, fuzzy name matching,
   configurable weights and thresholds, idempotent retries) and the AML hit review endpoints.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

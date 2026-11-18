@@ -11,7 +11,7 @@ description: >
   retrieve a stored check by check_id; make idempotent retries with client_reference; or
   risk-score a single IP address (geolocation, VPN/Tor, data center, claimed-country mismatch)
   using Didit.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

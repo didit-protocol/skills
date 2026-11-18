@@ -10,7 +10,7 @@ description: >
   rules, pull case analytics and SLA metrics, or create, validate, finalize and download goAML
   SAR/STR reports using Didit. Cases come from AML screening hits, transaction rules, workflow
   builder nodes, or manual creation.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

@@ -10,7 +10,7 @@ description: >
   self-hosted wallet ownership, register after-deposit (sunrise) transfers, mint SDK transaction
   tokens for client-side submission, or step up risky transactions with biometric
   re-verification using Didit.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:

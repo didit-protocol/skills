@@ -8,7 +8,7 @@ description: >
   field list; compare the name on a document with an expected person or company; detect tampered
   or edited PDFs and images; decode QR codes and barcodes on a document; or add a DOCUMENT_AI
   step to a verification workflow using Didit. Synchronous, multipart upload.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

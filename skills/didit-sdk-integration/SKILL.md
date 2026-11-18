@@ -12,7 +12,7 @@ description: >
   device with a monitoring token. Keeps the API key on the backend. Also use for any combination
   of Identity verification, Transaction monitoring and end-user Authentication, checking release
   availability first.
-version: 1.1.0
+version: 1.2.0
 metadata:
   openclaw:
     requires:

@@ -9,7 +9,7 @@ description: >
   /v3/email/risk/ using Didit. Supports fraud signals (IP, device, user agent), 4-8 character
   numeric or alphanumeric codes, 54 template languages, white-label branding, and per-call
   DECLINE policies for risky emails.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

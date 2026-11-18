@@ -8,7 +8,7 @@ description: >
   against an expected name, address or country, detect edited PDFs, or perform PoA checks using
   Didit. Returns Approved or Declined with itemized warnings, the parsed address with
   coordinates, issuer, dates, holder name, bank fields and QR/barcode data.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

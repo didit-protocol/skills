@@ -10,7 +10,7 @@ description: >
   Use when someone needs to create a Didit account or API key, build a verification workflow,
   create or poll verification sessions, review or resubmit a session, manage users, businesses
   or lists, check or top up credits, configure webhooks, or verify Didit webhook signatures.
-version: 5.1.0
+version: 5.2.0
 metadata:
   openclaw:
     requires:

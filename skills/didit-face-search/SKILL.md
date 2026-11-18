@@ -8,7 +8,7 @@ description: >
   already exists, preventing repeat registrations, screening a face against the face blocklist,
   or investigating fraud rings. Returns up to 5 ranked matches with similarity percentages,
   match source and session details, plus blocklist and duplicate-face warnings.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

@@ -8,7 +8,7 @@ description: >
   verification, active liveness, non-document lookup or digital ID wallets to the flow, poll or
   receive the decision, or approve, decline or request resubmission of a session. Creates the
   workflow, generates the verification URL and reads the decision.
-version: 1.2.0
+version: 1.3.0
 metadata:
   openclaw:
     requires:

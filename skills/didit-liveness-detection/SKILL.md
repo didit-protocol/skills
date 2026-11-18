@@ -8,7 +8,7 @@ description: >
   against the face blocklist and earlier approved faces. Returns a 0-100 liveness score, an
   Approved/Declined status against a configurable decline threshold, face quality and luminance,
   and blocklist and duplicate-face warnings.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

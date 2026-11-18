@@ -6,14 +6,40 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhere
 
 ## [Unreleased]
 
-### Fixed
-- ClawHub bundles keep `scripts/`, so the helpers referenced by skills are included. Credential,
-  cache and development exclusions remain in place. Manual installation now copies complete folders.
-- **didit-verification-management:** `setup_account.py` reads the password from `DIDIT_PASSWORD` or a
-  no-echo prompt instead of a command-line argument, which exposed it in the process list, shell history
-  and agent logs (CWE-214). A positional password still works but prints a warning.
+## [5.2.0] - 2026-11-18
+
+Every skill re-checked against the Didit MCP server v5.1.67 source and the pricing pages as they stood on
+2026-11-18. Skill versions: aml-screening 1.4.0, biometric-age-estimation 1.3.0, case-management 1.1.0,
+database-validation 1.4.0, document-ai 1.1.0, email-verification 1.4.0, event-monitoring 1.1.0,
+face-match 1.6.0, face-search 1.4.0, fraud-check 1.1.0, fraud-networks 1.1.0, id-document-verification 1.4.0,
+kyc-onboarding 1.3.0, liveness-detection 1.4.0, mcp-server 1.1.0, phone-verification 1.5.0,
+proof-of-address 1.4.0, sdk-integration 1.2.0 (after the 1.1.0 change below), transaction-monitoring 1.2.0, verification-management 5.2.0.
 
 ### Changed
+- **didit-mcp-server (1.0.0 to 1.1.0):** matches server v5.1.67. Documents API key connections (one
+  application, the key's own access, person-only tools refused) next to OAuth, which stays the default;
+  the three advertised scopes, with `didit:staff` for Didit staff only; that tool results are compact JSON
+  plus `structuredContent`, with secrets redacted and large payloads summarized; that revoking stops refresh
+  while an accepted access token can reach the server for up to 60 seconds; device-code `login` and `logout`
+  with stored, refreshed credentials; what `GET` and `DELETE` on `/mcp` and the bare origin return; tool
+  coverage (167 tools for a signed-in person, 9 more on a local server, `?toolsets=core` with 29 tools,
+  `read_only=true`, the discovery tools, `didit_docs_search`); the real `organization_id`/`application_id`
+  rule; OpenAI Codex and the per-client docs pages; the Claude Code plugin install; launcher versions pinned;
+  and which top-up and key tools are hosted or local only.
+- **All skills, pricing:** removed the sentence about list prices until 1 November 2026. Every remaining price
+  was checked on the pricing pages and is dated "as of 2026-11-18" with a link; changed figures include Email
+  Verification $0.02, the Phone Verification Didit fee $0.02, Transaction Screening (monthly plan allowance,
+  then $0.001), iDIN $0.95, Smart-ID and Mobile-ID $0.21, KYB Lite $2.00-$3.00, and the published Email Risk,
+  Phone Risk and IP Risk prices. Statements about 500 free checks a month and "no free tier" were replaced by
+  the current rule (plan credit or top-ups pay for checks; the Free plan's $10 monthly credit applies to
+  organizations that signed up with a work email in the console, not to API-created ones, and not to phone
+  verification). Prices were removed from the Document AI and Transaction Monitoring descriptions.
+- **didit-database-validation:** coverage is 45 countries plus a Global group, 122 live services, with 60+
+  countries tracked and activated on demand; the highest service price is $8.00, and the Argentina, Spain,
+  Guatemala, Panama, Peru, Kenya and South Africa service prices match the current pricing table.
+- **All REST skills:** each description starts with the integration boundary ("Use when writing backend or
+  API-key integration code for ..."), and each body points people working inside a connected Didit account
+  to the Didit plugin or MCP server tools instead of REST calls.
 - **didit-sdk-integration (1.0.0 to 1.1.0):** adds a three-product prompt for all seven combinations of
   Identity verification, Transaction monitoring and end-user Authentication. Uses one server-owned
   `vendor_data`, separate credentials and backend-confirmed decisions; keeps unavailable Authentication,
@@ -24,7 +50,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), adhere
 - Dedicated Authentication, electronic-signature and biometric-consent skills remain deferred until
   their APIs are merged and documented. The integration guidance does not certify runtime readiness.
 
+### Security
+- **didit-verification-management:** `setup_account.py` never prints a full API key, access token, refresh
+  token or password. It prints a masked form (first 4 and last 4 characters). `--write-env <path>` writes the
+  full values to a file created or updated with mode 0600, and `--show-secrets` prints them only when passed.
+  Error responses are masked the same way.
+
+### Fixed
+- ClawHub bundles keep `scripts/`, so the helpers referenced by skills are included. Credential,
+  cache and development exclusions remain in place. Manual installation now copies complete folders.
+- **didit-verification-management:** `setup_account.py` reads the password from `DIDIT_PASSWORD` or a
+  no-echo prompt instead of a command-line argument, which exposed it in the process list, shell history
+  and agent logs (CWE-214). A positional password still works but prints a warning.
+
 ### Tests
+- Offline tests feed synthetic verify and login responses to `setup_account.py` and fail if a full
+  credential appears in normal output, or if `--write-env` does not write a 0600 file.
 - Offline publication-filter regression verifies that every skill's Python helpers survive the ignore
   policies and that credential, cache and development files stay excluded.
 

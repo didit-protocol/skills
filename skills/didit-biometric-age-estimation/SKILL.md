@@ -8,7 +8,7 @@ description: >
   assurance. Returns the estimated age, a liveness score and an Approved/Declined status against
   configurable age and liveness thresholds. Also covers the AGE_ESTIMATION workflow feature,
   where borderline ages fall back to ID verification and per-country age limits apply.
-version: 1.2.0
+version: 1.3.0
 metadata:
   openclaw:
     requires:

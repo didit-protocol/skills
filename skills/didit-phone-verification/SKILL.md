@@ -8,7 +8,7 @@ description: >
   duplicate or blocklisted numbers, look up a number's carrier, line type or social footprint,
   or score phone risk with POST /v3/phone/risk/ using Didit. Supports automatic SMS fallback,
   branded SMS sender names, fraud signals, and per-call DECLINE policies.
-version: 1.4.0
+version: 1.5.0
 metadata:
   openclaw:
     requires:

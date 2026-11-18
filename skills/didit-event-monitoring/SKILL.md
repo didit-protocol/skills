@@ -11,7 +11,7 @@ description: >
   an event; or write velocity, ratio, sequence and correlation rules over events to detect
   account takeover, bonus abuse, multi-accounting, chip dumping, opposite betting, minimal-play
   laundering, friendly fraud and bot play using Didit.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:

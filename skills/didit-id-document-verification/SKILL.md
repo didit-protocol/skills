@@ -8,7 +8,7 @@ description: >
   covered fields, read document warnings, or start a digital ID wallet sign-in (MitID, BankID
   Sweden, iDIN, Finnish Trust Network, Smart-ID, Mobile-ID) without a workflow. Covers 14,000+
   document types from 220+ countries and territories.
-version: 1.3.0
+version: 1.4.0
 metadata:
   openclaw:
     requires:

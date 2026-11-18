@@ -9,7 +9,7 @@ description: >
   download a network PDF report, or check whether a session, user, business, transaction or
   transaction party belongs to a fraud network using Didit. Networks are built automatically
   from production verifications and transactions; the API is read-only.
-version: 1.0.0
+version: 1.1.0
 metadata:
   openclaw:
     requires:
