@@ -22,7 +22,7 @@ Explain which rules fired, what each one checks, and the resulting status.
 - The shapes of `transaction_details` and `subject` depend on the category. Look them up with `didit_docs_search` before building one; do not guess field names.
 - Optional: `counterparty`, `transaction_at`, `custom_properties`, `include_crypto_screening`.
 
-This records a real transaction in the application. In a live application, or one whose mode is unknown, submitting it uses the organization's Didit credits, and `include_crypto_screening` adds a wallet screening billed on its own. Show the payload with that notice and wait for the person to agree before calling it. Never state a price: link https://didit.me/pricing.
+This records a real transaction in the application. In a live application this can use your Didit credits: past the plan's monthly allowance a transaction is charged, an outbound Travel Rule transfer can be charged in its place, and `include_crypto_screening` adds a wallet screening billed on its own. Treat a mode that is unknown as live. Show the payload with that notice and wait for the person to agree before calling it. Never state a price: link https://didit.me/pricing.
 
 ## 3. Rules
 
@@ -32,8 +32,8 @@ This records a real transaction in the application. In a live application, or on
 
 Recommended order:
 
-1. Backtest the exact conditions first and report the hit rate.
-2. Create the rule with `mode: "TEST"` so it records hits without acting. Pass the same `conditions`, `aggregation`, `evaluation_mode` and `scope` that were backtested, plus `actions`; the backtest saves none of them.
+1. Back-test the exact conditions first and report the hit rate.
+2. Create the rule with `mode: "TEST"` so it records hits without acting. Pass the same `conditions`, `aggregation`, `evaluation_mode` and `scope` that were back-tested, plus `actions`; the back-test saves none of them.
 3. Switch it to `ACTIVE` only after the person reviews the test hits.
 
 Confirm the title, conditions, actions and mode with the person before creating the rule.
@@ -44,7 +44,7 @@ Confirm the title, conditions, actions and mode with the person before creating 
 
 - `wallet_address` and `blockchain` (`BTC`, `ETH`, `LTC`, `XRP`, `BCH`, `DOGE`, `TRX`, `SOL`, `MATIC`, `BNB`, `USDT`, `USDC`) are required. Optional `direction`.
 - It returns a risk score, severity, any sanctions hit and the source or destination of funds.
-- It needs transaction monitoring configured for the application and uses the organization's Didit credits in a live application, or one whose mode is unknown. Say so and wait for a yes. Never state a price: link https://didit.me/pricing.
+- It needs transaction monitoring configured for the application. In a live application this can use your Didit credits; treat a mode that is unknown as live. Say so and wait for a yes. Never state a price: link https://didit.me/pricing.
 
 ## 5. Alert channels
 
@@ -53,7 +53,7 @@ Confirm the title, conditions, actions and mode with the person before creating 
 ## What good output looks like
 
 - For a flagged transaction, the rules that fired and why, in plain words.
-- For a new rule, the backtest hit count and rate before anything is saved.
+- For a new rule, the back-test hit count and rate before anything is saved.
 - For a wallet, the risk score, severity and any sanctions hit on the first line.
 - A clear question before any transaction, rule or billable screening is created.
 

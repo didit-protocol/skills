@@ -9,7 +9,7 @@ Follow the rules of didit-connect first: call `didit_context_get`, pick the appl
 
 ## Before any check
 
-- Every tool in this skill is a write. In a live application each check uses Didit credits. Say so and wait for the person to agree before the first one. Sandbox checks are free.
+- Every tool in this skill is a write. In a live application this can use your Didit credits (for example, each phone code sent is charged). Say so and wait for the person to agree before the first one. Sandbox applications are free to test in.
 - When the person gives the checked person's id in the customer's system, pass it as `vendor_data` so the result links to that user. Only the AML, database, document, address and face tools declare `vendor_data`; the email and phone tools do not, so never send it to them.
 
 ## Checks that take text

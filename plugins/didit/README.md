@@ -2,7 +2,7 @@
 
 Use your Didit account from Claude, Codex or Cursor. After you sign in with your Didit account, you can ask in plain words to create verification links, read decisions and the reasons behind them, work the review queue and cases, screen names against sanctions and PEP lists, verify businesses, monitor transactions, and read analytics, balance and exports.
 
-The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds eight skills that teach the assistant how to use its tools safely: which application to act in, when to ask before a change, and when an action uses credits.
+The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds eight skills that teach the assistant how to use the Didit tools safely: which application to act in, when to ask before a change, and when an action uses credits.
 
 ## Install
 
@@ -30,13 +30,20 @@ codex plugin marketplace add didit-protocol/skills
 codex plugin add didit@didit
 ```
 
-**Cursor:** install the Didit plugin from github.com/didit-protocol/mcp, or use this folder's `.cursor-plugin/plugin.json`.
+**Cursor:** install the Didit plugin from [github.com/didit-protocol/mcp](https://github.com/didit-protocol/mcp), or use this folder's `.cursor-plugin/plugin.json`.
 
 Already added the Didit server by hand (a custom connector or `claude mcp add`)? Keep it. The plugin uses the same server name, `didit`, and the same URL.
 
-## Focused plugins
+## Which Didit plugin should I install?
 
-Need only one product? The same marketplace has `didit-transaction-monitoring`, `didit-user-management` and `didit-authentication`. Install either `didit` or the focused plugin for your product, not both. If both are installed nothing breaks: they use the same server and different skill names.
+| Plugin | Install it if you want |
+|---|---|
+| `didit` | Everything: verification, review, checks, KYB, transaction monitoring, reports and workspace admin |
+| `didit-transaction-monitoring` | Just transaction monitoring: transactions, rules, wallet screening, alerts, cases and the AI Investigator |
+| `didit-user-management` | Just the people and companies you verify, your lists, and your workspace team and API keys |
+| `didit-authentication` | Guidance for adding Didit end-user sign-in to your own app (not part of `didit`) |
+
+You can install `didit` on its own or a focused plugin alongside it; they share the same `didit` server, so you keep a single connection. Their skill names differ, so nothing conflicts.
 
 ## Skills
 
@@ -45,9 +52,9 @@ Need only one product? The same marketplace has `didit-transaction-monitoring`, 
 | didit-connect | Sign in, pick the organization and application, learn the rules every other skill follows |
 | didit-verify-people | Create KYC workflows and verification links, read decisions and why, test in sandbox |
 | didit-review-queue | Work sessions in review, approve or decline, add notes, manage cases |
-| didit-run-checks | Run one check: AML, ID document, proof of address, database, face, liveness, phone code (email through a session) |
+| didit-run-checks | Run a single check (AML, ID document, proof of address, database, face, liveness, phone code); email verification requires a session |
 | didit-verify-businesses | Look companies up in official registries and run full KYB |
-| didit-monitor-transactions | Read flagged transactions, backtest and create rules, screen wallets |
+| didit-monitor-transactions | Read flagged transactions, back-test and create rules, screen wallets |
 | didit-reports | Analytics, credit balance, plan, and exports |
 | didit-workspace-admin | Members and roles, webhooks, lists, branding, questionnaires |
 
@@ -55,18 +62,27 @@ Need only one product? The same marketplace has `didit-transaction-monitoring`, 
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
-- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You never give it a password or an API key.
-- Data you ask about is read from, and changes you approve are written to, your Didit account.
-- Billable operations (verification sessions, standalone checks) use your organization's Didit credits in live applications. Sandbox applications are free. The skills tell the assistant to say so before running anything billable in a live application. See https://didit.me/pricing.
+- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
+- It reads data from your Didit account and writes back only the changes you approve.
+- Verification sessions, standalone checks, transactions and wallet screening: in a live application this can use your Didit credits. Sandbox applications are free to test in. The skills tell the assistant to say so and wait for your agreement before running anything billable in a live application. See https://didit.me/pricing.
 
 ## Requirements
 
-- A Didit account. It is free to create at https://business.didit.me.
+- A Didit account. Create one at https://business.didit.me.
 - A client that supports remote MCP servers with OAuth (Claude Code, claude.ai, Cowork, Codex or Cursor).
 
-## Lighter or read-only connection
+## Shorter tool list (optional)
 
-You can connect to `https://mcp.didit.me/mcp?toolsets=core` for a short list of about 30 tools, and add `read_only=true` to allow reads only. The skills explain to the assistant what changes on such a connection.
+The plugins connect to the full server so they share one connection with any other Didit plugin or connector. For a shorter tool list, connect the `didit` server yourself to the URL for your plugin:
+
+| Plugin | Shorter connection |
+|---|---|
+| `didit` | `https://mcp.didit.me/mcp?toolsets=core` |
+| `didit-transaction-monitoring` | `https://mcp.didit.me/mcp?toolsets=core,transactions,cases,investigator,webhooks` |
+| `didit-user-management` | `https://mcp.didit.me/mcp?toolsets=core,vendors,lists,account` |
+| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,docs` |
+
+`core` includes `didit_context_get` and `didit_docs_search`. When a shorter list leaves tools out, the discovery tools can still reach them. Add `read_only=true` to restrict the connection to read-only tools. The skills tell the assistant what changes on such a connection.
 
 ## Disconnect
 

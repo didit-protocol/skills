@@ -1,5 +1,5 @@
 <p align="center">
-  <strong>didit/skills</strong><br>
+  <strong>didit-protocol/skills</strong><br>
   <em>Official AI Agent Skills for the Didit Identity Verification Platform</em>
 </p>
 
@@ -9,9 +9,9 @@
 
 ---
 
-20 production-ready skills that teach AI agents how to call the Didit REST API: account registration, identity verification, KYC workflows, AML screening, biometric checks, fraud checks, transaction and event monitoring, cases, fraud networks, SDK integration, billing and user management. Works with **Cursor**, **Claude Code**, **Codex**, **OpenCode**, and any agent that supports the [Agent Skills](https://agentskills.io/) standard.
+20 skills that teach AI agents how to call the Didit REST API: account registration, identity verification, KYC workflows, AML screening, biometric checks, fraud checks, transaction and event monitoring, cases, fraud networks, SDK integration, billing and user management. Works with **Cursor**, **Claude Code**, **Codex**, **OpenCode**, and any agent that supports the [Agent Skills](https://agentskills.io/) standard.
 
-To work in your Didit account from chat instead (no API key, sign in with OAuth), install the [`didit` plugin](#use-didit-from-claude-codex-or-cursor-plugin): the hosted MCP server plus 8 skills.
+To work in your Didit account from chat instead (no API key needed; you sign in with OAuth), install the [`didit` plugin](#use-didit-from-claude-codex-or-cursor-plugin): the hosted MCP server plus 8 skills.
 
 ## What's Inside
 
@@ -22,25 +22,25 @@ To work in your Didit account from chat instead (no API key, sign in with OAuth)
 | [**didit-id-document-verification**](skills/didit-id-document-verification/) | 1.4.0 | Verifies passports, ID cards and driver's licenses (OCR, MRZ, document liveness) and runs digital ID wallet verifications. |
 | [**didit-liveness-detection**](skills/didit-liveness-detection/) | 1.4.0 | Detects liveness from a single selfie. Anti-spoofing for print, screen and mask attacks. |
 | [**didit-face-match**](skills/didit-face-match/) | 1.6.0 | Compares two faces and returns a similarity score (0-100). Selfie-to-document matching. |
-| [**didit-face-search**](skills/didit-face-search/) | 1.4.0 | Searches a face against every enrolled face of the application. 1:N deduplication and blocklist checks. |
+| [**didit-face-search**](skills/didit-face-search/) | 1.4.0 | Searches a face against every face enrolled in your application. 1:N deduplication and blocklist checks. |
 | [**didit-biometric-age-estimation**](skills/didit-biometric-age-estimation/) | 1.3.0 | Estimates age from a selfie with a built-in liveness check. Decline thresholds for age-gated services. |
 | [**didit-email-verification**](skills/didit-email-verification/) | 1.4.0 | Verifies email addresses with a one-time code and scores email risk (breached, disposable, undeliverable). |
 | [**didit-phone-verification**](skills/didit-phone-verification/) | 1.5.0 | Verifies phone numbers by SMS, WhatsApp, Telegram, RCS, Viber, Zalo or voice code and scores phone risk. |
 | [**didit-aml-screening**](skills/didit-aml-screening/) | 1.4.0 | Screens people and companies against sanctions, PEP and adverse media lists. Match and risk scores, hit review, ongoing monitoring. |
 | [**didit-proof-of-address**](skills/didit-proof-of-address/) | 1.4.0 | Verifies utility bills, bank statements and government letters. Address extraction, geocoding, name and age checks. |
-| [**didit-database-validation**](skills/didit-database-validation/) | 1.4.0 | Validates identity data against government and official databases in 45 countries plus a Global group (122 live services). |
+| [**didit-database-validation**](skills/didit-database-validation/) | 1.4.0 | Validates identity data against government and official databases with 122 live services in 45 countries, plus a global group. |
 | [**didit-document-ai**](skills/didit-document-ai/) | 1.1.0 | Extracts structured data from any document (invoices, contracts, certificates) with Document AI. |
-| [**didit-transaction-monitoring**](skills/didit-transaction-monitoring/) | 1.2.0 | Transaction monitoring (KYT), rules, crypto wallet screening and the FATF / EU TFR Travel Rule. |
+| [**didit-transaction-monitoring**](skills/didit-transaction-monitoring/) | 1.2.0 | Transaction monitoring (KYT), rules, crypto wallet screening and the FATF and EU Travel Rule (TFR). |
 | [**didit-event-monitoring**](skills/didit-event-monitoring/) | 1.1.0 | Sends account and device events (logins, sessions, bonuses, payments) from your backend or the user's device and scores them with rules. |
-| [**didit-fraud-check**](skills/didit-fraud-check/) | 1.1.0 | One call that scores a person's email, phone, IP, documents and links to other users, with a recommendation. Also IP risk. |
+| [**didit-fraud-check**](skills/didit-fraud-check/) | 1.1.0 | Scores a person's email, phone, IP and documents in one call, shows links to other users and returns a recommendation. Also covers standalone IP risk. |
 | [**didit-case-management**](skills/didit-case-management/) | 1.1.0 | Review cases: create, assign, resolve, 4-eyes approval, notes, blueprints, and regulatory reports (SAR, STR and others). |
 | [**didit-fraud-networks**](skills/didit-fraud-networks/) | 1.1.0 | Fraud networks: clusters of users and businesses that share devices, IPs, faces, documents, phones, emails or addresses. |
-| [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.2.0 | Three-product integration prompt for Identity verification, Transaction monitoring and end-user Authentication, with release checks; web/native verification, transactions and device events. |
-| [**didit-mcp-server**](skills/didit-mcp-server/) | 1.1.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, ChatGPT, OpenAI Codex, Cursor, VS Code, Windsurf, Zed), with OAuth or an application API key. |
+| [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.2.0 | Three-product integration prompt covering Identity verification, Transaction monitoring and end-user Authentication, plus web and native verification, transactions and device events. |
+| [**didit-mcp-server**](skills/didit-mcp-server/) | 1.1.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, ChatGPT, Codex, Cursor, VS Code, Windsurf, Zed), with OAuth or an application API key. |
 
-> **Naming convention:** Domain-term names that match how users naturally ask: `face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`. Lowercase kebab-case, `didit-` namespaced. Every skill that uses an API key includes a **Getting Started** section for account creation and credits.
+> **Naming convention:** skill names use the domain terms people actually search for (`face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`), in lowercase kebab-case with a `didit-` prefix. Every skill that uses an API key includes a **Getting Started** section for account creation and credits.
 
-For any of the seven product combinations, start with the [three-product integration prompt](skills/didit-sdk-integration/SKILL.md#three-product-integration-prompt). It keeps credentials and decisions separate and links the person through server-owned `vendor_data`. Authentication SDKs, JWT/JWKS, automatic auth events and Authentication step-ups are release-dependent. Dedicated Authentication, electronic-signature and biometric-consent skills await merged, documented API contracts; they are not part of the 20-skill catalog yet.
+If you are integrating more than one product, start with the [three-product integration prompt](skills/didit-sdk-integration/SKILL.md#three-product-integration-prompt). It keeps credentials and decisions separate and links the person across products through a `vendor_data` value that your own server controls. Some Authentication features (SDKs, JWT/JWKS, automatic auth events, step-ups) are still being released; check the current docs before you code against them. Skills for dedicated Authentication, electronic signatures and biometric consent are not in the 20-skill catalog yet; they will ship once those APIs are documented.
 
 ---
 
@@ -78,7 +78,7 @@ After installing any of the four MCP plugins (`didit`, `didit-transaction-monito
 
 - **claude.ai and Cowork** (manual marketplace; directory listing pending): Customize > Plugins > Add marketplace `didit-protocol/skills`, install the plugin, then connect "didit" on the plugin's Connectors tab.
 - **Codex:** `codex plugin marketplace add didit-protocol/skills` then `codex plugin add <name>@didit`, where `<name>` is one of the four MCP plugins. `didit-api` is listed for Claude only.
-- **Cursor:** use the Cursor plugin of [didit-protocol/mcp](https://github.com/didit-protocol/mcp), or the `.cursor-plugin/plugin.json` in each plugin folder.
+- **Cursor:** install the Cursor plugin from [github.com/didit-protocol/mcp](https://github.com/didit-protocol/mcp), or point Cursor at the `.cursor-plugin/plugin.json` file inside the plugin folder.
 
 Already added the Didit server by hand (custom connector or `claude mcp add`)? Keep it: the plugins use the same server name `didit` and URL.
 
@@ -86,7 +86,7 @@ Already added the Didit server by hand (custom connector or `claude mcp add`)? K
 
 The 20 skills below teach agents to integrate the Didit REST API with an API key.
 
-#### Claude Code plugin
+#### Claude Code plugin (recommended)
 
 ```
 /plugin install didit-api --marketplace didit-protocol/skills
@@ -94,7 +94,9 @@ The 20 skills below teach agents to integrate the Didit REST API with an API key
 
 Or, with the marketplace already added: `/plugin install didit-api@didit`.
 
-#### Option 1: npx skills
+#### Other install options
+
+##### Option 1: npx skills CLI
 
 Install all skills at once:
 
@@ -110,7 +112,7 @@ npx skills add didit-protocol/skills --skill didit-face-match
 
 Works with Cursor, Claude Code, Codex, and OpenCode. The CLI auto-detects your agent and installs to the correct directory.
 
-#### Option 2: Git Clone
+##### Option 2: clone the repository
 
 ```bash
 git clone https://github.com/didit-protocol/skills.git
@@ -118,9 +120,9 @@ git clone https://github.com/didit-protocol/skills.git
 
 Copy the skills you need from `skills/` into your agent's skill directory.
 
-#### Option 3: Manual
+##### Option 3: copy the files manually
 
-Copy the entire `skills/<name>/` folder, including `SKILL.md` and `scripts/`, into your agent's skill directory. The helpers referenced by a skill must travel with it.
+Copy the entire `skills/<name>/` folder, including `SKILL.md` and `scripts/`, into your agent's skill directory. If you copy a skill folder, copy its `scripts/` helpers with it, because the skill's instructions reference them.
 
 ---
 

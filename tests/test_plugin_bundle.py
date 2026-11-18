@@ -275,6 +275,30 @@ BILLABLE_IN_FILE = {
     "didit_verify_poa",
     "didit_verify_kyb_search",
 }
+# The routing rule, word for word, in all four start skills and in skills/didit-mcp-server.
+ROUTING_RULE = (
+    "Scope ids follow each tool's schema. Always send the ids a tool requires. Send an optional "
+    "`organization_id` or `application_id` only when the context shows several organizations or applications, "
+    "or when it returned no default for that id: then ask the person which organization or application to use "
+    "and pass the one they name. Never send an id the tool does not declare. Through a discovery proxy "
+    "(`didit_tool_call_read` or `didit_tool_call_write`), put the target's arguments, ids included, inside "
+    "`arguments`, never next to `name`."
+)
+LIVE_BILLING = "In a live application this can use your Didit credits"
+# Billing claims that overstate or understate charges.
+BILLING_FORBIDDEN = [
+    (re.compile(r"\b(every|each)\b[^.\n]{0,60}\b(costs?|is billed|are billed|uses?\s+(the organization's\s+)?(Didit\s+)?credits)\b", re.I),
+     "says every action costs credits; say it can use credits"),
+    (re.compile(r"\bfree\b(?! to test in| text| of charge)", re.I), "claims something is free; only 'sandbox applications are free to test in'"),
+    (re.compile(r"\bnever bills?\b|\buse no Didit credits\b", re.I), "claims something never bills"),
+]
+# Displaying a webhook or destination URL in full (a secret can sit in its path or query).
+FULL_URL_DISPLAY = re.compile(
+    r"\b(show|display|print|echo)\w*\s+(the|its|each|their)\s+(full\s+)?(destination\s+|webhook\s+|slack\s+)?url\b(?!\s+masked)",
+    re.I,
+)
+SHARED_README_SECTIONS = ("## Which Didit plugin should I install?", "## Shorter tool list (optional)")
+CLAUDE_AI_STATUS = "(manual marketplace; directory listing pending)"
 README_FORBIDDEN = [
     (re.compile(r"\bno binaries\b", re.I), "say 'no executable binaries': the icon is a binary file"),
     (re.compile(r"only the tools this plugin uses", re.I), "a toolset connection is a shorter tool list, not only this plugin's tools"),
@@ -343,6 +367,27 @@ def arg_pair_problems(text: str, props: dict[str, set[str]]) -> list[str]:
 
 def readme_problems(text: str) -> list[str]:
     return [why for pattern, why in README_FORBIDDEN if pattern.search(text)]
+
+
+def billing_problems(text: str) -> list[str]:
+    problems = []
+    for number, line in enumerate(text.split("\n"), 1):
+        for pattern, why in BILLING_FORBIDDEN:
+            if pattern.search(line):
+                problems.append(f"line {number}: {why}: {line.strip()[:120]}")
+    return problems
+
+
+def full_url_problems(text: str) -> list[str]:
+    return [f"line {n}: shows a URL in full: {line.strip()[:120]}"
+            for n, line in enumerate(text.split("\n"), 1) if FULL_URL_DISPLAY.search(line)]
+
+
+def readme_section(text: str, heading: str) -> str:
+    """The section from `heading` up to the next level-2 heading (or the end)."""
+    start = text.index(heading + "\n")
+    end = text.find("\n## ", start + len(heading))
+    return text[start:] if end == -1 else text[start:end + 1]
 
 
 class Tree:
@@ -606,6 +651,51 @@ class SkillTests(TreeCase):
                             self.assertRegex(section, BILLING_WORDS)
                             self.assertIn("https://didit.me/pricing", section)
 
+    def test_billing_wording(self):
+        """Billable files say charges can apply, never that every action costs or that anything is free."""
+        for base in self.t.plugin_dirs():
+            texts = self.t.skill_texts(base) + [(f"{base.name}/README.md", (base / "README.md").read_text(encoding="utf-8"))]
+            for where, text in texts:
+                with self.subTest(file=where):
+                    self.assertEqual(billing_problems(text), [])
+                    if where.endswith("SKILL.md") and set(TOOL_TOKEN.findall(text)) & (BILLABLE_IN_FILE | BILLABLE_IN_SECTION):
+                        self.assertIn(LIVE_BILLING, text)
+
+    def test_urls_are_never_shown_in_full(self):
+        for base in self.t.plugin_dirs():
+            for where, text in self.t.skill_texts(base)[:-1]:
+                with self.subTest(file=where):
+                    self.assertEqual(full_url_problems(text), [])
+        events = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-events" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("never show it in full", events)
+        self.assertIn("masked", events)
+
+    def test_authentication_token_and_logout_contract(self):
+        integrate = (self.t.plugins / "didit-authentication" / "skills" / "didit-auth-integrate" / "SKILL.md").read_text(encoding="utf-8")
+        sdk = (self.t.rest / "didit-sdk-integration" / "SKILL.md").read_text(encoding="utf-8")
+        for text in (integrate, sdk):
+            self.assertIn("depends on the application's Authentication runtime as documented", re.sub(r"\s+", " ", text))
+        self.assertIn("read the current tokens page with `didit_docs_search`", integrate)
+        self.assertIn("Local sign-out", integrate)
+        self.assertIn("revocation is not confirmed", integrate)
+        self.assertNotIn("the session is already over", integrate)
+        self.assertNotIn("do not decode it as a JWT or invent JWKS", sdk)
+
+    def test_mcp_server_skill_contracts(self):
+        text = (self.t.rest / "didit-mcp-server" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn(ROUTING_RULE, text)
+        for tool in ("didit_session_search", "didit_transaction_search", "didit_case_search",
+                     "didit_vendor_user_search", "didit_vendor_business_search", "didit_workflow_search"):
+            self.assertIn(f"`{tool}`", text)
+        self.assertNotIn("the `*_search` tools", text)
+        self.assertNotRegex(text, r"`(sar|file_sar)`")
+        self.assertIn('action `resolve` with `data.status: "SAR_FILED"`', text)
+        self.assertIn("`didit_session_delete` (one session): `session_id` and `confirm: true`", text)
+        self.assertIn("`didit_session_batch_delete` (several sessions): `session_numbers`", text)
+        self.assertIn("only when the tool declares `confirm` and the error names it", text)
+        self.assertIn("On the hosted server the only exception is `didit_org_create_api_key`", text)
+        self.assertIn("`didit_org_reveal_application_api_key`", text)
+
     def test_focused_plugins_skip_business_update(self):
         # No recipe uses it (its route does not exist as coded); prompts.md may list it as forbidden.
         for name in FOCUSED:
@@ -666,6 +756,7 @@ class SkillTests(TreeCase):
                     "say the environment is unknown",
                     "Always send the ids a tool requires",
                     "only when the context shows several organizations or applications",
+                    "or when it returned no default for that id",
                     "Never send an id the tool does not declare",
                     "inside `arguments`, never next to `name`",
                     "only when they are themselves in your tool list",
@@ -678,6 +769,7 @@ class SkillTests(TreeCase):
                     "https://didit.me/pricing",
                 ):
                     self.assertIn(phrase, text)
+                self.assertIn(ROUTING_RULE, text)
                 for skill in EXPECTED_SKILLS[plugin]:
                     if skill != start:
                         self.assertIn(skill, text, f"{start} must route to {skill}")
@@ -724,7 +816,7 @@ class SkillTests(TreeCase):
                 with self.subTest(file=where, tool=token):
                     self.assertIn(token, core, "Authentication skills only use core tools")
         readme = (self.t.plugins / "didit-authentication" / "README.md").read_text(encoding="utf-8")
-        self.assertIn("this plugin is guidance + documentation search; configuration happens in the didit console", readme.lower())
+        self.assertIn("this plugin provides guidance and documentation search; configuration happens in the didit console", readme.lower())
 
     def test_prompts_cover_every_skill_twice(self):
         for base in self.t.plugin_dirs():
@@ -772,6 +864,20 @@ class BundleTests(TreeCase):
                     self.assertIn("?toolsets=", readme)
                     for skill in EXPECTED_SKILLS[base.name]:
                         self.assertIn(skill, readme)
+
+    def test_shared_readme_sections_are_identical(self):
+        readmes = {base.name: (base / "README.md").read_text(encoding="utf-8") for base in self.t.plugin_dirs()}
+        self.assertEqual(set(readmes), set(EXPECTED_SKILLS))
+        for heading in SHARED_README_SECTIONS:
+            copies = {name: readme_section(text, heading) for name, text in readmes.items() if heading in text}
+            with self.subTest(section=heading):
+                self.assertEqual(set(copies), set(readmes), f"{heading} missing from a plugin README")
+                self.assertEqual(len(set(copies.values())), 1, f"{heading} differs between plugin READMEs")
+        root = (self.t.root / "README.md").read_text(encoding="utf-8")
+        for where, text in [("README.md", root), *readmes.items()]:
+            with self.subTest(file=where):
+                self.assertIn(CLAUDE_AI_STATUS, text)
+                self.assertNotIn("production-ready", text)
 
     def test_root_readme_install_section(self):
         readme = (self.t.root / "README.md").read_text(encoding="utf-8")
@@ -881,6 +987,29 @@ class LintSelfTests(unittest.TestCase):
         self.assertNotEqual(arg_pair_problems("- `didit_docs_search`: `query`, `organization_id`.", props), [])
         self.assertNotEqual(arg_pair_problems("`didit_org_list_members` with `organization_id` and `application_id`", props), [])
         self.assertEqual(arg_pair_problems("- `didit_docs_search`: `query`, optional `language` (`en`).", props), [])
+
+    def test_billing_overstatements_are_rejected(self):
+        for bad in ("In a live application each check uses Didit credits.", "In a live application every session is billed.",
+                    "Every live submission uses the organization's Didit credits.", "It is free and decides nothing.",
+                    "Sandbox applications never bill.", "so they use no Didit credits"):
+            with self.subTest(text=bad):
+                self.assertNotEqual(billing_problems(bad), [])
+        for ok in ("In a live application this can use your Didit credits.", "Sandbox applications are free to test in.",
+                   "`search` (free text)"):
+            with self.subTest(text=ok):
+                self.assertEqual(billing_problems(ok), [])
+
+    def test_full_url_display_is_rejected(self):
+        for bad in ("Show the URL and the events and wait.", "Display the destination URL.", "print the full webhook URL"):
+            with self.subTest(text=bad):
+                self.assertNotEqual(full_url_problems(bad), [])
+        self.assertEqual(full_url_problems("Show each URL masked: the host, then `...`."), [])
+
+    def test_readme_section_drift_is_detected(self):
+        one = "# A\n\n## Shorter tool list (optional)\n\nSame.\n\n## Next\n"
+        two = "# B\n\n## Shorter tool list (optional)\n\nDrifted.\n\n## Next\n"
+        self.assertNotEqual(readme_section(one, SHARED_README_SECTIONS[1]), readme_section(two, SHARED_README_SECTIONS[1]))
+        self.assertEqual(readme_section(one, SHARED_README_SECTIONS[1]), readme_section(one.replace("# A", "# C"), SHARED_README_SECTIONS[1]))
 
     def test_readme_claims_are_rejected(self):
         self.assertNotEqual(readme_problems("It has no hooks, no scripts and no binaries."), [])

@@ -38,7 +38,7 @@ Before each call, state the item, the recommendation and the exact action, and w
 
 ## 5. Back-tests and performance
 
-- `didit_investigator_backtest_start`: `queues` (required), `period_days` (`30` or `90`), `source` (`policy`, `setup`, `sop_draft`). It is free, replays past decisions and decides nothing. Read it with `didit_investigator_backtest_get` (`backtest_id`).
+- `didit_investigator_backtest_start`: `queues` (required), `period_days` (`30` or `90`), `source` (`policy`, `setup`, `sop_draft`). It replays past decisions and decides nothing. Read it with `didit_investigator_backtest_get` (`backtest_id`).
 - `didit_investigator_performance_get`: agreement with the team, volume, time saved, calibration, per-queue numbers and overrides over `period` 7, 30 or 90 days.
 - `didit_investigator_dashboard_get`: 30-day automation, weekly history, spend, overrides and QA since go-live.
 - `didit_investigator_activity_list`: the append-only activity log. Filters: `scope`, `group` (`agent`, `decisions`, `overrides`, `autonomy`), `actor` (`agent` or an email), `since`, `until`.

@@ -11,7 +11,7 @@ Follow the rules of didit-tm-start first: call `didit_context_get` and pick the 
 
 - `didit_transaction_screen_wallet` checks one address without creating a transaction.
 - It needs transaction monitoring configured for the application. Without it, the tool answers `409`: tell the person to set up transaction monitoring for that application in the Didit console.
-- In a live application it uses the organization's Didit credits. Say so and wait for a yes. Never state a price: link https://didit.me/pricing.
+- In a live application this can use your Didit credits. Say so and wait for a yes. Never state a price: link https://didit.me/pricing.
 
 ## 2. Screen
 

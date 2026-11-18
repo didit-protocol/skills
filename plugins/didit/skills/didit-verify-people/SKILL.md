@@ -33,7 +33,7 @@ Call `didit_session_create` with:
 - Optional: `callback` (where to send the person afterwards), `language`, `contact_details`, `expected_details`, `metadata`.
 - Sandbox only: `sandbox_scenario` (for example `approve`, `decline_aml_hit`, `review_aml_possible_match`) fixes the outcome so nothing runs for real.
 
-In a live application every session is billed: say so and wait for a yes before creating it.
+In a live application this can use your Didit credits: say so and wait for a yes before creating a session.
 
 The result carries `session_id` and `url`. Give the person the `url` first: that is the link to send to the customer.
 
@@ -54,7 +54,7 @@ Confirm the session, the new status, and any email recipient with the person bef
 
 ## 5. Test in sandbox
 
-`didit_session_simulate` finishes a session of a sandbox application without anyone going through the flow. It is free and never works on a live application.
+`didit_session_simulate` finishes a session of a sandbox application without anyone going through the flow. It works only in a sandbox application (sandbox applications are free to test in), never in a live one.
 
 - `session_id` (required), then either `new_status` (`Approved`, `Declined`, `In Review`, `Expired`, `Abandoned`) or a `scenario` slug, and optional `risk` or `comment`.
 - `send_webhooks` defaults to true, so the customer's webhook endpoint receives the same events as a real run.

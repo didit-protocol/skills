@@ -2,7 +2,7 @@
 
 For compliance and fraud teams. Use your Didit account from Claude, Codex or Cursor to search monitored transactions and see why they were flagged, build and back-test monitoring rules, screen crypto wallets, manage alert channels and webhooks, work cases, and review the AI Investigator queue.
 
-The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds six skills that teach the assistant how to use the transaction monitoring tools safely: which application to act in, to back-test before a rule changes, and to ask before any decision or billable screening.
+The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds six skills that teach the assistant to pick the right application, to back-test before changing a rule, and to ask before any decision or billable screening.
 
 ## Which Didit plugin should I install?
 
@@ -13,7 +13,7 @@ The plugin connects your client to Didit's hosted MCP server (`https://mcp.didit
 | `didit-user-management` | Just the people and companies you verify, your lists, and your workspace team and API keys |
 | `didit-authentication` | Guidance for adding Didit end-user sign-in to your own app (not part of `didit`) |
 
-Install either `didit` or the focused plugin for your product, not both. If both are installed nothing breaks: they use the same server and different skill names. The Authentication guidance is only in `didit-authentication`, so it can sit next to `didit`.
+You can install `didit` on its own or a focused plugin alongside it; they share the same `didit` server, so you keep a single connection. Their skill names differ, so nothing conflicts.
 
 ## Install
 
@@ -32,7 +32,7 @@ Or add the marketplace first, then install:
 
 Then run `/mcp` and sign in to the `didit` server.
 
-**claude.ai and Cowork** (manual marketplace): open Customize, then Plugins, add the marketplace `didit-protocol/skills`, install Didit Transaction Monitoring, then connect "didit" on the plugin's Connectors tab.
+**claude.ai and Cowork** (manual marketplace; directory listing pending): open Customize, then Plugins, add the marketplace `didit-protocol/skills`, install Didit Transaction Monitoring, then connect "didit" on the plugin's Connectors tab.
 
 **Codex:**
 
@@ -60,18 +60,27 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
-- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You never give it a password or an API key.
-- Data you ask about is read from, and changes you approve are written to, your Didit account.
-- Wallet screening uses your organization's Didit credits in live applications. Sandbox applications are free. The skills tell the assistant to say so before running anything billable in a live application. See https://didit.me/pricing.
+- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
+- It reads data from your Didit account and writes back only the changes you approve.
+- Submitting transactions and screening wallets: in a live application this can use your Didit credits. Sandbox applications are free to test in. The skills tell the assistant to say so and wait for your agreement before running anything billable in a live application. See https://didit.me/pricing.
 
 ## Requirements
 
-- A Didit account. It is free to create at https://business.didit.me.
+- A Didit account. Create one at https://business.didit.me.
 - A client that supports remote MCP servers with OAuth (Claude Code, claude.ai, Cowork, Codex or Cursor).
 
 ## Shorter tool list (optional)
 
-The plugin connects to the full server so it shares one connection with any other Didit plugin or connector. For a shorter tool list, connect the `didit` server yourself to `https://mcp.didit.me/mcp?toolsets=core,transactions,cases,investigator,webhooks`. The toolsets that fit this plugin are `core`, `transactions`, `cases`, `investigator`, `webhooks`. Add `read_only=true` to allow reads only. The skills explain to the assistant what changes on such a connection.
+The plugins connect to the full server so they share one connection with any other Didit plugin or connector. For a shorter tool list, connect the `didit` server yourself to the URL for your plugin:
+
+| Plugin | Shorter connection |
+|---|---|
+| `didit` | `https://mcp.didit.me/mcp?toolsets=core` |
+| `didit-transaction-monitoring` | `https://mcp.didit.me/mcp?toolsets=core,transactions,cases,investigator,webhooks` |
+| `didit-user-management` | `https://mcp.didit.me/mcp?toolsets=core,vendors,lists,account` |
+| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,docs` |
+
+`core` includes `didit_context_get` and `didit_docs_search`. When a shorter list leaves tools out, the discovery tools can still reach them. Add `read_only=true` to restrict the connection to read-only tools. The skills tell the assistant what changes on such a connection.
 
 ## Disconnect
 

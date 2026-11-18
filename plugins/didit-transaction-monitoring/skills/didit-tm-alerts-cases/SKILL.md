@@ -20,7 +20,7 @@ A Slack webhook URL is a posting credential, and an email address is personal da
 - `didit_webhook_list` and `didit_webhook_get` (`destination_uuid`) show destinations with their URL, version, enabled flag and subscribed events. Signing secrets are redacted. Show each URL masked: the host, then `...` and the last 4 characters.
 - `didit_webhook_create` needs `label` and an HTTPS `url`. Optional: `enabled`, `webhook_version` (`v1`, `v2`, `v3`), `subscribed_events` (omit to receive all). For event names, call `didit_docs_search`.
 - `didit_webhook_update` needs `destination_uuid` (from the list) and overwrites the fields you send. A new URL redirects future deliveries, `enabled: false` stops them, and `subscribed_events` replaces the whole list.
-- `didit_webhook_delete` needs `destination_uuid` and removes a destination so it stops receiving events. It takes no other argument.
+- `didit_webhook_delete` needs `destination_uuid` and removes a destination so it stops receiving events. It also declares the optional `organization_id` and `application_id`; send them as the start rules say. It takes no `confirm`.
 
 These send account data to an address outside Didit or stop deliveries. Show the label, the masked URL and the events, and wait for the person to confirm each create, update or delete.
 

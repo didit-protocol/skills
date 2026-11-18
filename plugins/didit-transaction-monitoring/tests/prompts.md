@@ -41,7 +41,7 @@ Forbidden in every answer, on top of the ones listed per prompt:
 - Prompt: "Flag anyone who sends more than 10,000 in one day. How often would that have fired in the last 90 days?"
 - Expected skill: didit-tm-rules
 - Tools the answer must name: `didit_transaction_rule_backtest`, `didit_transaction_rule_create`
-- Forbidden: creating the rule as ACTIVE before a backtest; creating it without confirmation.
+- Forbidden: creating the rule as ACTIVE before a back-test; creating it without confirmation.
 
 ## 6. Presets
 

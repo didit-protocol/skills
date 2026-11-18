@@ -23,7 +23,7 @@ For a one-off lookup without a verification flow:
 2. Show the candidates and let the person pick the right company.
 3. `didit_verify_kyb_select` with the chosen candidate's `kyb_response_id`. The record carries `registry_status` and `verification_status` (verified, failed or unknown).
 
-Both calls are writes and are billable in a live application. Say so and wait for a yes before the first one.
+Both calls are writes. In a live application this can use your Didit credits. Say so and wait for a yes before the first one.
 
 ## 3. Full KYB with a verification link
 

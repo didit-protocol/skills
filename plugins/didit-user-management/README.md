@@ -7,7 +7,7 @@ The plugin covers two separate areas:
 - **The people and companies you verify:** vendor users and vendor businesses (search, read, create, change status, delete), custom lists and their entries, the blocklist and the phone allowlist.
 - **Your Didit workspace:** organization members and roles (invite, change, remove), API keys for your applications, and your organizations and applications.
 
-It connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds five skills that teach the assistant which application to act in and to ask before any deletion, removal or new API key.
+It connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`) and adds five skills that teach the assistant which application to act in, and to ask before any deletion, member removal or new API key.
 
 ## Which Didit plugin should I install?
 
@@ -18,7 +18,7 @@ It connects your client to Didit's hosted MCP server (`https://mcp.didit.me/mcp`
 | `didit-user-management` | Just the people and companies you verify, your lists, and your workspace team and API keys |
 | `didit-authentication` | Guidance for adding Didit end-user sign-in to your own app (not part of `didit`) |
 
-Install either `didit` or the focused plugin for your product, not both. If both are installed nothing breaks: they use the same server and different skill names. The Authentication guidance is only in `didit-authentication`, so it can sit next to `didit`.
+You can install `didit` on its own or a focused plugin alongside it; they share the same `didit` server, so you keep a single connection. Their skill names differ, so nothing conflicts.
 
 ## Install
 
@@ -37,7 +37,7 @@ Or add the marketplace first, then install:
 
 Then run `/mcp` and sign in to the `didit` server.
 
-**claude.ai and Cowork** (manual marketplace): open Customize, then Plugins, add the marketplace `didit-protocol/skills`, install Didit User Management, then connect "didit" on the plugin's Connectors tab.
+**claude.ai and Cowork** (manual marketplace; directory listing pending): open Customize, then Plugins, add the marketplace `didit-protocol/skills`, install Didit User Management, then connect "didit" on the plugin's Connectors tab.
 
 **Codex:**
 
@@ -64,18 +64,27 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 
 - The plugin runs no code on your machine. It has no hooks, no scripts and no executable binaries (the only binary file is the icon image), and it sends nothing by itself.
 - It contains text instructions (the skills) and one entry that points your client at `https://mcp.didit.me/mcp`.
-- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You never give it a password or an API key.
-- Data you ask about is read from, and changes you approve are written to, your Didit account.
-- The tools this plugin uses do not run verification sessions or checks, which are what use Didit credits in live applications. See https://didit.me/pricing.
+- When you ask for something, the assistant calls the Didit MCP server over HTTPS as you, after you sign in with OAuth ("Log in with Didit"). It acts with the permissions of your role. You sign in with OAuth, so the plugin never asks for your Didit password or an API key.
+- It reads data from your Didit account and writes back only the changes you approve.
+- The tools this plugin uses never start verification sessions or checks. See https://didit.me/pricing.
 
 ## Requirements
 
-- A Didit account. It is free to create at https://business.didit.me.
+- A Didit account. Create one at https://business.didit.me.
 - A client that supports remote MCP servers with OAuth (Claude Code, claude.ai, Cowork, Codex or Cursor).
 
 ## Shorter tool list (optional)
 
-The plugin connects to the full server so it shares one connection with any other Didit plugin or connector. For a shorter tool list, connect the `didit` server yourself to `https://mcp.didit.me/mcp?toolsets=core,vendors,lists,account`. The toolsets that fit this plugin are `core`, `vendors`, `lists`, `account`. Add `read_only=true` to allow reads only. The skills explain to the assistant what changes on such a connection.
+The plugins connect to the full server so they share one connection with any other Didit plugin or connector. For a shorter tool list, connect the `didit` server yourself to the URL for your plugin:
+
+| Plugin | Shorter connection |
+|---|---|
+| `didit` | `https://mcp.didit.me/mcp?toolsets=core` |
+| `didit-transaction-monitoring` | `https://mcp.didit.me/mcp?toolsets=core,transactions,cases,investigator,webhooks` |
+| `didit-user-management` | `https://mcp.didit.me/mcp?toolsets=core,vendors,lists,account` |
+| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,docs` |
+
+`core` includes `didit_context_get` and `didit_docs_search`. When a shorter list leaves tools out, the discovery tools can still reach them. Add `read_only=true` to restrict the connection to read-only tools. The skills tell the assistant what changes on such a connection.
 
 ## Disconnect
 

@@ -37,7 +37,7 @@ To read a rule in full, pass its id to `didit_transaction_rule_get` (see didit-t
 
 Before building a payload, call `didit_docs_search` for the category's field names. Do not guess them.
 
-This writes a real transaction that real rules act on. In a live application, or one whose mode is unknown, submitting it uses the organization's Didit credits: say so with the full payload and wait for the person to agree before calling it. `include_crypto_screening` adds a wallet screening that is billed on its own: name it separately in the same question. Never state a price: link https://didit.me/pricing.
+This writes a real transaction that real rules act on. In a live application this can use your Didit credits: past the plan's monthly allowance a transaction is charged, and an outbound Travel Rule transfer can be charged in its place. In a live application, or one whose mode is unknown, say so with the full payload and wait for the person to agree before calling it. `include_crypto_screening` adds a wallet screening that is billed on its own: name it separately in the same question. Never state a price: link https://didit.me/pricing.
 
 ## 4. Next steps after a flagged transaction
 

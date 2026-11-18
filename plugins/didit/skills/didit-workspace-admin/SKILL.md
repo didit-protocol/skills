@@ -23,7 +23,7 @@ Confirm the emails, role and applications before inviting, and the member's name
 - `didit_webhook_list` lists destinations with URL, version, enabled flag and events. Signing secrets come back redacted.
 - `didit_webhook_create`: `label` and `url` (HTTPS) are required. Optional `webhook_version` (`v3` is recommended), `subscribed_events` (for example `status.updated`; omit for all) and `enabled`.
 - `didit_webhook_update`: `destination_uuid` plus the fields to change. A new URL redirects future deliveries, and `subscribed_events` replaces the whole list.
-- `didit_webhook_delete`: `destination_uuid`. Deliveries stop.
+- `didit_webhook_delete`: `destination_uuid`, plus the optional `organization_id` and `application_id` as didit-connect says. Deliveries stop.
 
 Show each URL masked (the host, then `...` and the last 4 characters), never in full. Confirm the destination and each field change before updating or deleting.
 

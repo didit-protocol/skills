@@ -154,7 +154,7 @@ class SkillFormatTest(unittest.TestCase):
 
     def test_readme_counts_match(self):
         count = len(SKILLS)
-        self.assertTrue(re.search(rf"\b{count} production-ready skills\b", README), f"README intro must say {count} skills")
+        self.assertTrue(re.search(rf"\b{count} skills that teach AI agents\b", README), f"README intro must say {count} skills")
         self.assertTrue(re.search(rf"← {count} skills", README), f"README tree must say {count} skills")
 
 

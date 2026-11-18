@@ -3,7 +3,7 @@ name: didit-transaction-monitoring
 description: >
   Use when writing backend or API-key integration code for Didit Transaction Monitoring (KYT),
   crypto wallet screening and the FATF / EU TFR Travel Rule. Use when the user wants to monitor
-  transactions in real time, score transactions against AML/fraud rules, create, backtest or
+  transactions in real time, score transactions against AML/fraud rules, create, back-test or
   install monitoring rules by API, list or read monitored transactions, screen crypto wallets or
   transaction hashes against blockchain analytics, render a wallet-screening PDF, comply with
   the crypto Travel Rule (originator/beneficiary exchange with counterparty VASPs), verify
@@ -305,7 +305,7 @@ The device calls `POST https://verification.didit.me/v1/transactions/` and `GET 
 
 ## Rules API
 
-Same rules as **Transactions > Rules** in the console. Create in `TEST`, backtest, then switch to `ACTIVE`. Rules never run on sandbox applications.
+Same rules as **Transactions > Rules** in the console. Create in `TEST`, back-test, then switch to `ACTIVE`. Rules never run on sandbox applications.
 
 | Field | Notes |
 |---|---|
@@ -321,7 +321,7 @@ Same rules as **Transactions > Rules** in the console. Create in `TEST`, backtes
 - `GET /v3/transactions/rules/` filters: `source` (`PRESET`/`CUSTOM`), `category`, `mode`, `bundle`, `search`, `ordering`, `limit`, `offset`.
 - `PATCH .../rules/{rule_uuid}/`: custom rules accept every field; presets accept only `mode` (other fields -> `400`).
 - `DELETE .../rules/{rule_uuid}/`: deletes a custom rule (`204`); a preset returns `400` (uninstall it instead).
-- `POST .../rules/backtest/` with `conditions`, `aggregation`, `evaluation_mode` (default `ALL`), `scope`, `period_days` (default 90) -> `{evaluated, matched, affected_entities, period_days}`. Backtest the exact config you will activate.
+- `POST .../rules/backtest/` with `conditions`, `aggregation`, `evaluation_mode` (default `ALL`), `scope`, `period_days` (default 90) -> `{evaluated, matched, affected_entities, period_days}`. Back-test the exact config you will activate.
 - `GET .../rules/library/` (`bundle`, `category`, `search`) lists 150+ presets with `is_installed`. `POST .../rules/install/` with `{"library_keys": [...]}` or `{"bundle": "travel_rule_eu_tfr"}` -> `{installed_library_keys, installed_count}`; `DELETE` with the same body -> `{uninstalled_count}`. Neither key -> `400`.
 
 ```bash
@@ -372,7 +372,7 @@ Flat envelope with `webhook_type`, `event_id` (dedupe key, reused on retries), `
 
 ### Step-up biometrics for high-value transactions
 
-1. Create a rule (Rules API or console) whose `change_status` action targets `AWAITING_USER` with a Biometric Authentication `workflow_id`; backtest, then `PATCH {"mode": "ACTIVE"}`.
+1. Create a rule (Rules API or console) whose `change_status` action targets `AWAITING_USER` with a Biometric Authentication `workflow_id`; back-test, then `PATCH {"mode": "ACTIVE"}`.
 2. Submit transactions as usual with the same `vendor_data` as the user's KYC; when the rule fires, `action_required.type == "verification_session"`.
 3. Send the user to `url`: one live selfie is face-matched against the face verified at onboarding.
 4. The session decision sets the transaction to `APPROVED`, `DECLINED` or `IN_REVIEW` and fires `transaction.status.updated`.
