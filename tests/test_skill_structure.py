@@ -303,11 +303,11 @@ class NameGuardTest(unittest.TestCase):
         lines = [f"{hashlib.sha256((self.tree / name).read_bytes()).hexdigest()}  {name}" for name in files]
         self.approved_file.write_text("# looked at by a maintainer\n" + "\n".join(lines) + "\n", encoding="utf-8")
 
-    def run_guard(self, key=KEY, tree=None, digests=None, approved=None):
+    def run_guard(self, key=KEY, tree=None, digests=None, approved=None, extra=()):
         output = io.StringIO()
         environment = {name_guard.KEY_VARIABLE: key.decode()} if key else {}
         arguments = [str(tree or self.tree), "--digests", str(digests or self.digest_file)]
-        arguments += ["--approved", str(approved or self.approved_file)]
+        arguments += ["--approved", str(approved or self.approved_file), *extra]
         with mock.patch.dict(os.environ, environment, clear=True), contextlib.redirect_stdout(output):
             code = name_guard.main(arguments)
         return code, output.getvalue()
@@ -328,6 +328,32 @@ class NameGuardTest(unittest.TestCase):
         self.assertIn("docs/page.md: line 2, 4", output)
         for word in ("zorvex", "quill", "harbor"):
             self.assertNotIn(word, output.lower(), "the report names files and lines, never what it found")
+
+    def test_a_log_anyone_can_read_gives_the_count_and_never_a_place(self):
+        (self.tree / "docs").mkdir()
+        (self.tree / "docs" / "page.md").write_text("first line\nPowered by Zorvex today.\n", encoding="utf-8")
+        (self.tree / "zorvex-notes.txt").write_text("nothing here\n", encoding="utf-8")
+        (self.tree / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16)
+        code, output = self.run_guard(extra=["--no-places"])
+        self.assertEqual(code, 1, output)
+        self.assertIn("a withheld name is in 2 of 3 files", output)
+        self.assertIn("1 of 3 files are binary and not approved", output)
+        # Nothing says where: no path, no line number, no replaced part of a path, and never the words.
+        for place in ("docs", "page.md", "notes.txt", "logo", "line ", name_guard.WITHHELD, "zorvex"):
+            self.assertNotIn(place, output.lower(), "a reader who knows the place knows the name")
+        # The person who added the binary can still tell which file it is.
+        self.assertIn("sha256 " + hashlib.sha256((self.tree / "logo.png").read_bytes()).hexdigest()[:16], output)
+        # Without the option the same tree is reported with its places, for a run where the key is.
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("docs/page.md: line 2", output)
+        self.assertIn("logo.png", output)
+
+    def test_a_clean_tree_passes_in_a_log_anyone_can_read(self):
+        (self.tree / "README.md").write_text("Identity checks.\n", encoding="utf-8")
+        code, output = self.run_guard(extra=["--no-places"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked, no withheld name", output)
 
     def test_words_match_whole_and_in_order_only(self):
         (self.tree / "a.txt").write_text(
@@ -629,19 +655,56 @@ class NameGuardTest(unittest.TestCase):
         self.assertIn("environment: name-guard", workflow)
         self.assertIn("path: checked", workflow)
         self.assertEqual(workflow.count("secrets.DIDIT_NAME_GUARD_KEY"), 1)
-        # The one command that runs is the trusted script, with the trusted digest file and approved list.
+        # Two commands and no more: the refusal of a fork's pull request, which runs nothing from it, and
+        # the trusted script with the trusted digest file and approved list, in a log that gives no place.
         runs = [line.strip() for line in workflow.splitlines() if line.strip().startswith("run:")]
+        self.assertEqual(len(runs), 2, runs)
+        self.assertTrue(runs[0].startswith('run: echo "::error::The name guard does not run on a pull request'), runs[0])
+        self.assertTrue(runs[0].endswith('" && exit 1'), runs[0])
+        self.assertNotIn("$", runs[0], "the refusal prints fixed words: nothing from the pull request reaches a shell")
         self.assertEqual(
-            runs,
-            [
-                'run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests'
-                " --approved tests/data/approved-binaries.sha256"
-            ],
+            runs[1],
+            'run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests'
+            " --approved tests/data/approved-binaries.sha256 --no-places",
         )
         # No other workflow gets the key: tests and plugin checks run a pull request's own code.
         for other in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
             if other.name != "name-guard.yml":
                 self.assertNotIn("DIDIT_NAME_GUARD_KEY", other.read_text(encoding="utf-8"), other.name)
+
+    def test_the_workflow_never_answers_a_pull_request_from_a_fork(self):
+        # A fork's author chooses the content, so a keyed run on it would answer "is this word on the
+        # list?" for any word they like. Three locks, each enough alone: the first step fails for a
+        # fork, the pull request's files are fetched only from this repository, and the step with the
+        # key has its own condition.
+        workflow = (ROOT / ".github" / "workflows" / "name-guard.yml").read_text(encoding="utf-8")
+        steps = workflow.split("    steps:\n", 1)[1].split("\n      - ")
+        steps[0] = steps[0].removeprefix("      - ")
+        from_a_fork = "github.event.pull_request.head.repo.full_name != github.repository"
+        from_here = "github.event.pull_request.head.repo.full_name == github.repository"
+
+        refusal = steps[0]
+        self.assertIn(f"if: github.event_name == 'pull_request_target' && {from_a_fork}\n", refusal)
+        self.assertIn("&& exit 1", refusal)
+        self.assertNotIn("uses:", refusal, "the refusal comes before anything is fetched")
+        # A skipped job counts as passed, so the job itself has no condition: the refusal is a failed step.
+        job = workflow.split("  name-guard:\n", 1)[1].split("    steps:\n", 1)[0]
+        self.assertNotIn("if:", job)
+        # Nothing lets the job go on after a failed step.
+        for word in ("continue-on-error", "always()", "failure()", "cancelled()"):
+            self.assertNotIn(word, workflow)
+
+        fetch = [step for step in steps if "path: checked" in step]
+        self.assertEqual(len(fetch), 1)
+        self.assertIn(f"if: github.event_name == 'pull_request_target' && {from_here}\n", fetch[0])
+        self.assertIn("repository: ${{ github.repository }}\n", fetch[0])
+        self.assertEqual(workflow.count("repository:"), 1, "no step names another repository to fetch from")
+
+        keyed = [step for step in steps if "secrets.DIDIT_NAME_GUARD_KEY" in step]
+        self.assertEqual(len(keyed), 1)
+        self.assertIn(f"if: github.event_name != 'pull_request_target' || {from_here}\n", keyed[0])
+        self.assertLess(steps.index(refusal), steps.index(fetch[0]))
+        self.assertLess(steps.index(fetch[0]), steps.index(keyed[0]))
 
     def test_json_examples_parse(self):
         for skill in SKILLS:

@@ -5,9 +5,18 @@ name: name-guard
 # The check needs a key, and code from a pull request must never run with it.
 # So this workflow runs for the base branch (pull_request_target): the script and
 # the digest file come from the default branch, and the pull request's files are
-# checked out next to them as data that is read and never executed. That also
-# covers pull requests from forks, which an ordinary pull_request run cannot,
-# because a fork gets no secrets.
+# checked out next to them as data that is read and never executed.
+#
+# The check answers only people who can already push to this repository. A pull
+# request from a fork is refused before its files are fetched and before the step
+# that holds the key: its author chooses the content, so every run would answer
+# "is this word on the list?" for a word of their choosing. A maintainer reads
+# such a change and pushes it from a branch of this repository, where the check
+# runs. The refusal is a step that fails, never a job that is skipped, because a
+# skipped job counts as passed.
+#
+# Anyone can read this log, so the check prints how many files hold a withheld
+# name and never where (--no-places): a reader who knows the place knows the name.
 #
 # The key is a secret of the `name-guard` environment, and that environment
 # accepts the default branch only, so a branch that edits a workflow cannot
@@ -25,15 +34,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: name-guard
     steps:
+      - name: Refuse a pull request from outside this repository
+        if: github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
+        run: echo "::error::The name guard does not run on a pull request from a fork. A maintainer reads the change and pushes it from a branch of this repository, where it runs." && exit 1
       - name: Trusted code (the branch this workflow runs for)
         uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Pull request files (data only, never executed)
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          repository: ${{ github.repository }}
           ref: ${{ github.event.pull_request.head.sha }}
           path: checked
           persist-credentials: false
@@ -41,10 +53,12 @@ jobs:
         with:
           python-version: "3.11"
       - name: Name guard
+        # Its own condition as well: this step never runs for a fork, whatever becomes of the refusal above.
+        if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
         env:
           DIDIT_NAME_GUARD_KEY: ${{ secrets.DIDIT_NAME_GUARD_KEY }}
           TREE: ${{ github.event_name == 'pull_request_target' && 'checked' || '.' }}
         # -I: Python ignores its environment variables and the current folder.
         # Both lists are the trusted copies, never the pull request's: a pull request
         # cannot change the digests it is judged by or approve its own binary file.
-        run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests --approved tests/data/approved-binaries.sha256
+        run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests --approved tests/data/approved-binaries.sha256 --no-places

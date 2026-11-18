@@ -310,6 +310,9 @@ metadata:
 3. Run `python3 tests/test_skill_structure.py`, and `python3 tests/test_all_skills.py` with a sandbox key
 4. Open a PR
 
+The `name-guard` check does not run on a pull request from a fork and shows as failed there.
+A maintainer reads the change and pushes it from a branch of this repository, where the check runs.
+
 ---
 
 ## ClawHub publication handoff

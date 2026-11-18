@@ -39,12 +39,20 @@ name-guard workflow), that means a pull request cannot approve its own binary or
 change the digests it is judged by: the approval is a change a maintainer merges
 first.
 
+A log that anyone can read must not say where a name is: a reader who knows the
+place knows the name. With `--no-places` the report gives the number of files
+that hold one and nothing else about them, and it lists a binary that is not
+approved by the start of its SHA-256, never by its path. The name-guard workflow
+runs it that way. That workflow also never runs for a pull request from a fork:
+its author chooses the content, so every run would answer "is this word on the
+list?" for a word of their choosing.
+
 What it does not see, so nobody relies on it for that: what an approved binary
 holds (a maintainer answered for it), a name written inside a longer word, with a
 look-alike letter from another alphabet, or encoded (base64, escapes), and anything
 outside the tree (commit messages, branch names, the text of a pull request).
 
-    python3 -I scripts/name_guard.py <tree> [--digests <file>] [--approved <file>]
+    python3 -I scripts/name_guard.py <tree> [--digests <file>] [--approved <file>] [--no-places]
 
 Exit code: 0 nothing found, 1 a name was found or a binary is not approved,
 2 the check could not run (no key, or a list that cannot be used).
@@ -267,6 +275,11 @@ def main(argv=None):
     parser.add_argument(
         "--approved", default=str(DEFAULT_APPROVED), help="the list of binary files a maintainer approved, by SHA-256"
     )
+    parser.add_argument(
+        "--no-places",
+        action="store_true",
+        help="for a log anyone can read: say how many files hold a withheld name, never which ones",
+    )
     args = parser.parse_args(argv)
 
     key = os.environ.get(KEY_VARIABLE, "")
@@ -291,7 +304,11 @@ def main(argv=None):
     if not found and not unapproved:
         print(f"name guard: {seen} files checked, no withheld name")
         return 0
-    if found:
+    if found and args.no_places:
+        print(f"name guard: a withheld name is in {len(found)} of {seen} files.")
+        print("  Anyone can read this log, so it does not say where. Read the change for a name that must not be")
+        print("  published, or run the same command where the key is to see the places.")
+    elif found:
         print(f"name guard: a withheld name is in {len(found)} of {seen} files (where it is, never what it is):")
         for shown, where in found:
             print(f"  {shown}: {where}")
@@ -300,8 +317,10 @@ def main(argv=None):
         print(f"name guard: {count} files are binary and not approved, so they cannot be published here.")
         print("  A binary is never inspected. Publish the content as text, or have a maintainer who has looked at")
         print("  the file add its SHA-256 to tests/data/approved-binaries.sha256 on the default branch first:")
+        if args.no_places:
+            print("  (no path in this log: they are among the binary files this change adds or changes)")
         for shown, sha in unapproved:
-            print(f"  {shown}  (sha256 {sha}...)")
+            print(f"  sha256 {sha}..." if args.no_places else f"  {shown}  (sha256 {sha}...)")
     return 1
 
 
