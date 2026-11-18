@@ -17,26 +17,26 @@ To work in your Didit account from chat instead (no API key, sign in with OAuth)
 
 | Skill | v | What it does |
 |---|---|---|
-| [**didit-verification-management**](skills/didit-verification-management/) | 5.1.0 | **The hub**: account setup, API keys, sessions, bulk imports, workflows, questionnaires, users (KYC), businesses (KYB), billing, customization, lists (block/allow), webhook destinations and signatures. |
-| [**didit-kyc-onboarding**](skills/didit-kyc-onboarding/) | 1.2.0 | **KYC recipe**: creates a KYC workflow and a session for full identity verification (ID scan, selfie, face match) and reads the decision. |
-| [**didit-id-document-verification**](skills/didit-id-document-verification/) | 1.3.0 | Verifies passports, ID cards and driver's licenses (OCR, MRZ, document liveness) and runs digital ID wallet verifications. |
-| [**didit-liveness-detection**](skills/didit-liveness-detection/) | 1.3.0 | Detects liveness from a single selfie. Anti-spoofing for print, screen and mask attacks. |
-| [**didit-face-match**](skills/didit-face-match/) | 1.5.0 | Compares two faces and returns a similarity score (0-100). Selfie-to-document matching. |
-| [**didit-face-search**](skills/didit-face-search/) | 1.3.0 | Searches a face against every enrolled face of the application. 1:N deduplication and blocklist checks. |
-| [**didit-biometric-age-estimation**](skills/didit-biometric-age-estimation/) | 1.2.0 | Estimates age from a selfie with a built-in liveness check. Decline thresholds for age-gated services. |
-| [**didit-email-verification**](skills/didit-email-verification/) | 1.3.0 | Verifies email addresses with a one-time code and scores email risk (breached, disposable, undeliverable). |
-| [**didit-phone-verification**](skills/didit-phone-verification/) | 1.4.0 | Verifies phone numbers by SMS, WhatsApp, Telegram, RCS, Viber, Zalo or voice code and scores phone risk. |
-| [**didit-aml-screening**](skills/didit-aml-screening/) | 1.3.0 | Screens people and companies against sanctions, PEP and adverse media lists. Match and risk scores, hit review, ongoing monitoring. |
-| [**didit-proof-of-address**](skills/didit-proof-of-address/) | 1.3.0 | Verifies utility bills, bank statements and government letters. Address extraction, geocoding, name and age checks. |
-| [**didit-database-validation**](skills/didit-database-validation/) | 1.3.0 | Validates identity data against government and official databases in 60+ countries. |
-| [**didit-document-ai**](skills/didit-document-ai/) | 1.0.0 | Extracts structured data from any document (invoices, contracts, certificates) with Document AI. |
-| [**didit-transaction-monitoring**](skills/didit-transaction-monitoring/) | 1.1.0 | Transaction monitoring (KYT), rules, crypto wallet screening and the FATF / EU TFR Travel Rule. |
-| [**didit-event-monitoring**](skills/didit-event-monitoring/) | 1.0.0 | Sends account and device events (logins, sessions, bonuses, payments) from your backend or the user's device and scores them with rules. |
-| [**didit-fraud-check**](skills/didit-fraud-check/) | 1.0.0 | One call that scores a person's email, phone, IP, documents and links to other users, with a recommendation. Also IP risk. |
-| [**didit-case-management**](skills/didit-case-management/) | 1.0.0 | Review cases: create, assign, resolve, 4-eyes approval, notes, blueprints, and regulatory reports (SAR, STR and others). |
-| [**didit-fraud-networks**](skills/didit-fraud-networks/) | 1.0.0 | Fraud networks: clusters of users and businesses that share devices, IPs, faces, documents, phones, emails or addresses. |
-| [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.1.0 | Three-product integration prompt for Identity verification, Transaction monitoring and end-user Authentication, with release checks; web/native verification, transactions and device events. |
-| [**didit-mcp-server**](skills/didit-mcp-server/) | 1.0.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, Cursor, VS Code, Windsurf, Zed). |
+| [**didit-verification-management**](skills/didit-verification-management/) | 5.2.0 | **The hub**: account setup, API keys, sessions, bulk imports, workflows, questionnaires, users (KYC), businesses (KYB), billing, customization, lists (block/allow), webhook destinations and signatures. |
+| [**didit-kyc-onboarding**](skills/didit-kyc-onboarding/) | 1.3.0 | **KYC recipe**: creates a KYC workflow and a session for full identity verification (ID scan, selfie, face match) and reads the decision. |
+| [**didit-id-document-verification**](skills/didit-id-document-verification/) | 1.4.0 | Verifies passports, ID cards and driver's licenses (OCR, MRZ, document liveness) and runs digital ID wallet verifications. |
+| [**didit-liveness-detection**](skills/didit-liveness-detection/) | 1.4.0 | Detects liveness from a single selfie. Anti-spoofing for print, screen and mask attacks. |
+| [**didit-face-match**](skills/didit-face-match/) | 1.6.0 | Compares two faces and returns a similarity score (0-100). Selfie-to-document matching. |
+| [**didit-face-search**](skills/didit-face-search/) | 1.4.0 | Searches a face against every enrolled face of the application. 1:N deduplication and blocklist checks. |
+| [**didit-biometric-age-estimation**](skills/didit-biometric-age-estimation/) | 1.3.0 | Estimates age from a selfie with a built-in liveness check. Decline thresholds for age-gated services. |
+| [**didit-email-verification**](skills/didit-email-verification/) | 1.4.0 | Verifies email addresses with a one-time code and scores email risk (breached, disposable, undeliverable). |
+| [**didit-phone-verification**](skills/didit-phone-verification/) | 1.5.0 | Verifies phone numbers by SMS, WhatsApp, Telegram, RCS, Viber, Zalo or voice code and scores phone risk. |
+| [**didit-aml-screening**](skills/didit-aml-screening/) | 1.4.0 | Screens people and companies against sanctions, PEP and adverse media lists. Match and risk scores, hit review, ongoing monitoring. |
+| [**didit-proof-of-address**](skills/didit-proof-of-address/) | 1.4.0 | Verifies utility bills, bank statements and government letters. Address extraction, geocoding, name and age checks. |
+| [**didit-database-validation**](skills/didit-database-validation/) | 1.4.0 | Validates identity data against government and official databases in 45 countries plus a Global group (122 live services). |
+| [**didit-document-ai**](skills/didit-document-ai/) | 1.1.0 | Extracts structured data from any document (invoices, contracts, certificates) with Document AI. |
+| [**didit-transaction-monitoring**](skills/didit-transaction-monitoring/) | 1.2.0 | Transaction monitoring (KYT), rules, crypto wallet screening and the FATF / EU TFR Travel Rule. |
+| [**didit-event-monitoring**](skills/didit-event-monitoring/) | 1.1.0 | Sends account and device events (logins, sessions, bonuses, payments) from your backend or the user's device and scores them with rules. |
+| [**didit-fraud-check**](skills/didit-fraud-check/) | 1.1.0 | One call that scores a person's email, phone, IP, documents and links to other users, with a recommendation. Also IP risk. |
+| [**didit-case-management**](skills/didit-case-management/) | 1.1.0 | Review cases: create, assign, resolve, 4-eyes approval, notes, blueprints, and regulatory reports (SAR, STR and others). |
+| [**didit-fraud-networks**](skills/didit-fraud-networks/) | 1.1.0 | Fraud networks: clusters of users and businesses that share devices, IPs, faces, documents, phones, emails or addresses. |
+| [**didit-sdk-integration**](skills/didit-sdk-integration/) | 1.2.0 | Three-product integration prompt for Identity verification, Transaction monitoring and end-user Authentication, with release checks; web/native verification, transactions and device events. |
+| [**didit-mcp-server**](skills/didit-mcp-server/) | 1.1.0 | Connects AI assistants to Didit through the hosted MCP server (Claude, ChatGPT, OpenAI Codex, Cursor, VS Code, Windsurf, Zed), with OAuth or an application API key. |
 
 > **Naming convention:** Domain-term names that match how users naturally ask: `face-match`, `proof-of-address`, `aml-screening`, `kyc-onboarding`. Lowercase kebab-case, `didit-` namespaced. Every skill that uses an API key includes a **Getting Started** section for account creation and credits.
 
