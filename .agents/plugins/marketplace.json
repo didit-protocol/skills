@@ -1,0 +1,20 @@
+{
+  "name": "didit",
+  "interface": {
+    "displayName": "Didit"
+  },
+  "plugins": [
+    {
+      "name": "didit",
+      "source": {
+        "source": "local",
+        "path": "./plugins/didit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Business & Operations"
+    }
+  ]
+}

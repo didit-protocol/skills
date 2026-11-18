@@ -1,0 +1,72 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "didit",
+  "description": "Official Didit plugins: use Didit from Claude through its hosted MCP server, or integrate the Didit REST API with developer skills.",
+  "owner": {
+    "name": "Didit",
+    "email": "hello@didit.me",
+    "url": "https://didit.me"
+  },
+  "plugins": [
+    {
+      "name": "didit",
+      "source": "./plugins/didit",
+      "description": "Run identity checks from chat: verify people and businesses, review sessions and cases, screen names and wallets, monitor transactions and read reports in your Didit account.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Didit",
+        "email": "hello@didit.me"
+      },
+      "homepage": "https://docs.didit.me/integration/mcp/overview",
+      "category": "security",
+      "keywords": [
+        "identity-verification",
+        "kyc",
+        "kyb",
+        "aml",
+        "mcp"
+      ]
+    },
+    {
+      "name": "didit-api",
+      "source": "./",
+      "strict": false,
+      "version": "5.2.0",
+      "description": "Developer skills for integrating the Didit REST API with an API key (backend code, webhooks, SDKs)",
+      "author": {
+        "name": "Didit",
+        "email": "hello@didit.me"
+      },
+      "homepage": "https://docs.didit.me",
+      "category": "development",
+      "keywords": [
+        "identity-verification",
+        "kyc",
+        "api",
+        "sdk"
+      ],
+      "skills": [
+        "./skills/didit-aml-screening",
+        "./skills/didit-biometric-age-estimation",
+        "./skills/didit-case-management",
+        "./skills/didit-database-validation",
+        "./skills/didit-document-ai",
+        "./skills/didit-email-verification",
+        "./skills/didit-event-monitoring",
+        "./skills/didit-face-match",
+        "./skills/didit-face-search",
+        "./skills/didit-fraud-check",
+        "./skills/didit-fraud-networks",
+        "./skills/didit-id-document-verification",
+        "./skills/didit-kyc-onboarding",
+        "./skills/didit-liveness-detection",
+        "./skills/didit-mcp-server",
+        "./skills/didit-phone-verification",
+        "./skills/didit-proof-of-address",
+        "./skills/didit-sdk-integration",
+        "./skills/didit-transaction-monitoring",
+        "./skills/didit-verification-management"
+      ]
+    }
+  ]
+}
