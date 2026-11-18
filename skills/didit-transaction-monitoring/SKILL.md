@@ -1,15 +1,15 @@
 ---
 name: didit-transaction-monitoring
 description: >
-  Integrate Didit Transaction Monitoring (KYT), crypto wallet screening, and the FATF / EU TFR
-  Travel Rule. Use when the user wants to monitor transactions in real time, score transactions
-  against AML/fraud rules, create, backtest or install monitoring rules by API, list or read
-  monitored transactions, screen crypto wallets or transaction hashes against blockchain
-  analytics, render a wallet-screening PDF, comply with the crypto Travel Rule
-  (originator/beneficiary exchange with counterparty VASPs), verify self-hosted wallet
-  ownership, register after-deposit (sunrise) transfers, mint SDK transaction tokens for
-  client-side submission, or step up risky transactions with biometric re-verification using
-  Didit.
+  Use when writing backend or API-key integration code for Didit Transaction Monitoring (KYT),
+  crypto wallet screening and the FATF / EU TFR Travel Rule. Use when the user wants to monitor
+  transactions in real time, score transactions against AML/fraud rules, create, backtest or
+  install monitoring rules by API, list or read monitored transactions, screen crypto wallets or
+  transaction hashes against blockchain analytics, render a wallet-screening PDF, comply with
+  the crypto Travel Rule (originator/beneficiary exchange with counterparty VASPs), verify
+  self-hosted wallet ownership, register after-deposit (sunrise) transfers, mint SDK transaction
+  tokens for client-side submission, or step up risky transactions with biometric
+  re-verification using Didit.
 version: 1.1.0
 metadata:
   openclaw:
@@ -22,6 +22,8 @@ metadata:
 ---
 
 # Didit Transaction Monitoring & Travel Rule API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

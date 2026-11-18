@@ -1,13 +1,13 @@
 ---
 name: didit-aml-screening
 description: >
-  Integrate the Didit AML Screening standalone API to screen people or companies against
-  sanctions, PEP, warning and adverse-media watchlists. Use when the user wants to run AML or
-  KYC/AML compliance checks, screen against OFAC/UN/EU sanctions lists, check PEP status, search
-  adverse media, tune match and risk scoring, review AML hits (Confirmed Match, False Positive,
-  Inconclusive), or turn on ongoing AML monitoring using Didit. Covers POST /v3/aml/ (1,300+
-  watchlists, fuzzy name matching, configurable weights and thresholds, idempotent retries) and
-  the AML hit review endpoints.
+  Use when writing backend or API-key integration code for Didit AML Screening, the standalone
+  API that screens people or companies against sanctions, PEP, warning and adverse-media
+  watchlists. Use when the user wants to run AML or KYC/AML compliance checks, screen against
+  OFAC/UN/EU sanctions lists, check PEP status, search adverse media, tune match and risk
+  scoring, review AML hits (Confirmed Match, False Positive, Inconclusive), or turn on ongoing
+  AML monitoring using Didit. Covers POST /v3/aml/ (1,300+ watchlists, fuzzy name matching,
+  configurable weights and thresholds, idempotent retries) and the AML hit review endpoints.
 version: 1.3.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit AML Screening API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

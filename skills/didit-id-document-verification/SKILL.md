@@ -1,12 +1,13 @@
 ---
 name: didit-id-document-verification
 description: >
-  Verifies identity documents and digital ID wallets through Didit's standalone APIs. Use when
-  an agent needs to verify a passport, ID card, driver's license or residence permit from an
-  image or PDF, run OCR and MRZ or barcode extraction, detect screen captures, printed copies,
-  portrait manipulation or covered fields, read document warnings, or start a digital ID wallet
-  sign-in (MitID, BankID Sweden, iDIN, Finnish Trust Network, Smart-ID, Mobile-ID) without a
-  workflow. Covers 14,000+ document types from 220+ countries and territories.
+  Use when writing backend or API-key integration code that verifies identity documents and
+  digital ID wallets through Didit's standalone APIs. Use when an agent needs to verify a
+  passport, ID card, driver's license or residence permit from an image or PDF, run OCR and MRZ
+  or barcode extraction, detect screen captures, printed copies, portrait manipulation or
+  covered fields, read document warnings, or start a digital ID wallet sign-in (MitID, BankID
+  Sweden, iDIN, Finnish Trust Network, Smart-ID, Mobile-ID) without a workflow. Covers 14,000+
+  document types from 220+ countries and territories.
 version: 1.3.0
 metadata:
   openclaw:
@@ -19,6 +20,8 @@ metadata:
 ---
 
 # Didit ID Verification API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

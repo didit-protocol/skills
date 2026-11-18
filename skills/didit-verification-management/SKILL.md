@@ -1,14 +1,15 @@
 ---
 name: didit-verification-management
 description: >
-  Manages the whole Didit identity verification platform over the API: programmatic account and
-  application setup, API keys, workflows, verification sessions (create, retrieve, list, approve,
-  decline, resubmit, correct data, AML hit review, PDF, share, delete), bulk imports, questionnaires,
-  block/allow lists, users (KYC) and businesses (KYB) with AML monitoring and biometric templates,
-  KYB registry lookups, billing and top-ups, branding, and webhook destinations with signature
-  verification. Use when someone needs to create a Didit account or API key, build a verification
-  workflow, create or poll verification sessions, review or resubmit a session, manage users,
-  businesses or lists, check or top up credits, configure webhooks, or verify Didit webhook signatures.
+  Use when writing backend or API-key integration code that manages the whole Didit identity
+  verification platform over the API: programmatic account and application setup, API keys,
+  workflows, verification sessions (create, retrieve, list, approve, decline, resubmit, correct
+  data, AML hit review, PDF, share, delete), bulk imports, questionnaires, block/allow lists,
+  users (KYC) and businesses (KYB) with AML monitoring and biometric templates, KYB registry
+  lookups, billing and top-ups, branding, and webhook destinations with signature verification.
+  Use when someone needs to create a Didit account or API key, build a verification workflow,
+  create or poll verification sessions, review or resubmit a session, manage users, businesses
+  or lists, check or top up credits, configure webhooks, or verify Didit webhook signatures.
 version: 5.1.0
 metadata:
   openclaw:
@@ -20,6 +21,8 @@ metadata:
 ---
 
 # Didit Identity Verification Platform
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

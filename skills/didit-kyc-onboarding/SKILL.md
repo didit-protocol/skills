@@ -1,13 +1,13 @@
 ---
 name: didit-kyc-onboarding
 description: >
-  End-to-end KYC (Know Your Customer) identity verification for onboarding real users through a
-  hosted Didit verification link. Use when someone needs to perform KYC, onboard users with ID
-  scan + selfie + face match, create a KYC workflow or a verification session for a user, add
-  AML screening, NFC chip reading, phone or email verification, active liveness, non-document
-  lookup or digital ID wallets to the flow, poll or receive the decision, or approve, decline or
-  request resubmission of a session. Creates the workflow, generates the verification URL and
-  reads the decision.
+  Use when writing backend or API-key integration code for end-to-end KYC (Know Your Customer)
+  onboarding of real users through a hosted Didit verification link. Use when someone needs to
+  perform KYC, onboard users with ID scan + selfie + face match, create a KYC workflow or a
+  verification session for a user, add AML screening, NFC chip reading, phone or email
+  verification, active liveness, non-document lookup or digital ID wallets to the flow, poll or
+  receive the decision, or approve, decline or request resubmission of a session. Creates the
+  workflow, generates the verification URL and reads the decision.
 version: 1.2.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Running KYC with Didit
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 End-to-end Know Your Customer (KYC) verification. This skill creates a KYC workflow, generates a session URL where a real user completes ID scan + selfie + face match, and retrieves the verification decision.
 

@@ -1,12 +1,13 @@
 ---
 name: didit-face-match
 description: >
-  Compares two face images 1:1 with Didit's standalone Face Match API (POST /v3/face-match/).
-  Use when checking that a selfie matches an ID document portrait or a previously enrolled
-  photo, verifying that two photos show the same person, or adding selfie-to-document
-  biometric comparison. Returns a 0-100 similarity score and an Approved/Declined status
-  against a configurable decline threshold (default 30), with optional image rotation.
-  Does not enroll faces or run blocklist or duplicate checks.
+  Use when writing backend or API-key integration code for Didit Face Match (POST
+  /v3/face-match/), the standalone API that compares two face images 1:1. Use when checking that
+  a selfie matches an ID document portrait or a previously enrolled photo, verifying that two
+  photos show the same person, or adding selfie-to-document biometric comparison. Returns a
+  0-100 similarity score and an Approved/Declined status against a configurable decline
+  threshold (default 30), with optional image rotation. Does not enroll faces or run blocklist
+  or duplicate checks.
 version: 1.5.0
 metadata:
   openclaw:
@@ -19,6 +20,8 @@ metadata:
 ---
 
 # Didit Face Match API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

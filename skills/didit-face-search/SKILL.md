@@ -1,13 +1,13 @@
 ---
 name: didit-face-search
 description: >
-  Runs a 1:N face search with Didit's standalone Face Search API (POST /v3/face-search/)
-  against every face enrolled in the application: verification sessions, saved standalone
-  calls, faces uploaded to User profiles, face lists and retained biometric templates.
-  Use when detecting duplicate accounts, checking whether a face already exists, preventing
-  repeat registrations, screening a face against the face blocklist, or investigating
-  fraud rings. Returns up to 5 ranked matches with similarity percentages, match source and
-  session details, plus blocklist and duplicate-face warnings.
+  Use when writing backend or API-key integration code for Didit Face Search (POST
+  /v3/face-search/), a standalone 1:N search against every face enrolled in the application:
+  verification sessions, saved standalone calls, faces uploaded to User profiles, face lists and
+  retained biometric templates. Use when detecting duplicate accounts, checking whether a face
+  already exists, preventing repeat registrations, screening a face against the face blocklist,
+  or investigating fraud rings. Returns up to 5 ranked matches with similarity percentages,
+  match source and session details, plus blocklist and duplicate-face warnings.
 version: 1.3.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Face Search API (1:N)
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

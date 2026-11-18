@@ -1,13 +1,14 @@
 ---
 name: didit-email-verification
 description: >
-  Integrate the Didit Email Verification standalone API to verify email addresses with a one-time
-  code, and to risk-score an address without sending a code. Use when the user wants to send email
-  OTP codes, check email verification codes, detect breached, disposable or undeliverable emails,
-  flag duplicate or blocklisted addresses, look up an email's social footprint, or score email risk
-  with POST /v3/email/risk/ using Didit. Supports fraud signals (IP, device, user agent), 4-8
-  character numeric or alphanumeric codes, 54 template languages, white-label branding, and
-  per-call DECLINE policies for risky emails.
+  Use when writing backend or API-key integration code for Didit Email Verification, the
+  standalone API that verifies email addresses with a one-time code and risk-scores an address
+  without sending a code. Use when the user wants to send email OTP codes, check email
+  verification codes, detect breached, disposable or undeliverable emails, flag duplicate or
+  blocklisted addresses, look up an email's social footprint, or score email risk with POST
+  /v3/email/risk/ using Didit. Supports fraud signals (IP, device, user agent), 4-8 character
+  numeric or alphanumeric codes, 54 template languages, white-label branding, and per-call
+  DECLINE policies for risky emails.
 version: 1.3.0
 metadata:
   openclaw:
@@ -20,6 +21,8 @@ metadata:
 ---
 
 # Didit Email Verification API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

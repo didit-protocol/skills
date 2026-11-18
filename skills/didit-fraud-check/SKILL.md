@@ -1,15 +1,16 @@
 ---
 name: didit-fraud-check
 description: >
-  Integrate the Didit Fraud Check API and the IP Risk API. Use when the user wants to run one
-  server-side fraud or identity risk check over an email, phone, government ID number, tax
-  number, IP address or selfie; quote a check's price before running it with the plan endpoint;
-  combine email risk, phone risk, IP risk, social enrichment, database validation, private
-  network history and the global fraud network in one request; read separate identity,
-  contact, device/network, behavioral and fraud-network risk dimensions and an
-  approve/review/reject recommendation; bind a selfie to a Brazilian CPF; retrieve a stored
-  check by check_id; make idempotent retries with client_reference; or risk-score a single IP
-  address (geolocation, VPN/Tor, data center, claimed-country mismatch) using Didit.
+  Use when writing backend or API-key integration code for the Didit Fraud Check API and the IP
+  Risk API. Use when the user wants to run one server-side fraud or identity risk check over an
+  email, phone, government ID number, tax number, IP address or selfie; quote a check's price
+  before running it with the plan endpoint; combine email risk, phone risk, IP risk, social
+  enrichment, database validation, private network history and the global fraud network in one
+  request; read separate identity, contact, device/network, behavioral and fraud-network risk
+  dimensions and an approve/review/reject recommendation; bind a selfie to a Brazilian CPF;
+  retrieve a stored check by check_id; make idempotent retries with client_reference; or
+  risk-score a single IP address (geolocation, VPN/Tor, data center, claimed-country mismatch)
+  using Didit.
 version: 1.0.0
 metadata:
   openclaw:
@@ -22,6 +23,8 @@ metadata:
 ---
 
 # Didit Fraud Check API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

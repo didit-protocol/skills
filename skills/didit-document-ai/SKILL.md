@@ -1,13 +1,13 @@
 ---
 name: didit-document-ai
 description: >
-  Integrate the Didit Document AI standalone API to extract the fields you define from any
-  document (PDF or image). Use when the user wants to read custom data from proof of funds,
-  bank statements, payslips, tax documents, invoices, contracts or source-of-wealth letters;
-  get typed values (text, number, date) for their own field list; compare the name on a
-  document with an expected person or company; detect tampered or edited PDFs and images;
-  decode QR codes and barcodes on a document; or add a DOCUMENT_AI step to a verification
-  workflow using Didit. Synchronous, multipart upload.
+  Use when writing backend or API-key integration code for Didit Document AI, the standalone API
+  that extracts the fields you define from any document (PDF or image). Use when the user wants
+  to read custom data from proof of funds, bank statements, payslips, tax documents, invoices,
+  contracts or source-of-wealth letters; get typed values (text, number, date) for their own
+  field list; compare the name on a document with an expected person or company; detect tampered
+  or edited PDFs and images; decode QR codes and barcodes on a document; or add a DOCUMENT_AI
+  step to a verification workflow using Didit. Synchronous, multipart upload.
 version: 1.0.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Document AI API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

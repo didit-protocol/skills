@@ -1,15 +1,15 @@
 ---
 name: didit-case-management
 description: >
-  Integrate Didit Case Management through the API: open, triage, assign, resolve and audit
-  compliance investigation cases, and file FIU regulatory reports. Use when the user wants to
-  list or search cases, create a case for a user, business, session or transaction, assign or
-  bulk-assign cases, resolve cases as false positive or valid threat, run 4-eyes
-  (maker/checker) approval, add notes and attachments, work case checklists, escalate or
-  transfer cases, configure case blueprints (review policies), presets, review teams and
-  routing rules, pull case analytics and SLA metrics, or create, validate, finalize and
-  download goAML SAR/STR reports using Didit. Cases come from AML screening hits,
-  transaction rules, workflow builder nodes, or manual creation.
+  Use when writing backend or API-key integration code for Didit Case Management: open, triage,
+  assign, resolve and audit compliance investigation cases, and file FIU regulatory reports. Use
+  when the user wants to list or search cases, create a case for a user, business, session or
+  transaction, assign or bulk-assign cases, resolve cases as false positive or valid threat, run
+  4-eyes (maker/checker) approval, add notes and attachments, work case checklists, escalate or
+  transfer cases, configure case blueprints (review policies), presets, review teams and routing
+  rules, pull case analytics and SLA metrics, or create, validate, finalize and download goAML
+  SAR/STR reports using Didit. Cases come from AML screening hits, transaction rules, workflow
+  builder nodes, or manual creation.
 version: 1.0.0
 metadata:
   openclaw:
@@ -22,6 +22,8 @@ metadata:
 ---
 
 # Didit Case Management API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

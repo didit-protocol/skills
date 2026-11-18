@@ -1,13 +1,13 @@
 ---
 name: didit-proof-of-address
 description: >
-  Integrate the Didit Proof of Address standalone API (POST /v3/poa/) to verify address
-  documents. Use when the user wants to verify a proof of address, validate a utility bill,
-  bank statement or government letter, extract and geocode the address on a document,
-  enforce a maximum document age, cross-check a document against an expected name, address
-  or country, detect edited PDFs, or perform PoA checks using Didit. Returns Approved or
-  Declined with itemized warnings, the parsed address with coordinates, issuer, dates,
-  holder name, bank fields and QR/barcode data.
+  Use when writing backend or API-key integration code for the Didit Proof of Address standalone
+  API (POST /v3/poa/), which verifies address documents. Use when the user wants to verify a
+  proof of address, validate a utility bill, bank statement or government letter, extract and
+  geocode the address on a document, enforce a maximum document age, cross-check a document
+  against an expected name, address or country, detect edited PDFs, or perform PoA checks using
+  Didit. Returns Approved or Declined with itemized warnings, the parsed address with
+  coordinates, issuer, dates, holder name, bank fields and QR/barcode data.
 version: 1.3.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Proof of Address API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

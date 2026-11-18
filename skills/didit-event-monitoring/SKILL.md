@@ -1,16 +1,16 @@
 ---
 name: didit-event-monitoring
 description: >
-  Integrate Didit Event Monitoring: send non-monetary activity events to the same rule engine
-  that scores transactions. Use when the user wants to send logins, signups, failed logins,
-  sessions, page views, gameplay rounds, bets, P2P settlements, bonus claims, affiliate
-  attributions, deposit or withdrawal events, chargebacks and disputes, password or MFA
-  changes, or self-exclusion registry checks to Didit; batch up to 500 events; capture events
-  from a browser or mobile app with a scoped monitoring token instead of an API key; list,
-  filter or read events and a user's event timeline; delete an event; or write velocity,
-  ratio, sequence and correlation rules over events to detect account takeover, bonus abuse,
-  multi-accounting, chip dumping, opposite betting, minimal-play laundering, friendly fraud
-  and bot play using Didit.
+  Use when writing backend or API-key integration code for Didit Event Monitoring, which sends
+  non-monetary activity events to the same rule engine that scores transactions. Use when the
+  user wants to send logins, signups, failed logins, sessions, page views, gameplay rounds,
+  bets, P2P settlements, bonus claims, affiliate attributions, deposit or withdrawal events,
+  chargebacks and disputes, password or MFA changes, or self-exclusion registry checks to Didit;
+  batch up to 500 events; capture events from a browser or mobile app with a scoped monitoring
+  token instead of an API key; list, filter or read events and a user's event timeline; delete
+  an event; or write velocity, ratio, sequence and correlation rules over events to detect
+  account takeover, bonus abuse, multi-accounting, chip dumping, opposite betting, minimal-play
+  laundering, friendly fraud and bot play using Didit.
 version: 1.0.0
 metadata:
   openclaw:
@@ -23,6 +23,8 @@ metadata:
 ---
 
 # Didit Event Monitoring API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

@@ -1,16 +1,17 @@
 ---
 name: didit-sdk-integration
 description: >
-  Integrate the Didit client SDKs into web and mobile apps. Use when the user wants to launch
-  a Didit verification session in a web page (redirect, iframe, or the JavaScript SDK
-  @didit-protocol/sdk-web), an iOS app (DiditSDK, Swift), an Android app (me.didit:didit-sdk,
-  Kotlin), a React Native or Expo app (@didit-protocol/sdk-react-native) or a Flutter app
-  (didit_sdk); create the session on a backend and hand the url or session_token to the
-  client; handle SDK results, callbacks and errors; submit monitored transactions from the
-  device with a transaction SDK token (submitTransaction, wallet ownership, step-up
-  verification); or send monitoring events from a device with a monitoring token. Keeps the
-  API key on the backend. Also use for any combination of Identity verification,
-  Transaction monitoring and end-user Authentication, checking release availability first.
+  Use when writing app, backend or API-key integration code for the Didit client SDKs in web and
+  mobile apps. Use when the user wants to launch a Didit verification session in a web page
+  (redirect, iframe, or the JavaScript SDK @didit-protocol/sdk-web), an iOS app (DiditSDK,
+  Swift), an Android app (me.didit:didit-sdk, Kotlin), a React Native or Expo app
+  (@didit-protocol/sdk-react-native) or a Flutter app (didit_sdk); create the session on a
+  backend and hand the url or session_token to the client; handle SDK results, callbacks and
+  errors; submit monitored transactions from the device with a transaction SDK token
+  (submitTransaction, wallet ownership, step-up verification); or send monitoring events from a
+  device with a monitoring token. Keeps the API key on the backend. Also use for any combination
+  of Identity verification, Transaction monitoring and end-user Authentication, checking release
+  availability first.
 version: 1.1.0
 metadata:
   openclaw:
@@ -22,6 +23,8 @@ metadata:
 ---
 
 # Didit SDK Integration (Web, iOS, Android, React Native, Flutter)
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

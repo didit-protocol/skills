@@ -1,14 +1,15 @@
 ---
 name: didit-database-validation
 description: >
-  Integrate the Didit Database Validation API (POST /v3/database-validation/) to check
-  identity data against government and authoritative registries. Use when the user wants
-  to validate a national ID, CPF, CURP, DNI, RUT or cedula number against official records,
-  confirm a person's name and date of birth with a civil registry, run a registry face match
-  (Argentina RENAPER, Panama SIB), choose database validation services per country, or
-  implement government database lookups using Didit. Covers 100+ services in 45 countries
-  (strongest in Latin America, plus Spain, South Africa, Kenya and other markets) with
-  per-service pricing and per-field match results.
+  Use when writing backend or API-key integration code for Didit Database Validation (POST
+  /v3/database-validation/), which checks identity data against government and authoritative
+  registries. Use when the user wants to validate a national ID, CPF, CURP, DNI, RUT or cedula
+  number against official records, confirm a person's name and date of birth with a civil
+  registry, run a registry face match (Argentina RENAPER, Panama SIB), choose database
+  validation services per country, or implement government database lookups using Didit. Covers
+  120+ live services in 45 countries plus a global group (strongest in Latin America, plus
+  Spain, South Africa, Kenya and other markets) with per-service pricing and per-field match
+  results.
 version: 1.3.0
 metadata:
   openclaw:
@@ -21,6 +22,8 @@ metadata:
 ---
 
 # Didit Database Validation API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

@@ -1,13 +1,13 @@
 ---
 name: didit-biometric-age-estimation
 description: >
-  Estimates a person's age from one selfie with Didit's standalone Age Estimation API
-  (POST /v3/age-estimation/), which also runs a passive liveness check in the same call.
-  Use when implementing an age gate, checking whether someone looks over 18 or 21, detecting
-  underage users, or adding low-friction age assurance. Returns the estimated age, a liveness
-  score and an Approved/Declined status against configurable age and liveness thresholds.
-  Also covers the AGE_ESTIMATION workflow feature, where borderline ages fall back to ID
-  verification and per-country age limits apply.
+  Use when writing backend or API-key integration code for Didit Age Estimation (POST
+  /v3/age-estimation/), the standalone API that estimates a person's age from one selfie and
+  runs a passive liveness check in the same call. Use when implementing an age gate, checking
+  whether someone looks over 18 or 21, detecting underage users, or adding low-friction age
+  assurance. Returns the estimated age, a liveness score and an Approved/Declined status against
+  configurable age and liveness thresholds. Also covers the AGE_ESTIMATION workflow feature,
+  where borderline ages fall back to ID verification and per-country age limits apply.
 version: 1.2.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Age Estimation API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

@@ -1,13 +1,13 @@
 ---
 name: didit-liveness-detection
 description: >
-  Runs Didit's standalone passive liveness check on a single selfie image
-  (POST /v3/passive-liveness/). Use when checking that a person is physically present,
-  detecting spoofing or presentation attacks (printed photos, screen replays, masks,
-  deepfakes), adding anti-spoofing to a selfie step, or screening a selfie against the
-  face blocklist and earlier approved faces. Returns a 0-100 liveness score, an
-  Approved/Declined status against a configurable decline threshold, face quality and
-  luminance, and blocklist and duplicate-face warnings.
+  Use when writing backend or API-key integration code for Didit's standalone passive liveness
+  check on a single selfie image (POST /v3/passive-liveness/). Use when checking that a person
+  is physically present, detecting spoofing or presentation attacks (printed photos, screen
+  replays, masks, deepfakes), adding anti-spoofing to a selfie step, or screening a selfie
+  against the face blocklist and earlier approved faces. Returns a 0-100 liveness score, an
+  Approved/Declined status against a configurable decline threshold, face quality and luminance,
+  and blocklist and duplicate-face warnings.
 version: 1.3.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Passive Liveness API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 

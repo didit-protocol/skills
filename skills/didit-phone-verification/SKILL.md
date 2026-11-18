@@ -1,13 +1,13 @@
 ---
 name: didit-phone-verification
 description: >
-  Integrate the Didit Phone Verification standalone API to verify phone numbers with a one-time
-  code, and to risk-score a number without sending a code. Use when the user wants to send SMS,
-  WhatsApp, Telegram, voice, RCS, Viber or Zalo codes, check phone verification codes, detect
-  disposable or VoIP numbers, flag duplicate or blocklisted numbers, look up a number's carrier,
-  line type or social footprint, or score phone risk with POST /v3/phone/risk/ using Didit.
-  Supports automatic SMS fallback, branded SMS sender names, fraud signals, and per-call DECLINE
-  policies.
+  Use when writing backend or API-key integration code for Didit Phone Verification, the
+  standalone API that verifies phone numbers with a one-time code and risk-scores a number
+  without sending a code. Use when the user wants to send SMS, WhatsApp, Telegram, voice, RCS,
+  Viber or Zalo codes, check phone verification codes, detect disposable or VoIP numbers, flag
+  duplicate or blocklisted numbers, look up a number's carrier, line type or social footprint,
+  or score phone risk with POST /v3/phone/risk/ using Didit. Supports automatic SMS fallback,
+  branded SMS sender names, fraud signals, and per-call DECLINE policies.
 version: 1.4.0
 metadata:
   openclaw:
@@ -20,6 +20,8 @@ metadata:
 ---
 
 # Didit Phone Verification API
+
+> Working inside a connected Didit account (Claude, ChatGPT, Cursor)? Use the Didit plugin or the Didit MCP server tools instead of these REST calls.
 
 ## Overview
 
