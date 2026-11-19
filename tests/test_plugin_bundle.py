@@ -721,7 +721,7 @@ class ManifestTests(TreeCase):
                     self.assertEqual(claude[key], codex[key], key)
                     self.assertEqual(claude[key], cursor[key], key)
                 self.assertEqual(claude["name"], base.name)
-                self.assertEqual(claude["version"], "1.1.0")
+                self.assertEqual(claude["version"], "1.1.1")
                 self.assertTrue(claude.get("displayName"))
                 self.assertLessEqual(len(claude["description"]), 200)
                 self.assertEqual(claude["license"], "MIT")
@@ -754,7 +754,7 @@ class ManifestTests(TreeCase):
             with self.subTest(plugin=name):
                 entry = entries[name]
                 self.assertEqual(entry["source"], f"./plugins/{name}")
-                self.assertEqual(entry["version"], "1.1.0")
+                self.assertEqual(entry["version"], "1.1.1")
                 manifest = load_json(self.t.plugins / name / ".claude-plugin" / "plugin.json")
                 self.assertEqual(entry["description"], manifest["description"])
                 self.assertTrue(entry.get("category"))
@@ -762,7 +762,7 @@ class ManifestTests(TreeCase):
         api = entries["didit-api"]
         self.assertEqual(api["source"], "./")
         self.assertIs(api["strict"], False)
-        self.assertEqual(api["version"], "5.2.0")
+        self.assertEqual(api["version"], "5.2.1")
         listed = api["skills"]
         self.assertEqual(len(listed), len(set(listed)), "duplicate skills in didit-api")
         rest = sorted(p.parent.name for p in self.t.rest.glob("*/SKILL.md"))
