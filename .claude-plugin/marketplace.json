@@ -12,7 +12,7 @@
       "name": "didit",
       "source": "./plugins/didit",
       "description": "Run identity checks from chat: verify people and businesses, review sessions and cases, screen names and wallets, monitor transactions and read reports in your Didit account.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "Didit",
         "email": "hello@didit.me"
@@ -34,7 +34,7 @@
       "name": "didit-transaction-monitoring",
       "source": "./plugins/didit-transaction-monitoring",
       "description": "Transaction monitoring from chat: search transactions, back-test rules, screen wallets, run the Travel Rule, work alerts and cases, and review the AI Investigator queue in your Didit account.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "Didit",
         "email": "hello@didit.me"
@@ -55,7 +55,7 @@
       "name": "didit-user-management",
       "source": "./plugins/didit-user-management",
       "description": "Manage the people and companies you verify, your blocklist and custom lists, and your Didit workspace members, roles and API keys from chat.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "Didit",
         "email": "hello@didit.me"
@@ -76,7 +76,7 @@
       "name": "didit-authentication",
       "source": "./plugins/didit-authentication",
       "description": "Guidance for adding Didit end-user sign-in (hosted pages, passkeys, codes, social, SSO) to your app, with Didit documentation search. Configuration stays in the Didit console.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": {
         "name": "Didit",
         "email": "hello@didit.me"
@@ -97,7 +97,7 @@
       "name": "didit-api",
       "source": "./",
       "strict": false,
-      "version": "5.2.0",
+      "version": "5.2.1",
       "description": "Developer skills for integrating the Didit REST API with an API key (backend code, webhooks, SDKs)",
       "author": {
         "name": "Didit",
