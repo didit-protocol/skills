@@ -1,0 +1,1086 @@
+#!/usr/bin/env python3
+"""Offline checks for every skill in this repository. No network and no API key needed.
+
+Checks that each skill keeps the repository format (frontmatter, naming, Getting Started),
+that the README table and tree match the skills folder, that every script compiles and is
+referenced, that code examples parse, that API paths keep their trailing slash, that no
+withheld name or em dash slips in, and that the documented webhook signature verifier
+accepts signatures produced by Didit's signing algorithm.
+
+Usage:
+    python3 tests/test_skill_structure.py
+"""
+
+import contextlib
+import hashlib
+import hmac
+import importlib.util
+import io
+import json
+import os
+import py_compile
+import re
+import struct
+import subprocess
+import sys
+import tempfile
+import types
+import unittest
+import zlib
+from pathlib import Path
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parent.parent
+SKILLS_DIR = ROOT / "skills"
+SKILLS = sorted(p.name for p in SKILLS_DIR.iterdir() if p.is_dir())
+README = (ROOT / "README.md").read_text(encoding="utf-8")
+
+EM_DASH, EN_DASH = chr(0x2014), chr(0x2013)
+NAME_RE = re.compile(r"^didit-[a-z0-9]+(-[a-z0-9]+)*$")
+SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+FENCE_RE = re.compile(r"^```([A-Za-z0-9_+-]*)[^\n]*\n(.*?)^```", re.S | re.M)
+# Didit API paths, e.g. /v3/session/{id}/decision/ or https://verification.didit.me/v1/events/
+API_PATH_RE = re.compile(r"(?<![\w.])/v[123]/[A-Za-z0-9_{}<>.\-/]*[A-Za-z0-9_{}<>\-/]")
+# Names that must never be published are NOT listed in this repository: it is
+# public, and a list of them would publish them. `tests/data/withheld-names.digests`
+# holds keyed digests (HMAC-SHA256) of those names, and `scripts/name_guard.py`
+# compares every file against them. The key is a secret that only the
+# `name-guard` workflow gets, and that workflow runs the script from the default
+# branch against a pull request's files as data. The tests here never get the
+# real key in CI: they prove the script's behaviour with a key and names made up
+# on the spot, and run the real check only when a maintainer sets the key locally.
+NAME_GUARD_SCRIPT = ROOT / "scripts" / "name_guard.py"
+NAME_GUARD_DIGESTS = ROOT / "tests" / "data" / "withheld-names.digests"
+NAME_GUARD_KEY = os.environ.get("DIDIT_NAME_GUARD_KEY", "")
+
+
+def load_name_guard():
+    spec = importlib.util.spec_from_file_location("name_guard", NAME_GUARD_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+name_guard = load_name_guard()
+
+
+# Webhook test vector. The signatures were produced by Didit's own signing functions
+# (generate_signature, generate_signature_v2 and generate_signature_simple) for this payload.
+WEBHOOK_SECRET = "whsec_test_vector_not_a_real_secret"
+WEBHOOK_RAW_BODY = (
+    '{"created_at":1760000000,"decision":{"aml_score":12.5,"face_matches":[{"score":87,"status":"Approved"}]},'
+    '"event_id":"0f6b2f5e-8f4a-4c1b-9d7e-2a1b3c4d5e6f","metadata":{"display_name":"Jos\\u00e9 M\\u00fcller","tier":2},'
+    '"session_id":"11111111-2222-4333-8444-555555555555","status":"Approved","timestamp":1760000000,'
+    '"vendor_data":"user-42","webhook_type":"status.updated"}'
+)
+WEBHOOK_HEADERS = {
+    "X-Signature": "1ea17c072b7c05aedce1b51d22a4e56921d4bfa039b731755df9730924c28003",
+    "X-Signature-V2": "99a6d72d2bec5ae5ef9bbc4620f2be3f84fd2f192f5e44a05b535d3af6e199ca",
+    "X-Signature-Simple": "6bb7729b64ef61faf2683171d1a2c499b415a45452128c748c3a5425c8fe3a58",
+    "X-Timestamp": "1760000000",
+}
+
+
+def skill_md(skill):
+    return (SKILLS_DIR / skill / "SKILL.md").read_text(encoding="utf-8")
+
+
+def frontmatter(text):
+    """Return the frontmatter block as text (between the first two '---' lines)."""
+    match = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    return match.group(1) if match else ""
+
+
+def fm_value(fm, key):
+    match = re.search(rf"^{key}:[ \t]*(.*)$", fm, re.M)
+    return match.group(1).strip() if match else None
+
+
+def fm_description(fm):
+    match = re.search(r"^description:[ \t]*>-?\n((?:[ \t]+.*\n?)+)", fm, re.M)
+    if match:
+        return " ".join(line.strip() for line in match.group(1).splitlines()).strip()
+    return fm_value(fm, "description") or ""
+
+
+def fm_required_env(fm):
+    match = re.search(r"^\s+requires:\s*\n\s+env:[ \t]*(\[\])?\n((?:\s+- .*\n)*)", fm, re.M)
+    if not match:
+        return None
+    if match.group(1):
+        return []
+    return [line.strip()[2:].strip() for line in match.group(2).splitlines() if line.strip()]
+
+
+def code_blocks(text, *languages):
+    return [body for lang, body in FENCE_RE.findall(text) if lang.lower() in languages]
+
+
+def public_files():
+    files = [ROOT / "README.md", ROOT / "CHANGELOG.md"]
+    files += sorted(p for p in SKILLS_DIR.rglob("*") if p.is_file() and p.suffix in {".md", ".py"})
+    files += sorted((ROOT / "tests").glob("*.py"))
+    return files
+
+
+class SkillFormatTest(unittest.TestCase):
+    def test_every_skill_has_valid_frontmatter(self):
+        self.assertGreaterEqual(len(SKILLS), 20)
+        for skill in SKILLS:
+            with self.subTest(skill=skill):
+                fm = frontmatter(skill_md(skill))
+                self.assertTrue(fm, "SKILL.md must start with YAML frontmatter")
+                self.assertEqual(fm_value(fm, "name"), skill, "frontmatter name must match the folder")
+                self.assertRegex(skill, NAME_RE, "names are lowercase kebab-case with the didit- prefix")
+                self.assertLessEqual(len(skill), 64)
+                self.assertRegex(fm_value(fm, "version") or "", SEMVER_RE)
+                description = fm_description(fm)
+                self.assertGreater(len(description), 80, "description must say when to use the skill")
+                self.assertLessEqual(len(description), 1024, "Agent Skills descriptions are capped at 1024 characters")
+                for key in ("metadata", "openclaw", "primaryEnv", "emoji", "homepage"):
+                    self.assertRegex(fm, rf"(?m)^\s*{key}:", f"missing {key}")
+                self.assertIsNotNone(fm_required_env(fm), "metadata.openclaw.requires.env must be present")
+
+    def test_api_key_skills_have_getting_started(self):
+        for skill in SKILLS:
+            text = skill_md(skill)
+            required = fm_required_env(frontmatter(text)) or []
+            if "DIDIT_API_KEY" not in required:
+                continue
+            with self.subTest(skill=skill):
+                self.assertRegex(text, r"(?m)^## Getting Started")
+                self.assertIn("application.api_key", text, "the key is returned at application.api_key")
+                self.assertIn("Developers > API keys", text, "console path for API keys")
+
+    def test_readme_table_lists_every_skill_with_its_version(self):
+        rows = dict(re.findall(r"^\| \[\*\*(didit-[a-z0-9-]+)\*\*\]\(skills/\1/\) \| ([0-9.]+) \|", README, re.M))
+        self.assertEqual(sorted(rows), SKILLS, "README table must list exactly the skills in skills/")
+        for skill, version in rows.items():
+            with self.subTest(skill=skill):
+                self.assertEqual(version, fm_value(frontmatter(skill_md(skill)), "version"))
+
+    def test_readme_tree_lists_every_skill_and_script(self):
+        tree = dict(re.findall(r"^[├└]── (didit-[a-z0-9-]+)/\s+(.*)$", README, re.M))
+        self.assertEqual(sorted(tree), SKILLS, "README repo structure must list every skill")
+        for skill, line in tree.items():
+            with self.subTest(skill=skill):
+                scripts = sorted(p.stem for p in (SKILLS_DIR / skill / "scripts").glob("*.py"))
+                listed = re.search(r"scripts/\{?([^}]*?)\}?\.py", line)
+                listed = sorted(s.strip() for s in listed.group(1).split(",")) if listed else []
+                self.assertEqual(listed, scripts)
+
+    def test_readme_counts_match(self):
+        count = len(SKILLS)
+        self.assertTrue(re.search(rf"\b{count} skills that teach AI agents\b", README), f"README intro must say {count} skills")
+        self.assertTrue(re.search(rf"← {count} skills", README), f"README tree must say {count} skills")
+
+
+class ScriptTest(unittest.TestCase):
+    def test_scripts_compile_and_are_referenced(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for skill in SKILLS:
+                text = skill_md(skill)
+                scripts_dir = SKILLS_DIR / skill / "scripts"
+                for script in sorted(scripts_dir.glob("*.py")):
+                    with self.subTest(script=str(script.relative_to(ROOT))):
+                        py_compile.compile(str(script), cfile=str(Path(tmp) / f"{skill}-{script.stem}.pyc"), doraise=True)
+                        self.assertIn(f"scripts/{script.name}", text, "every script must be documented in its SKILL.md")
+                        source = script.read_text(encoding="utf-8")
+                        self.assertIn("argparse", source)
+                        self.assertNotRegex(source, r"api_key\[[-:0-9]", "never print any part of the API key")
+                for referenced in sorted(set(re.findall(r"scripts/([a-z0-9_]+\.py)", text))):
+                    with self.subTest(skill=skill, referenced=referenced):
+                        self.assertTrue((scripts_dir / referenced).is_file(), f"{referenced} is referenced but missing")
+
+
+class BundleTest(unittest.TestCase):
+    """Exercise publishing policies with Git's ignore matcher, without an API key.
+
+    ClawHub reads ignore files from the individual publication folder. The README
+    stages both repository policies there, appending matching skill-local rules.
+    The actual CLI collector is checked separately before human publication.
+    """
+
+    def test_publication_filters_keep_helpers_and_exclude_private_files(self):
+        excluded = {".env", ".env.local", "scripts/__pycache__/helper.pyc",
+                    "scripts/helper.pyc", "tests/test_local.py", "README.md"}
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run(["git", "init", "--quiet", tmp], check=True, capture_output=True)
+            for skill in SKILLS:
+                folder = SKILLS_DIR / skill
+                policies = [ROOT / ".gitignore", folder / ".gitignore",
+                            ROOT / ".clawhubignore", folder / ".clawhubignore"]
+                (Path(tmp) / ".gitignore").write_text(
+                    "\n".join(p.read_text(encoding="utf-8") for p in policies if p.exists()),
+                    encoding="utf-8",
+                )
+                included = {"SKILL.md"}
+                included.update(p.relative_to(folder).as_posix() for p in folder.rglob("*.py"))
+                included.update(re.findall(r"scripts/[a-z0-9_]+\.py", skill_md(skill)))
+                result = subprocess.run(
+                    ["git", "-c", "core.excludesFile=/dev/null", "check-ignore", "--no-index", "--stdin"],
+                    cwd=tmp, input="\n".join(sorted(included | excluded)) + "\n",
+                    text=True, capture_output=True,
+                )
+                with self.subTest(skill=skill):
+                    self.assertIn(result.returncode, (0, 1), result.stderr)
+                    ignored = set(result.stdout.splitlines())
+                    self.assertEqual(included & ignored, set(), "required bundle files were excluded")
+                    self.assertEqual(excluded - ignored, set(), "private/development files were included")
+
+
+class ContentTest(unittest.TestCase):
+    def test_no_em_or_en_dashes(self):
+        for path in public_files():
+            text = path.read_text(encoding="utf-8")
+            for number, line in enumerate(text.splitlines(), 1):
+                with self.subTest(file=str(path.relative_to(ROOT)), line=number):
+                    self.assertNotIn(EM_DASH, line, "em dash")
+                    self.assertNotIn(EN_DASH, line, "en dash")
+
+    def test_no_personal_emails(self):
+        for path in public_files():
+            if path.name == "test_skill_structure.py":
+                continue
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(file=str(path.relative_to(ROOT))):
+                self.assertNotIn("@gmail.com", text, "use you@yourdomain.com or user@example.com")
+
+    def test_the_digest_file_holds_digests_only(self):
+        digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
+        self.assertTrue(digests)
+        for digest in digests:
+            self.assertRegex(digest, r"^[0-9a-f]{64}$", "the digest file holds digests only, never a name")
+
+    def test_no_withheld_names_anywhere_in_the_repository(self):
+        # The `name-guard` workflow is what enforces this, from trusted code. This run
+        # is for a maintainer who has the key: CI never gives it to the tests.
+        if not NAME_GUARD_KEY:
+            self.skipTest("DIDIT_NAME_GUARD_KEY is not set: the name-guard workflow runs this check")
+        digests = name_guard.load_digests(NAME_GUARD_DIGESTS)
+        # What a push would publish: tracked files and new ones git does not ignore. A working
+        # copy also holds build output (bytecode caches) that no clone ever gets.
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            cwd=ROOT, capture_output=True, check=True,
+        ).stdout.decode("utf-8")  # fmt: skip
+        with tempfile.TemporaryDirectory() as folder:
+            for name in filter(None, listed.split("\0")):
+                source = ROOT / name
+                if source.is_file() and not source.is_symlink():
+                    target = Path(folder) / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(source.read_bytes())
+            approved = name_guard.load_approved(name_guard.DEFAULT_APPROVED)
+            _, found, unapproved = name_guard.scan(folder, NAME_GUARD_KEY.encode("utf-8"), digests, approved)
+        # The message says where a name is, never what it is.
+        self.assertEqual(found, [], "a withheld name is in these places")
+        self.assertEqual(unapproved, [], "these binary files are not on the approved list, so they cannot be published")
+
+
+class NameGuardTest(unittest.TestCase):
+    """The guard's behaviour, proven with a key and names invented here (no real name, no real key)."""
+
+    KEY = b"a key made up for this test"
+    NAMES = ("zorvex", "quill harbor")
+
+    def setUp(self):
+        self.digests = frozenset(hmac.new(self.KEY, name.encode(), hashlib.sha256).hexdigest() for name in self.NAMES)
+        self.folder = tempfile.TemporaryDirectory()
+        self.tree = Path(self.folder.name)
+        self.digest_file = self.tree.parent / (self.tree.name + ".digests")
+        self.digest_file.write_text("\n".join(sorted(self.digests)) + "\n", encoding="utf-8")
+        # The approved binaries live OUTSIDE the tree, as in the workflow: the tree cannot approve itself.
+        self.approved_file = self.tree.parent / (self.tree.name + ".approved")
+        self.approved_file.write_text("# nothing approved\n", encoding="utf-8")
+
+    def tearDown(self):
+        self.digest_file.unlink()
+        self.approved_file.unlink()
+        self.folder.cleanup()
+
+    def approve(self, *files):
+        lines = [f"{hashlib.sha256((self.tree / name).read_bytes()).hexdigest()}  {name}" for name in files]
+        self.approved_file.write_text("# looked at by a maintainer\n" + "\n".join(lines) + "\n", encoding="utf-8")
+
+    def run_guard(self, key=KEY, tree=None, digests=None, approved=None, extra=()):
+        output = io.StringIO()
+        environment = {name_guard.KEY_VARIABLE: key.decode()} if key else {}
+        arguments = [str(tree or self.tree), "--digests", str(digests or self.digest_file)]
+        arguments += ["--approved", str(approved or self.approved_file), *extra]
+        with mock.patch.dict(os.environ, environment, clear=True), contextlib.redirect_stdout(output):
+            code = name_guard.main(arguments)
+        return code, output.getvalue()
+
+    def test_a_clean_tree_passes(self):
+        (self.tree / "README.md").write_text("Identity checks.\nNothing withheld here.\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked", output)
+
+    def test_a_name_fails_with_the_file_and_lines_and_never_the_words(self):
+        (self.tree / "docs").mkdir()
+        (self.tree / "docs" / "page.md").write_text(
+            "first line\nPowered by Zorvex today.\nthird\nUses Quill   Harbor, too.\n", encoding="utf-8"
+        )
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("docs/page.md: line 2, 4", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "the report names files and lines, never what it found")
+
+    def test_a_log_anyone_can_read_gives_the_count_and_never_a_place(self):
+        (self.tree / "docs").mkdir()
+        (self.tree / "docs" / "page.md").write_text("first line\nPowered by Zorvex today.\n", encoding="utf-8")
+        (self.tree / "zorvex-notes.txt").write_text("nothing here\n", encoding="utf-8")
+        (self.tree / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16)
+        code, output = self.run_guard(extra=["--no-places"])
+        self.assertEqual(code, 1, output)
+        self.assertIn("a withheld name is in 2 of 3 files", output)
+        self.assertIn("1 of 3 files are binary and not approved", output)
+        # Nothing says where: no path, no line number, no replaced part of a path, and never the words.
+        for place in ("docs", "page.md", "notes.txt", "logo", "line ", name_guard.WITHHELD, "zorvex"):
+            self.assertNotIn(place, output.lower(), "a reader who knows the place knows the name")
+        # The person who added the binary can still tell which file it is.
+        self.assertIn("sha256 " + hashlib.sha256((self.tree / "logo.png").read_bytes()).hexdigest()[:16], output)
+        # Without the option the same tree is reported with its places, for a run where the key is.
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("docs/page.md: line 2", output)
+        self.assertIn("logo.png", output)
+
+    def test_a_clean_tree_passes_in_a_log_anyone_can_read(self):
+        (self.tree / "README.md").write_text("Identity checks.\n", encoding="utf-8")
+        code, output = self.run_guard(extra=["--no-places"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("1 files checked, no withheld name", output)
+
+    def test_words_match_whole_and_in_order_only(self):
+        (self.tree / "a.txt").write_text(
+            "quillharbor\nharbor quill\nzorvexes\nquill\nand harbor apart\n", encoding="utf-8"
+        )
+        # Line 4 ends with "quill" and line 5 does not start with "harbor", so nothing here is a name.
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+
+    def test_line_numbers_stay_right_deep_in_a_large_file(self):
+        # 60,000 lines and 240,000 words: the line of a name near the end, in the middle and at the
+        # start, with blank lines and a line that holds several words before the name.
+        lines = ["plain words on this line"] * 60000
+        lines[0] = "zorvex starts the file"
+        lines[29999] = ""
+        lines[30000] = "three words then quill harbor here"
+        lines[59998] = "the end is near: zorvex"
+        (self.tree / "big.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output[:300])
+        self.assertIn("  big.txt: line 1, 30001, 59999\n", output)
+
+    def test_a_name_split_over_two_lines_is_found_on_its_first_line(self):
+        (self.tree / "a.txt").write_text("we use quill\nharbor for this\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("a.txt: line 1", output)
+
+    def test_a_file_that_is_not_valid_utf8_is_a_binary_whatever_it_is_called(self):
+        # Text is valid UTF-8 and nothing else. Another encoding can spell a name in bytes that are not
+        # ASCII letters and hold no zero byte (EBCDIC here), so such a file is never read in part: it is refused.
+        (self.tree / "stray.txt").write_bytes(b"\xff\xfe broken bytes\nzorvex inside\n")
+        (self.tree / "legacy.txt").write_bytes("zorvex".encode("cp037"))
+        (self.tree / "latin.md").write_bytes("a clean café\n".encode("latin-1"))
+        (self.tree / "plain.md").write_text("a clean café, in UTF-8\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("3 of 4 files are binary and not approved", output)
+        self.assertNotIn("a withheld name", output)
+        self.assertNotIn("zorvex", output.lower())
+        self.approve("stray.txt", "legacy.txt", "latin.md")
+        self.assertEqual(self.run_guard()[0], 0, "a maintainer who has looked at the bytes can still approve them")
+
+    def test_invisible_characters_accents_and_wide_letters_do_not_hide_a_name(self):
+        lines = [
+            "zor​vex",  # a zero-width space
+            "zor­vex",  # a soft hyphen
+            "zor️vex",  # a variation selector
+            "zor⁠vex",  # a word joiner
+            "Ｚｏｒｖｅｘ",  # full-width letters
+            "Zörvex",  # an accent, written as one character
+            "Zörvex",  # the same accent, written as a combining mark
+            "quill harbor",  # a no-break space between the two words
+            "﻿zorvex",  # a byte order mark
+            "nothing on this line",
+        ]
+        (self.tree / "a.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (self.tree / "zor​vex.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  a.txt: line 1, 2, 3, 4, 5, 6, 7, 8, 9\n", output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertIn("a withheld name is in 2 of 2 files", output)
+        self.assertNotIn("vex", output.lower())
+
+    def test_what_the_guard_says_it_does_not_see_stays_what_it_does_not_see(self):
+        # The limits the script's own description states. If one of these starts to match, update that text.
+        lines = [
+            "zоrvex",  # a look-alike letter from another alphabet (Cyrillic)
+            "em9ydmV4",  # base64
+            "&#122;orvex",  # an escape
+            "prezorvexed",  # inside a longer word
+        ]
+        (self.tree / "a.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        self.assertEqual(self.run_guard()[0], 0)
+
+    def test_a_path_that_is_not_valid_utf8_can_still_be_reported(self):
+        # Git accepts such a file name on Linux; Python holds its bad bytes as lone surrogates, which
+        # cannot be printed as they are.
+        shown = name_guard.printable("docs/caf\udce9.md")
+        self.assertEqual(shown, "docs/caf\\udce9.md")
+        shown.encode("utf-8")
+        self.assertEqual(name_guard.printable("docs/plain.md"), "docs/plain.md")
+
+    def test_a_symbolic_link_is_never_followed_and_git_folders_are_never_read(self):
+        outside = self.tree.parent / (self.tree.name + ".outside")
+        outside.write_text("zorvex\n", encoding="utf-8")
+        self.addCleanup(outside.unlink)
+        (self.tree / "link.txt").symlink_to(outside)
+        (self.tree / ".git").mkdir()
+        (self.tree / ".git" / "packed.txt").write_text("zorvex\n", encoding="utf-8")
+        (self.tree / "plain.txt").write_text("nothing\n", encoding="utf-8")
+        code, output = self.run_guard()
+        # The file the link points at holds a name, and it is outside the tree: it is not opened.
+        self.assertEqual(code, 0, output)
+        self.assertIn("2 files checked", output)
+
+    def test_a_symbolic_link_is_checked_by_its_name_and_its_stored_target(self):
+        (self.tree / "real").mkdir()
+        (self.tree / "real" / "page.md").write_text("clean\n", encoding="utf-8")
+        (self.tree / "zorvex-link.md").symlink_to("real/page.md")
+        (self.tree / "alias.md").symlink_to("../elsewhere/Quill-Harbor/page.md")
+        (self.tree / "folder-alias").symlink_to("/opt/zorvex/docs", target_is_directory=True)
+        (self.tree / "honest.md").symlink_to("real/page.md")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        lines = output.splitlines()
+        self.assertIn("  <withheld>: in its path", lines, output)
+        self.assertIn("  alias.md: in its link target", lines, output)
+        self.assertIn("  folder-alias: in its link target", lines, output)
+        self.assertIn("a withheld name is in 3 of 5 files", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "a link target that holds a name is never printed")
+
+    def test_an_empty_folder_is_checked_by_its_name(self):
+        (self.tree / "docs" / "zorvex").mkdir(parents=True)
+        (self.tree / "docs" / "empty-but-fine").mkdir()
+        (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  docs/<withheld>/: in its path", output.splitlines(), output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_name_in_a_file_or_folder_name_fails_and_the_report_hides_that_part(self):
+        (self.tree / "zorvex-notes.md").write_text("nothing here\n", encoding="utf-8")
+        (self.tree / "docs" / "Quill_Harbor").mkdir(parents=True)
+        (self.tree / "docs" / "Quill_Harbor" / "readme.md").write_text("clean\n", encoding="utf-8")
+        (self.tree / "docs" / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertIn("  docs/<withheld>/readme.md: in its path", output)
+        self.assertIn("a withheld name is in 2 of 3 files", output)
+        for word in ("zorvex", "quill", "harbor"):
+            self.assertNotIn(word, output.lower(), "a path that holds a name is never printed whole")
+
+    def test_a_name_in_both_the_path_and_the_text_is_reported_once_with_both(self):
+        (self.tree / "zorvex.md").write_text("first\nzorvex again\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path; line 2", output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_binary_file_is_refused_not_skipped(self):
+        # A PDF by its suffix, an archive by its first bytes whatever it is called, and any file with a zero byte.
+        (self.tree / "guide.pdf").write_bytes(b"%PDF-1.7\nstream\nx\x9c+\nendstream\n")
+        (self.tree / "renamed.txt").write_bytes(b"PK\x03\x04\x14\x00\x00\x00 archive bytes")
+        (self.tree / "blob.bin").write_bytes(b"\x00\x01\x02 zorvex \x00")
+        (self.tree / "zorvex.zip").write_bytes(b"PK\x03\x04")
+        (self.tree / "plain.md").write_text("clean\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("4 of 5 files are binary and not approved", output)
+        refused = [line.split("  (sha256 ")[0] for line in output.splitlines() if "  (sha256 " in line]
+        self.assertEqual(sorted(refused), sorted(["  guide.pdf", "  renamed.txt", "  blob.bin", "  <withheld>"]), output)
+        self.assertNotIn("zorvex", output.lower())
+
+    @staticmethod
+    def png(*chunks, end=b"", tail=b""):
+        """A PNG file made of the given (type, body) chunks between a header and an end marker."""
+
+        def chunk(kind, body):
+            return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+        header = chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0))
+        pixels = chunk(b"IDAT", zlib.compress(b"\x00\x00"))
+        return b"\x89PNG\r\n\x1a\n" + header + b"".join(chunk(k, b) for k, b in chunks) + pixels + chunk(b"IEND", end) + tail
+
+    def test_a_binary_is_never_inspected_so_no_place_inside_one_can_hide_a_name(self):
+        # Every way a review found to carry a name inside a PNG, and a clean PNG: none is read, all are refused.
+        cases = {
+            "clean.png": self.png((b"sRGB", b"\x00")),
+            "text-chunk.png": self.png((b"tEXt", b"Comment\x00made with Zorvex")),
+            "compressed-chunk.png": self.png((b"zTXt", b"Comment\x00\x00" + zlib.compress(b"made with Zorvex"))),
+            "profile.png": self.png((b"iCCP", b"sRGB\x00\x00" + zlib.compress("Zorvex".encode("utf-16-be")))),
+            "exif.png": self.png((b"eXIf", b"MM\x00*\x00\x00\x00\x08" + "by Zorvex".encode("utf-16-le"))),
+            "unknown-chunk.png": self.png((b"prVt", b"zorvex")),
+            "after-the-stream.png": self.png((b"zTXt", b"Comment\x00\x00" + zlib.compress(b"fine") + b"zorvex")),
+            "in-the-end-marker.png": self.png(end=b"zorvex"),
+            "in-the-palette.png": self.png((b"PLTE", b"zorvex")),
+            "after-the-end.png": self.png(tail=b"zorvex"),
+            "in-the-pixels.png": self.png((b"IDAT", zlib.compress(b"zorvex"))),
+        }
+        for name, data in cases.items():
+            (self.tree / name).write_bytes(data)
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn(f"{len(cases)} of {len(cases)} files are binary and not approved", output)
+        for name in cases:
+            self.assertTrue(any(line.startswith(f"  {name}  (sha256 ") for line in output.splitlines()), name)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_an_approved_binary_passes_and_one_changed_byte_refuses_it(self):
+        (self.tree / "assets").mkdir()
+        (self.tree / "assets" / "icon.png").write_bytes(self.png((b"sRGB", b"\x00")))
+        (self.tree / "readme.md").write_text("clean\n", encoding="utf-8")
+        self.approve("assets/icon.png")
+        code, output = self.run_guard()
+        self.assertEqual(code, 0, output)
+        self.assertIn("2 files checked", output)
+        # The same bytes under another name are the same approved file; one more byte is a new file.
+        (self.tree / "assets" / "copy.png").write_bytes((self.tree / "assets" / "icon.png").read_bytes())
+        self.assertEqual(self.run_guard()[0], 0)
+        (self.tree / "assets" / "icon.png").write_bytes(self.png((b"sRGB", b"\x00"), tail=b"x"))
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("1 of 3 files are binary and not approved", output)
+        self.assertTrue(any(line.startswith("  assets/icon.png  (sha256 ") for line in output.splitlines()), output)
+
+    def test_an_approved_binary_still_has_its_path_compared(self):
+        (self.tree / "zorvex-logo.png").write_bytes(self.png())
+        self.approve("zorvex-logo.png")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("  <withheld>: in its path", output)
+        self.assertNotIn("not approved", output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_a_tree_cannot_approve_its_own_binary(self):
+        # The list is a file of its own, given to the guard from outside the tree it checks. A copy of the
+        # list inside the tree, at the very path the repository keeps it, approves nothing.
+        (self.tree / "picture.png").write_bytes(self.png())
+        (self.tree / "tests" / "data").mkdir(parents=True)
+        sha = hashlib.sha256((self.tree / "picture.png").read_bytes()).hexdigest()
+        (self.tree / "tests" / "data" / "approved-binaries.sha256").write_text(sha + "  picture.png\n", encoding="utf-8")
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("1 of 2 files are binary and not approved", output)
+
+    def test_the_approved_list_holds_digests_notes_and_comments_and_nothing_else(self):
+        (self.tree / "a.md").write_text("clean\n", encoding="utf-8")
+        good = self.tree.parent / (self.tree.name + ".good")
+        good.write_text("# a comment\n\n" + "a" * 64 + "  assets/icon.png\n" + "b" * 64 + "\n", encoding="utf-8")
+        self.addCleanup(good.unlink)
+        self.assertEqual(name_guard.load_approved(good), frozenset({"a" * 64, "b" * 64}))
+        self.assertEqual(self.run_guard(approved=good)[0], 0)
+        for text in ("assets/icon.png\n", "A" * 64 + "\n", "a" * 63 + "\n", "zorvex\n"):
+            bad = self.tree.parent / (self.tree.name + ".bad-approved")
+            bad.write_text(text, encoding="utf-8")
+            self.addCleanup(bad.unlink, missing_ok=True)
+            code, output = self.run_guard(approved=bad)
+            self.assertEqual(code, 2, output)
+            self.assertIn("approved binary files cannot be used", output)
+            self.assertNotIn("zorvex", output.lower())
+        self.assertEqual(self.run_guard(approved=self.tree.parent / "no-such-list")[0], 2)
+
+    def test_other_images_and_fonts_are_refused_whatever_they_are_called(self):
+        cases = {
+            "photo.jpg": b"\xff\xd8\xff\xe0\x00\x10JFIF",
+            "anim.gif": b"GIF89a\x01\x00\x01\x00",
+            "picture.webp": b"RIFF\x24\x00\x00\x00WEBPVP8 ",
+            "font.otf": b"OTTO\x00\x0b\x00\x80",
+            "font.woff2": b"wOF2\x00\x01\x00\x00",
+            "truetype.ttf": b"\x00\x01\x00\x00\x00\x0f",
+            "renamed.md": b"GIF89a plain looking",
+            "renamed.txt": b"\x89PNG\r\n\x1a\n plain looking",
+        }
+        for name, data in cases.items():
+            (self.tree / name).write_bytes(data)
+        code, output = self.run_guard()
+        self.assertEqual(code, 1, output)
+        self.assertIn("8 of 8 files are binary and not approved", output)
+
+    def test_every_binary_this_repository_publishes_is_on_the_approved_list(self):
+        # Needs no key: it is the list against the files, so an unapproved binary fails ordinary CI too.
+        approved = name_guard.load_approved(name_guard.DEFAULT_APPROVED)
+        listed = subprocess.run(
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT, capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+        binaries = {}
+        for name in listed:
+            path = ROOT / name
+            if path.is_file() and not path.is_symlink():
+                data = path.read_bytes()
+                if name_guard.is_binary(path, data):
+                    binaries[name] = hashlib.sha256(data).hexdigest()
+        self.assertTrue(binaries, "the repository publishes at least its icons")
+        self.assertEqual({name for name, sha in binaries.items() if sha not in approved}, set())
+        # An approval no file uses yet is allowed on purpose: it is merged first, on its own, and the
+        # pull request that adds the binary comes after it (the guard reads the list from the default branch).
+
+    def test_without_a_key_nothing_is_reported_as_checked(self):
+        (self.tree / "a.txt").write_text("zorvex\n", encoding="utf-8")
+        code, output = self.run_guard(key=b"")
+        self.assertEqual(code, 2, output)
+        self.assertIn("nothing was checked", output)
+
+    def test_a_digest_file_with_anything_but_digests_is_refused(self):
+        bad = self.tree.parent / (self.tree.name + ".bad")
+        bad.write_text("zorvex\n", encoding="utf-8")
+        self.addCleanup(bad.unlink)
+        code, output = self.run_guard(digests=bad)
+        self.assertEqual(code, 2, output)
+        self.assertNotIn("zorvex", output.lower())
+
+    def test_the_workflow_runs_trusted_code_and_never_the_pull_request(self):
+        workflow = (ROOT / ".github" / "workflows" / "name-guard.yml").read_text(encoding="utf-8")
+        self.assertIn("pull_request_target:", workflow)
+        self.assertIn("environment: name-guard", workflow)
+        self.assertIn("path: checked", workflow)
+        self.assertEqual(workflow.count("secrets.DIDIT_NAME_GUARD_KEY"), 1)
+        # Two commands and no more: the refusal of a fork's pull request, which runs nothing from it, and
+        # the trusted script with the trusted digest file and approved list, in a log that gives no place.
+        runs = [line.strip() for line in workflow.splitlines() if line.strip().startswith("run:")]
+        self.assertEqual(len(runs), 2, runs)
+        self.assertTrue(runs[0].startswith('run: echo "::error::The name guard does not run on a pull request'), runs[0])
+        self.assertTrue(runs[0].endswith('" && exit 1'), runs[0])
+        self.assertNotIn("$", runs[0], "the refusal prints fixed words: nothing from the pull request reaches a shell")
+        self.assertEqual(
+            runs[1],
+            'run: python3 -I scripts/name_guard.py "$TREE" --digests tests/data/withheld-names.digests'
+            " --approved tests/data/approved-binaries.sha256 --no-places",
+        )
+        # No other workflow gets the key: tests and plugin checks run a pull request's own code.
+        for other in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+            if other.name != "name-guard.yml":
+                self.assertNotIn("DIDIT_NAME_GUARD_KEY", other.read_text(encoding="utf-8"), other.name)
+
+    def test_the_workflow_never_answers_a_pull_request_from_a_fork(self):
+        # A fork's author chooses the content, so a keyed run on it would answer "is this word on the
+        # list?" for any word they like. Three locks, each enough alone: the first step fails for a
+        # fork, the pull request's files are fetched only from this repository, and the step with the
+        # key has its own condition.
+        workflow = (ROOT / ".github" / "workflows" / "name-guard.yml").read_text(encoding="utf-8")
+        steps = workflow.split("    steps:\n", 1)[1].split("\n      - ")
+        steps[0] = steps[0].removeprefix("      - ")
+        from_a_fork = "github.event.pull_request.head.repo.full_name != github.repository"
+        from_here = "github.event.pull_request.head.repo.full_name == github.repository"
+
+        refusal = steps[0]
+        self.assertIn(f"if: github.event_name == 'pull_request_target' && {from_a_fork}\n", refusal)
+        self.assertIn("&& exit 1", refusal)
+        self.assertNotIn("uses:", refusal, "the refusal comes before anything is fetched")
+        # A skipped job counts as passed, so the job itself has no condition: the refusal is a failed step.
+        job = workflow.split("  name-guard:\n", 1)[1].split("    steps:\n", 1)[0]
+        self.assertNotIn("if:", job)
+        # Nothing lets the job go on after a failed step.
+        for word in ("continue-on-error", "always()", "failure()", "cancelled()"):
+            self.assertNotIn(word, workflow)
+
+        fetch = [step for step in steps if "path: checked" in step]
+        self.assertEqual(len(fetch), 1)
+        self.assertIn(f"if: github.event_name == 'pull_request_target' && {from_here}\n", fetch[0])
+        self.assertIn("repository: ${{ github.repository }}\n", fetch[0])
+        self.assertEqual(workflow.count("repository:"), 1, "no step names another repository to fetch from")
+
+        keyed = [step for step in steps if "secrets.DIDIT_NAME_GUARD_KEY" in step]
+        self.assertEqual(len(keyed), 1)
+        self.assertIn(f"if: github.event_name != 'pull_request_target' || {from_here}\n", keyed[0])
+        self.assertLess(steps.index(refusal), steps.index(fetch[0]))
+        self.assertLess(steps.index(fetch[0]), steps.index(keyed[0]))
+
+    def test_json_examples_parse(self):
+        for skill in SKILLS:
+            for index, block in enumerate(code_blocks(skill_md(skill), "json")):
+                with self.subTest(skill=skill, block=index):
+                    try:
+                        json.loads(block)
+                    except json.JSONDecodeError as error:
+                        self.fail(f"invalid JSON example: {error}\n{block[:300]}")
+
+    def test_python_examples_compile(self):
+        for skill in SKILLS:
+            for index, block in enumerate(code_blocks(skill_md(skill), "python", "py")):
+                with self.subTest(skill=skill, block=index):
+                    compile(block, f"{skill}-example-{index}", "exec")
+
+    def test_api_paths_keep_the_trailing_slash(self):
+        for skill in SKILLS:
+            for number, line in enumerate(skill_md(skill).splitlines(), 1):
+                for path in API_PATH_RE.findall(line):
+                    with self.subTest(skill=skill, line=number, path=path):
+                        self.assertTrue(path.endswith("/"), "Didit API paths end with a slash")
+
+
+class WebhookSignatureTest(unittest.TestCase):
+    """The hub skill's verifier must accept signatures produced by Didit's signing code."""
+
+    @classmethod
+    def setUpClass(cls):
+        namespace = {}
+        sources = [
+            block
+            for block in code_blocks(skill_md("didit-verification-management"), "python", "py")
+            if "def verify_webhook" in block
+        ]
+        if not sources:
+            raise AssertionError("didit-verification-management must document a verify_webhook(...) Python function")
+        exec(compile(sources[0], "verify_webhook_example", "exec"), namespace)
+        cls.verify = staticmethod(namespace["verify_webhook"])
+
+    def call(self, body, headers):
+        return self.verify(body, headers, WEBHOOK_SECRET, now=int(WEBHOOK_HEADERS["X-Timestamp"]) + 30)
+
+    def test_accepts_didit_signature_on_the_raw_body(self):
+        self.assertTrue(self.call(WEBHOOK_RAW_BODY.encode(), dict(WEBHOOK_HEADERS)))
+
+    def test_accepts_v2_after_middleware_re_encoding(self):
+        reencoded = json.dumps(json.loads(WEBHOOK_RAW_BODY), ensure_ascii=False, indent=2)
+        reencoded = reencoded.replace('"score": 87', '"score": 87.0')
+        headers = {k: v for k, v in WEBHOOK_HEADERS.items() if k != "X-Signature"}
+        self.assertTrue(self.call(reencoded.encode(), headers))
+
+    def test_rejects_a_tampered_body(self):
+        tampered = WEBHOOK_RAW_BODY.replace('"Approved","timestamp"', '"Declined","timestamp"')
+        self.assertFalse(self.call(tampered.encode(), dict(WEBHOOK_HEADERS)))
+
+    def test_rejects_a_stale_timestamp(self):
+        stale = self.verify(WEBHOOK_RAW_BODY.encode(), dict(WEBHOOK_HEADERS), WEBHOOK_SECRET,
+                            now=int(WEBHOOK_HEADERS["X-Timestamp"]) + 3600)
+        self.assertFalse(stale)
+
+    def test_vector_matches_the_documented_algorithm(self):
+        expected = hmac.new(WEBHOOK_SECRET.encode(), WEBHOOK_RAW_BODY.encode(), hashlib.sha256).hexdigest()
+        self.assertEqual(expected, WEBHOOK_HEADERS["X-Signature"])
+
+
+def load_setup_account():
+    """Import setup_account.py without the network. A stub stands in for requests when it is missing."""
+    path = SKILLS_DIR / "didit-verification-management" / "scripts" / "setup_account.py"
+    stub = {} if importlib.util.find_spec("requests") else {"requests": types.ModuleType("requests")}
+    with mock.patch.dict(sys.modules, stub):
+        spec = importlib.util.spec_from_file_location("setup_account_under_test", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    return module
+
+
+# Synthetic credentials: long, distinctive values that are not real secrets.
+FAKE_API_KEY = "dk_test_SYNTHETIC_api_key_value_0123456789abcdef"
+FAKE_ACCESS = "eyJSYNTHETIC.access.token.value.0123456789abcdef"
+FAKE_REFRESH = "rt_SYNTHETIC_refresh_token_value_0123456789abcdef"
+FAKE_PASSWORD = "Synthetic-Passw0rd!-not-real"
+VERIFY_RESPONSE = {
+    "access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400,
+    "organization": {"uuid": "0b6f2c1e-3a4d-4e5f-9a8b-7c6d5e4f3a2b", "name": "Example"},
+    "application": {"uuid": "1c7a3d2f-4b5e-4f60-8b9c-8d7e6f5a4b3c", "name": "Default", "client_id": "client-1",
+                    "api_key": FAKE_API_KEY},
+}
+LOGIN_RESPONSE = {"access_token": FAKE_ACCESS, "refresh_token": FAKE_REFRESH, "expires_in": 86400}
+FAKE_TEMP_TOKEN = "tt_SYNTHETIC_temp_token_value_0123456789abcdef"
+SECRETS = (FAKE_API_KEY, FAKE_ACCESS, FAKE_REFRESH, FAKE_PASSWORD, FAKE_TEMP_TOKEN)
+
+
+class SetupAccountSecretsTest(unittest.TestCase):
+    """setup_account.py never prints a full credential unless --show-secrets is passed."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_setup_account()
+
+    def assert_no_secret(self, text):
+        for secret in SECRETS:
+            self.assertNotIn(secret, text, "a full credential appeared in normal output")
+
+    def test_masked_form_is_first_and_last_four(self):
+        self.assertEqual(self.mod.mask_secret(FAKE_API_KEY), "dk_t...cdef")
+        self.assertEqual(self.mod.mask_secret("short"), "****")
+
+    def test_format_result_masks_every_command(self):
+        cases = {
+            "verify": VERIFY_RESPONSE,
+            "login": LOGIN_RESPONSE,
+            "register": {"message": "code sent", "password": FAKE_PASSWORD},
+            "resend-otp": {"message": "code sent", "access_token": FAKE_ACCESS},
+        }
+        for command, response in cases.items():
+            with self.subTest(command=command):
+                output = self.mod.format_result(command, response, "user@example.com")
+                self.assert_no_secret(output)
+        self.assertIn("dk_t...cdef", self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com"))
+
+    def test_show_secrets_prints_the_full_values(self):
+        output = self.mod.format_result("verify", VERIFY_RESPONSE, "user@example.com", show_secrets=True)
+        self.assertIn(FAKE_API_KEY, output)
+
+    def run_main(self, argv, response=None, post=None):
+        """Run main() with a mocked handler (or a mocked requests.post). Returns (exit code, stdout, stderr)."""
+        out, err = io.StringIO(), io.StringIO()
+        handler = {"verify": "verify_email", "login": "login", "register": "register"}.get(argv[0], "resend_otp")
+        env = {"DIDIT_PASSWORD": FAKE_PASSWORD, "DIDIT_VERIFICATION_CODE": "A3K9F2"}
+        patches = [mock.patch.object(sys, "argv", ["setup_account.py", *argv]),
+                   mock.patch.dict(os.environ, env)]
+        if post is not None:
+            patches.append(mock.patch.object(self.mod, "requests", types.SimpleNamespace(post=post)))
+        else:
+            self.handler_mock = mock.MagicMock(return_value=response)
+            patches.append(mock.patch.object(self.mod, handler, self.handler_mock))
+        code = None
+        with contextlib.ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            stack.enter_context(contextlib.redirect_stdout(out))
+            stack.enter_context(contextlib.redirect_stderr(err))
+            try:
+                self.mod.main()
+            except SystemExit as exc:
+                code = exc.code
+        return code, out.getvalue(), err.getvalue()
+
+    def assert_streams_clean(self, result, *extra):
+        """Both stdout and stderr are scanned, separately."""
+        _, out, err = result
+        for stream in (out, err):
+            self.assert_no_secret(stream)
+            for value in extra:
+                self.assertNotIn(value, stream)
+
+    def test_main_output_is_masked(self):
+        result = self.run_main(["verify", "user@example.com"], VERIFY_RESPONSE)
+        self.assertEqual(result[0], 0)
+        self.assert_streams_clean(result)
+        self.assertIn("dk_t...cdef", result[1])
+        self.assert_streams_clean(self.run_main(["login", "user@example.com"], LOGIN_RESPONSE))
+
+    def test_abbreviated_show_secrets_is_rejected(self):
+        for flag in ("--show", "--show-s", "--sh"):
+            with self.subTest(flag=flag):
+                result = self.run_main(["login", "user@example.com", flag], LOGIN_RESPONSE)
+                self.assertEqual(result[0], 2)
+                self.assert_streams_clean(result)
+        full = self.run_main(["login", "user@example.com", "--show-secrets"], LOGIN_RESPONSE)
+        self.assertIn(FAKE_ACCESS, full[1])
+
+    def fake_response(self, status, body=None, text=""):
+        response = mock.MagicMock()
+        response.status_code = status
+        response.text = text
+        if body is None:
+            response.json.side_effect = ValueError("not json: " + text)
+        else:
+            response.json.return_value = body
+        return response
+
+    def test_non_json_error_body_is_not_echoed(self):
+        body = f"<html>upstream failed {FAKE_ACCESS} trace-marker-123</html>"
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(502, text=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "trace-marker-123", "<html>")
+        self.assertIn("HTTP 502", result[2])
+
+    def test_json_error_message_is_not_echoed(self):
+        body = {"code": "invalid_credentials", "detail": f"bad password {FAKE_PASSWORD} detail-marker"}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(401, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "detail-marker")
+        self.assertIn("invalid_credentials", result[2])
+
+    def test_transport_exception_text_is_not_echoed(self):
+        post = mock.MagicMock(side_effect=OSError(f"proxy said {FAKE_REFRESH} exc-marker"))
+        result = self.run_main(["register", "user@example.com"], post=post)
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result, "exc-marker")
+
+    def test_second_factor_temp_token_is_masked(self):
+        challenge = {"2fa_required": True, "has_authenticator": True, "temp_token": FAKE_TEMP_TOKEN}
+        for command in ("verify", "login"):
+            for extra in ([], ["--show-secrets"]):
+                with self.subTest(command=command, extra=extra):
+                    result = self.run_main([command, "user@example.com", *extra], challenge)
+                    self.assertEqual(result[0], 1)
+                    self.assert_streams_clean(result, FAKE_TEMP_TOKEN)
+                    self.assertIn("Second factor required", result[2])
+                    self.assertNotIn("Account ready", result[1] + result[2])
+
+    def test_sso_required_is_reported(self):
+        body = {"code": "sso_required", "organization": {"name": "org-name-marker"}}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(403, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assertIn("SSO required", result[2])
+        self.assert_streams_clean(result, "org-name-marker")
+
+    def test_write_env_stores_full_values_with_mode_0600(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text('OTHER="kept"\nDIDIT_API_KEY="old"\n', encoding="utf-8")
+            result = self.run_main(["verify", "user@example.com", "--write-env", str(env_path)], VERIFY_RESPONSE)
+            self.assertEqual(result[0], 0)
+            self.assert_streams_clean(result)
+            written = env_path.read_text(encoding="utf-8")
+            parsed = read_dotenv(written)
+            self.assertEqual(parsed["DIDIT_API_KEY"], FAKE_API_KEY)
+            self.assertEqual(parsed["DIDIT_ACCESS_TOKEN"], FAKE_ACCESS)
+            self.assertEqual(parsed["DIDIT_REFRESH_TOKEN"], FAKE_REFRESH)
+            self.assertEqual(parsed["OTHER"], "kept")
+            self.assertNotIn('DIDIT_API_KEY="old"', written)
+            self.assertEqual(env_path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), [".env"])
+
+    def test_write_env_refuses_a_symlink_before_spending_the_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            real = Path(tmp) / "real.env"
+            real.write_text("UNTOUCHED=1\n", encoding="utf-8")
+            link = Path(tmp) / ".env"
+            link.symlink_to(real)
+            result = self.run_main(["verify", "user@example.com", "--write-env", str(link)], VERIFY_RESPONSE)
+            self.assertEqual(result[0], 1)
+            self.assertIn("symlink", result[2])
+            self.handler_mock.assert_not_called()
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(real.read_text(encoding="utf-8"), "UNTOUCHED=1\n")
+            self.assert_streams_clean(result)
+            with self.assertRaises(self.mod.SetupError):
+                self.mod.write_env(str(link), {"DIDIT_API_KEY": FAKE_API_KEY})
+            self.assertNotIn(FAKE_API_KEY, real.read_text(encoding="utf-8"))
+
+    def test_write_env_rejects_unsupported_characters(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            for bad in ("has'quote", "has\nnewline", "a${HOME}b", "a\\\\b", "a b", 'a"b', "a#b", "a$b", "a`b", ""):
+                with self.subTest(value=bad), self.assertRaises(self.mod.SetupError):
+                    self.mod.write_env(str(env_path), {"DIDIT_API_KEY": bad})
+            self.assertFalse(env_path.exists())
+
+    def test_write_env_round_trips_through_a_dotenv_reader(self):
+        values = {"DIDIT_API_KEY": "Ab9._~+/=-xyz", "DIDIT_ACCESS_TOKEN": FAKE_ACCESS, "DIDIT_REFRESH_TOKEN": "=lead"}
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text("export OTHER=1\n", encoding="utf-8")
+            self.mod.write_env(str(env_path), values)
+            parsed = read_dotenv(env_path.read_text(encoding="utf-8"))
+            for name, value in values.items():
+                self.assertEqual(parsed[name], value)
+            self.assertIn("DIDIT_API_KEY=Ab9._~+/=-xyz\n", env_path.read_text(encoding="utf-8"))
+
+    def test_bad_value_with_write_env_fails_before_success_is_announced(self):
+        response = dict(LOGIN_RESPONSE, access_token="bad token ${X}")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            result = self.run_main(["login", "user@example.com", "--write-env", str(env_path)], response)
+            self.assertEqual(result[0], 1)
+            self.assertNotIn("Login successful", result[1])
+            self.assertFalse(env_path.exists())
+
+    def test_credential_in_an_error_code_is_not_echoed(self):
+        body = {"code": FAKE_API_KEY}
+        result = self.run_main(["login", "user@example.com"],
+                               post=mock.MagicMock(return_value=self.fake_response(400, body=body)))
+        self.assertEqual(result[0], 1)
+        self.assert_streams_clean(result)
+        self.assertIn("unknown_error", result[2])
+
+    def test_credential_in_a_uuid_field_is_not_echoed(self):
+        response = dict(VERIFY_RESPONSE, organization={"uuid": FAKE_REFRESH})
+        result = self.run_main(["verify", "user@example.com", "--show-secrets"], response)
+        self.assertEqual(result[0], 1)
+        self.assertIn("unexpected response", result[2])
+        self.assertNotIn("Account ready", result[1])
+        self.assertEqual(self.mod.safe_uuid(FAKE_REFRESH), "(unavailable)")
+        self.assertEqual(self.mod.safe_uuid("org-uuid"), "(unavailable)")
+        self.assertEqual(self.mod.safe_uuid(VERIFY_RESPONSE["organization"]["uuid"]),
+                         VERIFY_RESPONSE["organization"]["uuid"])
+
+    def test_credentials_inside_a_list_under_a_credential_key_are_collected(self):
+        found = self.mod.collect_credentials({"recovery_tokens": [FAKE_REFRESH, {"nested": "abc123secretvalue"}]})
+        self.assertIn(FAKE_REFRESH, found)
+        self.assertIn("abc123secretvalue", found)
+        self.assertEqual(self.mod.guard_display(FAKE_REFRESH, found), self.mod.HIDDEN)
+
+    def test_uuid_shaped_credential_repeated_in_a_display_id_is_hidden(self):
+        token = "2d9e4f1a-6b7c-4d8e-9f0a-1b2c3d4e5f60"
+        response = dict(VERIFY_RESPONSE, refresh_token=token,
+                        organization={"uuid": token, "name": "Example"})
+        result = self.run_main(["verify", "user@example.com"], response)
+        self.assertEqual(result[0], 0)
+        self.assert_streams_clean(result, token)
+        self.assertIn("Organization UUID: [hidden]", result[1])
+        self.assertIn(VERIFY_RESPONSE["application"]["uuid"], result[1])
+        nested = dict(VERIFY_RESPONSE, extra={"deep": [{"client_secret": token}]},
+                      organization={"uuid": token})
+        output = self.mod.format_result("verify", nested, "user@example.com")
+        self.assertNotIn(token, output)
+        self.assertIn("Organization UUID: [hidden]", output)
+        self.assertEqual(self.mod.guard_display("prefix-" + token, {token}), "[hidden]")
+
+    def test_trailing_newline_is_rejected(self):
+        uuid = VERIFY_RESPONSE["organization"]["uuid"]
+        self.assertEqual(self.mod.safe_uuid(uuid + "\n"), "(unavailable)")
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            with self.assertRaises(self.mod.SetupError):
+                self.mod.write_env(str(env_path), {"DIDIT_API_KEY": FAKE_API_KEY + "\n"})
+            self.assertFalse(env_path.exists())
+        response = dict(VERIFY_RESPONSE, organization={"uuid": uuid + "\n"})
+        result = self.run_main(["verify", "user@example.com"], response)
+        self.assertEqual(result[0], 1)
+        self.assertIn("unexpected response", result[2])
+
+    def test_known_error_codes_only(self):
+        self.assertEqual(self.mod.safe_error_code("invalid_credentials"), "invalid_credentials")
+        for value in (FAKE_ACCESS, "some_new_code", None, 7):
+            self.assertEqual(self.mod.safe_error_code(value), "unknown_error")
+
+    def test_email_is_echoed_only_when_it_matches(self):
+        self.assertEqual(self.mod.safe_email("user@example.com", "user@example.com"), "user@example.com")
+        self.assertNotIn(FAKE_ACCESS, self.mod.safe_email(FAKE_ACCESS, "user@example.com"))
+
+    def test_empty_success_response_is_refused(self):
+        for command in ("login", "verify"):
+            for response in ({}, {"expires_in": 60}, {"access_token": FAKE_ACCESS}):
+                with self.subTest(command=command, response=response):
+                    result = self.run_main([command, "user@example.com"], response)
+                    self.assertEqual(result[0], 1)
+                    self.assertIn("unexpected response", result[2])
+                    self.assertNotIn("successful", result[1])
+                    self.assertNotIn("Account ready", result[1])
+                    self.assert_streams_clean(result)
+
+
+def read_dotenv(text):
+    """Minimal dotenv reader: KEY=value, optional `export `, matching outer quotes stripped, # comments skipped."""
+    values = {}
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip().removeprefix("export ").strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+if __name__ == "__main__":
+    sys.exit(0 if unittest.main(exit=False, verbosity=1).result.wasSuccessful() else 1)

@@ -1,0 +1,17 @@
+{
+  "name": "didit",
+  "displayName": "Didit",
+  "version": "1.1.1",
+  "description": "Run identity checks from chat: verify people and businesses, review sessions and cases, screen names and wallets, monitor transactions and read reports in your Didit account.",
+  "author": {
+    "name": "Didit",
+    "email": "hello@didit.me"
+  },
+  "homepage": "https://docs.didit.me/integration/mcp/overview",
+  "repository": "https://github.com/didit-protocol/skills",
+  "license": "MIT",
+  "logo": "assets/didit-icon.png",
+  "keywords": ["identity-verification", "kyc", "kyb", "aml", "transaction-monitoring", "fraud", "compliance", "mcp"],
+  "skills": "skills/",
+  "mcpServers": ".mcp.json"
+}
