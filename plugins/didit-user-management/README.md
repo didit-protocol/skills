@@ -60,7 +60,7 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 | didit-users-lists | People you verify | Custom lists and entries, face entries, blocklist and allowlist |
 | didit-users-team | Your workspace | Members and roles, invitations, API keys, applications |
 
-Checked against the live server with a customer account on 2026-11-18: 206 tools for a signed-in person on the hosted server (97 read, 75 write, 34 destructive), plus the six Authentication setup tools added in v5.1.78 on 2026-11-21, so 212 (100 read, 78 write, 34 destructive); 178 on an API key connection; the open-source build lists 173. `?toolsets=core` lists 29 and `read_only=true` lists 100. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
+Checked against the live server with a customer account on 2026-11-18: 206 tools for a signed-in person on the hosted server (97 read, 75 write, 34 destructive), plus the six Authentication setup tools added in v5.1.78 on 2026-11-21, so 212 (100 read, 78 write, 34 destructive); 178 on an API key connection (a key with the `authentication` scope also lists the Authentication setup tools that scope allows); the open-source build lists 173. `?toolsets=core` lists 29 and `read_only=true` lists 100. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
 
 ## What this plugin does on your machine and where data goes
 

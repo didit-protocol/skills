@@ -26,7 +26,7 @@ metadata:
 
 ## Overview
 
-The Didit MCP server lets an MCP client call the Didit platform through tools. It is read-and-write: agents can create sessions, change workflows, update statuses and delete data. Facts and counts below are for server version 5.1.67 (`@didit-protocol/mcp-server@5.1.67`).
+The Didit MCP server lets an MCP client call the Didit platform through tools. It is read-and-write: agents can create sessions, change workflows, update statuses and delete data. Facts and counts below are for server version 5.1.78 (`@didit-protocol/mcp-server@5.1.78`).
 
 **Key facts:**
 - Hosted endpoint: `https://mcp.didit.me/mcp` (Streamable HTTP, stateless). `GET https://mcp.didit.me/healthz` returns the server status, its version and the `features` it supports (for example `toolsets`, `read_only`, `api_key`).
@@ -150,7 +150,7 @@ Zed:
 {"context_servers": {"didit": {"source": "custom", "command": "npx", "args": ["-y", "mcp-remote@0.16.6", "https://mcp.didit.me/mcp"]}}}
 ```
 
-The guide and the server README use `mcp-remote@latest`. This skill pins `mcp-remote@0.16.6` (the npm `latest` release on 2026-11-18) and `@didit-protocol/mcp-server@5.1.67`; change them deliberately when you upgrade. Keep the client's "review tool calls before running" setting on.
+The guide and the server README use `mcp-remote@latest`. This skill pins `mcp-remote@0.16.6` (the npm `latest` release on 2026-11-18) and `@didit-protocol/mcp-server@5.1.78`; change them deliberately when you upgrade. Keep the client's "review tool calls before running" setting on.
 
 ### Endpoint behaviour
 
@@ -204,14 +204,14 @@ The hosted-only groups (Travel Rule, Compliance, Marketplace and Networks; see T
 For the local (stdio) server on a remote machine, in a container or in CI:
 
 ```bash
-npx -y @didit-protocol/mcp-server@5.1.67 login
+npx -y @didit-protocol/mcp-server@5.1.78 login
 ```
 
 The terminal prints a short code and a link to `https://business.didit.me/device`. Open it on any device, sign in, check that the code matches and approve. Approve only a code you started yourself.
 
 - Credentials are stored in `~/.config/didit/mcp-credentials.json` (override with `DIDIT_MCP_CREDENTIALS_FILE`), readable by you only. The command prints the granted scopes, never the token.
 - The local server uses the stored credentials when `DIDIT_ACCESS_TOKEN` is not set, and refreshes them before they expire. Refresh tokens rotate, so do not share one credentials file between jobs that run at the same time.
-- `npx -y @didit-protocol/mcp-server@5.1.67 logout` revokes the stored refresh token at the authorization server and deletes the stored credentials. The local copy is deleted even when the revocation fails (for example offline); then end the grant in the console under **Connected apps**.
+- `npx -y @didit-protocol/mcp-server@5.1.78 logout` revokes the stored refresh token at the authorization server and deletes the stored credentials. The local copy is deleted even when the revocation fails (for example offline); then end the grant in the console under **Connected apps**.
 - With no shell, an agent can call `didit_account_device_login_start`, show the link and code, then `didit_account_device_login_poll` after approval.
 - Local server only: `didit_account_register` creates an account and `didit_account_verify_email` confirms it with the emailed code; `didit_account_login` signs in with an email and password, followed by `didit_account_verify_2fa` when the account has an authenticator. The sign-in is kept in the same credentials file, or in memory for the life of the process when that file cannot be written. The hosted server never takes a password.
 
@@ -219,13 +219,13 @@ The terminal prints a short code and a link to `https://business.didit.me/device
 
 ```bash
 # DIDIT_ACCESS_TOKEN is already exported in this shell (for example read with `read -rs`).
-npx -y @didit-protocol/mcp-server@5.1.67
+npx -y @didit-protocol/mcp-server@5.1.78
 ```
 
 Register it in Claude Code through `.mcp.json`, with an environment reference Claude Code expands when it starts the server:
 
 ```json
-{"mcpServers": {"didit-local": {"command": "npx", "args": ["-y", "@didit-protocol/mcp-server@5.1.67"], "env": {"DIDIT_ACCESS_TOKEN": "${DIDIT_ACCESS_TOKEN}"}}}}
+{"mcpServers": {"didit-local": {"command": "npx", "args": ["-y", "@didit-protocol/mcp-server@5.1.78"], "env": {"DIDIT_ACCESS_TOKEN": "${DIDIT_ACCESS_TOKEN}"}}}}
 ```
 
 `claude mcp add ... -e DIDIT_ACCESS_TOKEN=<token>` puts the token in the process arguments and shell history; use the config file instead.

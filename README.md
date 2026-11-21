@@ -64,7 +64,7 @@ Agents can go from nothing to a live verification link in **5 API calls**:
 
 The `didit` plugin connects your assistant to Didit's hosted MCP server and adds eight skills for working in your Didit account from chat: verification links and decisions, the review queue and cases, one-off checks, KYB, transaction monitoring, reports and workspace admin. You sign in with your Didit account (OAuth); no API key is needed. See [plugins/didit](plugins/didit/).
 
-Tool count: 206 tools for a signed-in person on the hosted server as measured on 2026-11-18 (97 read, 75 write, 34 destructive), plus the six Authentication setup tools added in v5.1.78 on 2026-11-21, so 212 (100 read, 78 write, 34 destructive); 178 on an API key connection; the open-source build lists 173. `?toolsets=core` lists 29 and `read_only=true` lists 100.
+Tool count: 206 tools for a signed-in person on the hosted server as measured on 2026-11-18 (97 read, 75 write, 34 destructive), plus the six Authentication setup tools added in v5.1.78 on 2026-11-21, so 212 (100 read, 78 write, 34 destructive); 178 on an API key connection (a key with the `authentication` scope also lists the Authentication setup tools that scope allows); the open-source build lists 173. `?toolsets=core` lists 29 and `read_only=true` lists 100.
 
 Want only one Didit product? Install a focused plugin instead. All of them use the same `didit` server, so installing several keeps one connection.
 
