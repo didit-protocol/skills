@@ -73,7 +73,7 @@ Want only one Didit product? Install a focused plugin instead. All of them use t
 | [`didit`](plugins/didit/) | Everything in your Didit account | `/plugin install didit --marketplace didit-protocol/skills` |
 | [`didit-transaction-monitoring`](plugins/didit-transaction-monitoring/) | Transactions, rules, wallet screening, Travel Rule, alerts, cases, AI Investigator | `/plugin install didit-transaction-monitoring --marketplace didit-protocol/skills` |
 | [`didit-user-management`](plugins/didit-user-management/) | People and companies you verify, lists, team and API keys | `/plugin install didit-user-management --marketplace didit-protocol/skills` |
-| [`didit-authentication`](plugins/didit-authentication/) | Guidance for adding Didit end-user sign-in to your app | `/plugin install didit-authentication --marketplace didit-protocol/skills` |
+| [`didit-authentication`](plugins/didit-authentication/) | Add Didit end-user sign-in to your app and set up its sign-in methods with the MCP tools | `/plugin install didit-authentication --marketplace didit-protocol/skills` |
 | `didit-api` | Developer skills for the REST API (below) | `/plugin install didit-api --marketplace didit-protocol/skills` |
 
 After installing any of the four MCP plugins (`didit`, `didit-transaction-monitoring`, `didit-user-management`, `didit-authentication`), run `/mcp` to sign in to the `didit` server. `didit-api` uses no MCP server.

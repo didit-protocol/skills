@@ -7,7 +7,7 @@ description: Helps choose and set up the sign-in methods their users get with Di
 
 Follow the rules of didit-auth-start first: call `didit_context_get` for the application, and call `didit_docs_search` for the current sign-in methods page before giving details. Docs mark Authentication as new.
 
-Methods are turned on in the Didit console. The hosted sign-in page shows only the methods that are on, and supports every available method below (the Didit ID Wallet is not available yet).
+Methods are turned on and off with `didit_authentication_method_set` (see section 7) or in the Didit console. The hosted sign-in page shows only the methods that are on, and supports every available method below (the Didit ID Wallet is not available yet).
 
 ## 1. The methods
 
@@ -52,15 +52,24 @@ Help the developer pick from what is documented:
 
 With `sign_in_ui: "own"`, the app calls JSON endpoints instead of the hosted page. Each flow starts with a transaction that lasts 10 minutes and ends with a code to exchange within 60 seconds (see didit-auth-integrate). A step can return `mfa_required`, `mfa_enrollment_required`, `protection_required` or `verification_required` instead of a code. Read the exact endpoints with `didit_docs_search` before writing them. Recommend the hosted page unless the developer needs their own screens.
 
+## 7. Turning methods on and off
+
+- First read the setup with `didit_authentication_get` for the application, and check from `didit_context_get` whether it is sandbox or live (its `mode`, never its name). If `enabled` is false, Authentication is off for the application: no change can be made until a person turns it on in the Didit console.
+- Describe the exact change (application, method, on or off, credential source) and wait for a clear yes before calling `didit_authentication_method_set` (rule 6 of didit-auth-start).
+- Social methods (google, microsoft, apple, github) on a sandbox application can use `credential_source: "didit_test"`, Didit's own test provider apps, so they work without the developer's own provider app. A live application refuses it (`sandbox_only`): there the method needs the developer's own provider client id and client secret, with `credential_source: "own"`. Only the person can supply those; never invent them, and never repeat the secret back (the tools never return it).
+- Phone needs the verification workflow whose phone step sends the code (`workflow_id`). The Didit ID Wallet method is always on.
+- After each change call `didit_authentication_get` again and report what it shows.
+
 ## What good output looks like
 
-- A short recommended set of methods, with what each needs in the console.
+- A short recommended set of methods, with what each needs (Didit's test app on sandbox, the developer's own provider app on live).
 - Early access and "not available yet" items named as such.
 - A docs link for every detail.
 
 ## Do not
 
-- Never say this plugin can turn methods on; that happens in the Didit console.
+- Never turn a method on or off without the person's clear yes, and never say a change worked without reading it back with `didit_authentication_get`.
+- Never say a tool can turn Authentication itself on for an application; a person does that in the Didit console.
 - Never invent a method name, endpoint or setting value.
 - Never ask for credentials (password, API key, one-time code).
 - Never state prices. Link https://didit.me/pricing.
