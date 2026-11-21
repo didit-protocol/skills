@@ -2,7 +2,7 @@
 
 For developers adding Didit end-user sign-in (hosted pages, passkeys, codes, social sign-in and organization SSO) to their own app. Didit Authentication signs your customers into your application; it is separate from signing into the Didit console and from identity verification.
 
-This plugin provides guidance and documentation search; configuration happens in the Didit console. The Didit MCP server has no tools that configure Authentication: methods, redirect URLs, allowed origins, session and password settings are set in the console. The plugin's four skills help the assistant plan the integration and write code from the current Didit documentation, which it searches with `didit_docs_search`, and find your application with `didit_context_get`. Authentication is new, so the skills tell the assistant to check the current documentation page before writing code.
+This plugin provides guidance and documentation search, and uses the Didit MCP server's Authentication setup tools to read an application's setup and turn sign-in methods on and off (with Didit's test provider apps on a sandbox application). Turning Authentication itself on for an application, and the redirect URLs, allowed origins, session and password settings, stay in the Didit console. The plugin's four skills help the assistant plan the integration and write code from the current Didit documentation, which it searches with `didit_docs_search`, and find your application with `didit_context_get`. Authentication is new, so the skills tell the assistant to check the current documentation page before writing code.
 
 ## Which Didit plugin should I install?
 

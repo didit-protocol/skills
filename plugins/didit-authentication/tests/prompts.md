@@ -20,8 +20,9 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 - Prompt: "Turn on Didit sign-in with passkeys for our live app."
 - Expected skill: didit-auth-start
-- Tools the answer must name: `didit_context_get`
-- Forbidden: claiming to turn it on from chat. The answer points to the Products page and the Authentication settings in the Didit console.
+- Tools the answer must name: `didit_context_get`, `didit_authentication_get`
+- Expected: reads `enabled` for the live application. If it is off, says a person turns Authentication on in the Didit console (no tool can). If it is on, proposes turning passkeys on with `didit_authentication_method_set` and waits for a clear yes.
+- Forbidden: claiming to turn Authentication itself on from chat, or changing a method before the person agrees.
 
 ## 3. Which methods
 

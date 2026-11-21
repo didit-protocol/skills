@@ -92,7 +92,15 @@ TOOL_TOKEN = re.compile(r"\bdidit_[a-z0-9_]+\b")
 DISCOVERY = {"didit_tool_search", "didit_tool_describe", "didit_tool_call_read", "didit_tool_call_write"}
 # Tokens that look like tool names but are not: record fields (a Travel Rule settings field included)
 # and the Flutter Authentication package.
-NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth", "didit_network"}
+NOT_TOOLS = {"didit_internal_id", "didit_internal_id_list", "didit_auth", "didit_network", "didit_test"}
+AUTHENTICATION_SETUP_TOOLS = {
+    "didit_authentication_get",
+    "didit_authentication_method_set",
+    "didit_authentication_settings_get",
+    "didit_authentication_settings_update",
+    "didit_authentication_onboarding_get",
+    "didit_authentication_onboarding_update",
+}
 
 
 def load_json(path: Path):
@@ -721,7 +729,7 @@ class ManifestTests(TreeCase):
                     self.assertEqual(claude[key], codex[key], key)
                     self.assertEqual(claude[key], cursor[key], key)
                 self.assertEqual(claude["name"], base.name)
-                self.assertEqual(claude["version"], "1.1.1")
+                self.assertEqual(claude["version"], "1.1.2")
                 self.assertTrue(claude.get("displayName"))
                 self.assertLessEqual(len(claude["description"]), 200)
                 self.assertEqual(claude["license"], "MIT")
@@ -754,7 +762,7 @@ class ManifestTests(TreeCase):
             with self.subTest(plugin=name):
                 entry = entries[name]
                 self.assertEqual(entry["source"], f"./plugins/{name}")
-                self.assertEqual(entry["version"], "1.1.1")
+                self.assertEqual(entry["version"], "1.1.2")
                 manifest = load_json(self.t.plugins / name / ".claude-plugin" / "plugin.json")
                 self.assertEqual(entry["description"], manifest["description"])
                 self.assertTrue(entry.get("category"))
@@ -1061,14 +1069,14 @@ class SkillTests(TreeCase):
         read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
         self.assertTrue(read_only, "all_read_only is empty")
-        # The hosted server as measured on 2026-11-18 (v5.1.67) with a new customer account (organization owner, not staff).
-        self.assertEqual(len(full), 206)
+        # The hosted server as measured on 2026-11-21 (v5.1.79) with a new customer account (organization owner, not staff).
+        self.assertEqual(len(full), 212)
         self.assertEqual(len(core), 29)
-        self.assertEqual(len(read_only), 97)
+        self.assertEqual(len(read_only), 100)
         expected = {
-            "all": (206, 97, 75, 34),
+            "all": (212, 100, 78, 34),
             "core": (29, 22, 3, 4),
-            "all_read_only": (97, 97, 0, 0),
+            "all_read_only": (100, 100, 0, 0),
             "api_key_all": (178, 81, 66, 31),
             "api_key_core": (27, 21, 3, 3),
             "api_key_read_only": (81, 81, 0, 0),
@@ -1086,7 +1094,10 @@ class SkillTests(TreeCase):
         api_key = {tool["name"] for tool in profiles["api_key_all"]["tools"]}
         self.assertTrue(api_key <= set(full))
         person_only = set(full) - api_key
-        self.assertEqual(len(person_only), 28)
+        self.assertEqual(len(person_only), 34)
+        # The profile's key is the application's own key, which Authentication setup refuses by design (only a
+        # named key with the authentication scope may set it up), so the server lists no setup tool for it.
+        self.assertTrue(AUTHENTICATION_SETUP_TOOLS <= person_only)
         for name in ("didit_org_list_members", "didit_org_create_api_key", "didit_billing_get_plan",
                      "didit_compliance_requirements", "didit_audit_log_list", "didit_workflow_build_graph"):
             self.assertIn(name, person_only)
@@ -1196,20 +1207,27 @@ class SkillTests(TreeCase):
         self.assertIn("calling `didit_transaction_rule_install`", block.split("- Forbidden:", 1)[1])
         self.assertNotIn("didit_transaction_rule_install", block.split("- Tools the answer must name:", 1)[1].split("\n", 1)[0])
 
-    def test_authentication_has_no_configuration_tools(self):
-        known = self.t.known_tools()
-        # The catalog has no tool that configures Authentication in this build.
-        for name, tool in known.items():
-            with self.subTest(tool=name):
-                self.assertNotIn("authentication", tool.get("permission") or "")
-                self.assertNotRegex(name, r"^didit_(auth|sign_?in|sso|passkey|jwks)")
-        core = {tool["name"] for tool in self.t.catalog()["profiles"]["core"]["tools"]}
+    def test_authentication_setup_tools(self):
+        profiles = self.t.catalog()["profiles"]
+        full = {tool["name"]: tool for tool in profiles["all"]["tools"]}
+        read_only = {tool["name"] for tool in profiles["all_read_only"]["tools"]}
+        # The hosted server sets up Didit Authentication with these six tools (v5.1.78 and later).
+        setup = {name for name in full if name.startswith("didit_authentication_")}
+        self.assertEqual(setup, AUTHENTICATION_SETUP_TOOLS)
+        self.assertEqual(
+            {name for name in setup if full[name]["type"] == "read"},
+            {"didit_authentication_get", "didit_authentication_settings_get", "didit_authentication_onboarding_get"},
+        )
+        self.assertEqual(setup & read_only, {name for name in setup if full[name]["type"] == "read"})
+        core = {tool["name"] for tool in profiles["core"]["tools"]}
+        allowed = core | AUTHENTICATION_SETUP_TOOLS
         for where, text in self.t.skill_texts(self.t.plugins / "didit-authentication"):
             for token in set(TOOL_TOKEN.findall(text)) - NOT_TOOLS:
                 with self.subTest(file=where, tool=token):
-                    self.assertIn(token, core, "Authentication skills only use core tools")
-        readme = (self.t.plugins / "didit-authentication" / "README.md").read_text(encoding="utf-8")
-        self.assertIn("this plugin provides guidance and documentation search; configuration happens in the didit console", readme.lower())
+                    self.assertIn(token, allowed, "Authentication skills use core tools and the setup tools only")
+        readme = (self.t.plugins / "didit-authentication" / "README.md").read_text(encoding="utf-8").lower()
+        self.assertIn("turning authentication itself on for an application", readme)
+        self.assertNotIn("has no tools that configure authentication", readme)
 
     def test_prompts_cover_every_skill_twice(self):
         for base in self.t.plugin_dirs():
