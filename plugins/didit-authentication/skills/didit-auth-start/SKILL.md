@@ -12,7 +12,7 @@ Didit Authentication signs a developer's own customers into the developer's appl
 - Six MCP tools read and change the setup of one application: `didit_authentication_get`, `didit_authentication_method_set`, `didit_authentication_settings_get`, `didit_authentication_settings_update`, `didit_authentication_onboarding_get` and `didit_authentication_onboarding_update`. They need an owner-approved `didit:management` grant (the MCP sign-in) or a named API key with the `authentication` scope.
 - `didit_authentication_get` shows `enabled` at the top, which says whether Authentication is on for the application, and every method with its `enabled` state and `credential_source`.
 - No call turns Authentication on for an application: a person turns it on in the Didit console. While it is off, every setup change answers `product_disabled` and nothing is written.
-- The rest of the plugin is guidance and documentation search: it helps plan and write the integration code. Redirect URLs, allowed origins, branding, the hosted domain and native apps are still set in the console.
+- The rest of the plugin is guidance and documentation search: it helps plan and write the integration code. Redirect URLs, allowed origins, session and password settings, branding, the hosted domain and native apps are still set in the console.
 - Docs mark Authentication as new. Treat details as subject to change and check them before writing code.
 
 ## Rules
