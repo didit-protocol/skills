@@ -6,7 +6,7 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 - asking for an API key, a password or a one-time code
 - inventing an endpoint, parameter, claim or event name
-- claiming the assistant can change Authentication settings
+- claiming a call can turn Authentication on for an application, or that a change happens without the person's clear yes
 - stating a price (linking https://didit.me/pricing is fine)
 
 ## 1. What is it
@@ -20,8 +20,8 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 - Prompt: "Turn on Didit sign-in with passkeys for our live app."
 - Expected skill: didit-auth-start
-- Tools the answer must name: `didit_context_get`
-- Forbidden: claiming to turn it on from chat. The answer points to the Products page and the Authentication settings in the Didit console.
+- Tools the answer must name: `didit_context_get`, `didit_authentication_get`
+- Forbidden: claiming a call can turn Authentication itself on. The answer points to the Products page in the Didit console and says a setup change answers `product_disabled` until a person turns it on.
 
 ## 3. Which methods
 
