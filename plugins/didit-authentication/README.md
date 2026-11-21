@@ -2,7 +2,7 @@
 
 For developers adding Didit end-user sign-in (hosted pages, passkeys, codes, social sign-in and organization SSO) to their own app. Didit Authentication signs your customers into your application; it is separate from signing into the Didit console and from identity verification.
 
-This plugin provides guidance and documentation search; configuration happens in the Didit console. The Didit MCP server has no tools that configure Authentication: methods, redirect URLs, allowed origins, session and password settings are set in the console. The plugin's four skills help the assistant plan the integration and write code from the current Didit documentation, which it searches with `didit_docs_search`, and find your application with `didit_context_get`. Authentication is new, so the skills tell the assistant to check the current documentation page before writing code.
+This plugin gives guidance, documentation search and the six MCP tools that set up Didit Authentication for one application: `didit_authentication_get` reads the setup (whether Authentication is on, and every method with its `enabled` state and `credential_source`), `didit_authentication_method_set` turns methods on and off, and the settings and onboarding tools read and update the rest. No call turns Authentication on for an application: a person does that in the Didit console, and while it is off every setup change answers `product_disabled` and nothing is written. Redirect URLs, allowed origins, branding, the hosted domain and native apps stay in the console. The plugin's four skills help the assistant plan the integration and write code from the current Didit documentation, which it searches with `didit_docs_search`, and find your application with `didit_context_get`. Authentication is new, so the skills tell the assistant to check the current documentation page before writing code.
 
 ## Which Didit plugin should I install?
 
@@ -54,7 +54,7 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 | didit-auth-integrate | Hosted flow with PKCE, code exchange, token validation as the docs specify, refresh, sign-out |
 | didit-auth-events | Sign-in timeline, auth webhooks, event rules, linking sign-in risk to other products |
 
-Checked against the live server on 2026-11-18 with a customer account: 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
+Checked against the live server on 2026-11-21 with a customer account: 212 tools for a signed-in person on the hosted server as of 2026-11-21 (100 read, 78 write, 34 destructive); 178 on an API key connection; the open-source build lists 173. `?toolsets=core` lists 29 and `read_only=true` lists 100. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
 
 ## What this plugin does on your machine and where data goes
 
@@ -78,7 +78,7 @@ The plugins connect to the full server so they share one connection with any oth
 | `didit` | `https://mcp.didit.me/mcp?toolsets=core` |
 | `didit-transaction-monitoring` | `https://mcp.didit.me/mcp?toolsets=core,transactions,cases,investigator,webhooks` |
 | `didit-user-management` | `https://mcp.didit.me/mcp?toolsets=core,vendors,lists,account` |
-| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,docs` |
+| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,authentication,docs` |
 
 `core` includes `didit_context_get` and `didit_docs_search`. When a shorter list leaves tools out, the discovery tools can still reach them. Add `read_only=true` to restrict the connection to read-only tools. The skills tell the assistant what changes on such a connection.
 

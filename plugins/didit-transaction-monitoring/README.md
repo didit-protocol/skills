@@ -57,7 +57,7 @@ Already added the Didit server by hand, or installed the `didit` plugin? Keep it
 | didit-tm-investigator | The AI Investigator queue: reports, accept or override, re-review, policy questions, performance |
 | didit-tm-travel-rule | Travel Rule: settings, VASP directory, counterparty contacts, wallet address book and ownership, messages, transfer actions, networks, sandbox tests |
 
-Checked against the live server on 2026-11-18 with a customer account: 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. `?toolsets=core` lists 29 and `read_only=true` lists 97. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
+Checked against the live server on 2026-11-21 with a customer account: 212 tools for a signed-in person on the hosted server as of 2026-11-21 (100 read, 78 write, 34 destructive); 178 on an API key connection; the open-source build lists 173. `?toolsets=core` lists 29 and `read_only=true` lists 100. The `evals/` folder holds cases for `claude plugin eval`, with mocked tool results, so no real account is needed to run them.
 
 ## What this plugin does on your machine and where data goes
 
@@ -81,7 +81,7 @@ The plugins connect to the full server so they share one connection with any oth
 | `didit` | `https://mcp.didit.me/mcp?toolsets=core` |
 | `didit-transaction-monitoring` | `https://mcp.didit.me/mcp?toolsets=core,transactions,cases,investigator,webhooks` |
 | `didit-user-management` | `https://mcp.didit.me/mcp?toolsets=core,vendors,lists,account` |
-| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,docs` |
+| `didit-authentication` | `https://mcp.didit.me/mcp?toolsets=core,authentication,docs` |
 
 `core` includes `didit_context_get` and `didit_docs_search`. When a shorter list leaves tools out, the discovery tools can still reach them. Add `read_only=true` to restrict the connection to read-only tools. The skills tell the assistant what changes on such a connection.
 

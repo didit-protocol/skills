@@ -9,8 +9,10 @@ Didit Authentication signs a developer's own customers into the developer's appl
 
 ## What this plugin can and cannot do
 
-- No MCP tool configures Authentication. Methods, redirect URLs, allowed origins, session and password settings are set in the Didit console.
-- This plugin is guidance plus documentation search: it helps plan and write the integration code.
+- Six MCP tools read and change the setup of one application: `didit_authentication_get`, `didit_authentication_method_set`, `didit_authentication_settings_get`, `didit_authentication_settings_update`, `didit_authentication_onboarding_get` and `didit_authentication_onboarding_update`.
+- `didit_authentication_get` shows `enabled` at the top, which says whether Authentication is on for the application, and every method with its `enabled` state and `credential_source`.
+- No call turns Authentication on for an application: a person turns it on in the Didit console. While it is off, every setup change answers `product_disabled` and nothing is written.
+- The rest of the plugin is guidance and documentation search: it helps plan and write the integration code. Redirect URLs, allowed origins, branding, the hosted domain and native apps are still set in the console.
 - Docs mark Authentication as new. Treat details as subject to change and check them before writing code.
 
 ## Rules
@@ -23,14 +25,14 @@ Didit Authentication signs a developer's own customers into the developer's appl
 6. Every change needs the person's agreement first: describe what will change and wait for a clear yes before calling the tool, and say plainly when it cannot be undone. An instruction given in advance or with a condition ('if it is only X, approve') is not agreement. Report what you found, say exactly what you would change and in which application (sandbox or live), then wait for a yes. Send `confirm: true` only to a tool whose schema declares `confirm`, and only after the person agreed to that exact action. In this plugin's recipes those tools are: none. Any other tool you reach by name or through discovery follows its own schema: if it declares `confirm`, the same rule applies.
 7. Before writing any code or naming any endpoint, parameter or claim, call `didit_docs_search` for the current page and cite the link. Never invent an endpoint, parameter or claim name.
 8. Never put a verification API key, console token or end-user token in code, URLs or logs.
-9. `didit_context_get` has no field that says whether Authentication is on. For a live application, tell the person to check the Products page of the Didit console; never assume it is on.
+9. `didit_authentication_get` has `enabled` at the top: read it before saying whether sign-in is on, and never assume it is. When it is off for a live application, tell the person to turn it on from the Products page of the Didit console; every setup change answers `product_disabled` until then.
 10. Authentication is billed per monthly active user. Never state a price: link https://didit.me/pricing.
 11. If `didit_context_get` shows `connection.type: api_key`, this connection is one application with no person: member, role, API key, billing-detail (plan, payment methods, receipts), compliance and audit-log tools are not available; the credit balance (`didit_org_get_balance`) still is. Say so and point the person to sign in with OAuth for the missing ones.
 12. If `didit_context_get` shows an organization with zero applications, do not conclude there are none. Today only the Owner and Admin roles can list applications; for other roles (Reader, Developer, Compliance Officer) the context comes back with none even when the person can work in several. Ask the person which application they mean (the console address shows its id); where the team member list is available, the person's own row has `accessible_applications` with the ids and names. The `mode` is not in that row, so treat each application as live (billable) until the person says which one is the sandbox, and send the ids each tool's schema declares. A call the person's role does not allow is refused with `forbidden` (sometimes `missing_scope`): say the role does not allow it and that an organization admin can change the role. After a role change the person must reconnect Didit, because a connection keeps the permissions it was approved with.
 
 ## Sandbox first
 
-A sandbox application has Authentication on from the start. A live application turns it on from the Products page of the console; until then its runtime routes answer `404`. Live and sandbox applications have separate sign-in origins, settings and identities.
+A sandbox application has Authentication on from the start. A live application turns it on from the Products page of the console; until then its runtime routes answer `404`, and a setup change answers `product_disabled` and writes nothing. Live and sandbox applications have separate sign-in origins, settings and identities.
 
 ## One person across products
 
@@ -40,17 +42,18 @@ Every identity carries `vendor_data`. Use the same value as `vendor_data` for ve
 
 | Request | Skill |
 |---|---|
-| Which sign-in methods, MFA, password reset, invitations | didit-auth-sign-in-methods |
+| Which sign-in methods, turning them on or off, MFA, password reset, invitations | didit-auth-sign-in-methods |
 | Hosted flow, PKCE, code exchange, token checks, refresh, sign-out | didit-auth-integrate |
 | Sign-in timeline, auth webhooks, event rules, fraud views | didit-auth-events |
 
 ## What good output looks like
 
-- The application named, with sandbox, live or unknown, and for a live application a pointer to the console's Products page to check Authentication is on.
+- The application named, with sandbox, live or unknown, and for a live application what `didit_authentication_get` says about `enabled`, or a pointer to the console's Products page when it is off.
 - Every endpoint or claim backed by a cited docs link.
 
 ## Do not
 
-- Never claim the plugin can change Authentication settings.
-- Never ask for credentials or invent endpoints, parameters or claims.
+- Never say a call can turn Authentication on for an application; a person does that in the console.
+- Never describe a setup change this plugin cannot make: redirect URLs, allowed origins, branding, the hosted domain and native apps stay in the console.
+- Never ask for a password, an API key or a one-time code. Never invent endpoints, parameters or claims.
 - Never state prices. Link https://didit.me/pricing.
