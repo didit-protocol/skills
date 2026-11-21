@@ -99,7 +99,7 @@ Do not write `--header "x-api-key: $DIDIT_API_KEY"` on a command line: the shell
 - **One application.** The connection acts on the key's application; no ids to pass. `didit_context_get` reports `connection.type: "api_key"` and the app's `mode` when it is available. A call that names another organization or application is refused.
 - **The key's own access.** The key is forwarded to the Didit API as on a direct call; a restricted key reaches only what it was given. Give an agent a restricted key with an expiry.
 - **Sandbox first.** Build and test with the sandbox application's key.
-- **Not for person-only tools.** Members, roles and API key management, plan, cards, receipts and billing details, compliance, the audit log, `didit_workflow_build_graph`, and PDF or e-signature download links are neither listed nor run on an API key connection. On the hosted server as of 2026-11-18 an API key connection lists 178 tools (81 read, 66 write, 31 destructive), 27 with `?toolsets=core` and 81 with `read_only=true`: the 206 a signed-in person sees minus 28 person-only tools (members and roles 5, API key list and create 2, billing 6, compliance 9, the audit log, the session PDF, the three e-signature file tools and `didit_workflow_build_graph`).
+- **Not for person-only tools.** Members, roles and API key management, plan, cards, receipts and billing details, compliance, the audit log, `didit_workflow_build_graph`, and PDF or e-signature download links are neither listed nor run on an API key connection. On the hosted server as of 2026-11-21 an API key connection lists 178 tools (81 read, 66 write, 31 destructive), 27 with `?toolsets=core` and 81 with `read_only=true`: the 212 a signed-in person sees minus 28 person-only tools (members and roles 5, API key list and create 2, billing 6, compliance 9, the audit log, the session PDF, the three e-signature file tools and `didit_workflow_build_graph`) and the six Authentication setup tools, which a key lists only with the `authentication` scope.
 - A key limited to specific IP addresses is refused (the API would see the server's address). A revoked key stops working once the server's cached check expires (up to 60 seconds by default). A rotated key is different: its old secret keeps working until the rotation's grace period ends, because the key's `expires_at` is the earlier of its own expiry and that grace period.
 
 ## Getting Started (No Account Yet?)
@@ -171,7 +171,7 @@ https://mcp.didit.me/mcp?toolsets=core,transactions,cases&read_only=true
 
 | Toolset | What it holds |
 |---|---|
-| `core` | The short list: organizations and applications, sessions (create, find, decide, explain, simulate in the sandbox, webhook deliveries), finding workflows, analytics and balance, the application's API key and webhooks, finding cases, users, businesses and transactions, documentation search (29 tools in v5.1.67, discovery tools included) |
+| `core` | The short list: organizations and applications, sessions (create, find, decide, explain, simulate in the sandbox, webhook deliveries), finding workflows, analytics and balance, the application's API key and webhooks, finding cases, users, businesses and transactions, documentation search (29 tools in v5.1.78, discovery tools included) |
 | `account` | Organizations, applications, API keys, members and roles |
 | `billing` | Plan, credit balance, payment methods, receipts and billing details |
 | `sessions` | Verification sessions: create, find, decide, review, share, import, PDFs and webhook deliveries |
@@ -184,6 +184,7 @@ https://mcp.didit.me/mcp?toolsets=core,transactions,cases&read_only=true
 | `webhooks` | Webhook destinations and alerts |
 | `reports` | Analytics, exports and the audit log |
 | `branding` | White-label branding of the verification flow |
+| `authentication` | Didit Authentication setup: the configuration and sign-in methods, product settings and onboarding |
 | `verification` | Standalone verification APIs: ID document, face, AML, proof of address, phone, email, database and business checks |
 | `docs` | Search the Didit documentation |
 | `all` | Every tool (the default) |
@@ -192,7 +193,7 @@ The hosted-only groups (Travel Rule, Compliance, Marketplace and Networks; see T
 
 - A toolset decides what is **listed**, not what may run: a tool outside the selection still runs when called by name, with the same permission checks.
 - When the listed selection leaves out tools the connection could use, it also gets the discovery tools: `didit_tool_search` (find a tool or list a toolset), `didit_tool_describe` (its full schema), `didit_tool_call_read` and, unless the connection is read-only, `didit_tool_call_write` (run it). Calls through them are checked exactly like direct calls.
-- `read_only=true` lists only tools that read and refuses every call that would change data, whatever the client remembers. On the hosted server (v5.1.67, as of 2026-11-18) a signed-in person with every toolset sees 97 tools in read-only mode.
+- `read_only=true` lists only tools that read and refuses every call that would change data, whatever the client remembers. On the hosted server (v5.1.78, as of 2026-11-21) a signed-in person with every toolset sees 100 tools in read-only mode.
 - Clients that cannot edit the URL send the `X-MCP-Toolsets` and `X-MCP-Readonly` headers. The local server takes `--toolsets=core,workflows` and `--read-only`, or `DIDIT_TOOLSETS` and `DIDIT_READ_ONLY`. An unknown toolset is ignored, not an error.
 - `didit_docs_search` searches the live documentation at docs.didit.me; use it for "how does Didit work" questions instead of answering from memory.
 
@@ -263,7 +264,7 @@ Clone https://github.com/didit-protocol/mcp at a release tag, `npm install && np
 
 Tool names start with `didit_`. Annotations mark each tool read-only, write or destructive (`readOnlyHint`, `destructiveHint`). Whether a client asks before running a destructive tool depends on the client and its settings; the server does not prompt. Get the human's approval yourself (see Confirmations).
 
-**Coverage (v5.1.67):** 206 tools for a signed-in person on the hosted server as of 2026-11-18 (97 read, 75 write, 34 destructive); 178 on an API key connection; the open-source build lists 167. The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. The hosted server adds Travel Rule (23 tools), Compliance (9), Marketplace (3), Networks (3) and `didit_transaction_sdk_token`, and every tool the two share takes the same arguments. A local stdio server of the open-source build also offers the 7 account sign-in tools (`didit_account_register`, `_verify_email`, `_resend_otp`, `_login`, `_verify_2fa`, `_device_login_start`, `_device_login_poll`). `didit_org_top_up` and `didit_org_reveal_application_api_key` are local server only; on the hosted server a new key is created with `didit_org_create_api_key`, and credit is added in the Didit console. With `?toolsets=core` the list is 29 tools (27 on an API key connection); with `read_only=true`, 97 (81).
+**Coverage (v5.1.78):** 212 tools for a signed-in person on the hosted server as of 2026-11-21 (100 read, 78 write, 34 destructive); 178 on an API key connection; the open-source build lists 173. The list is the same for every role; a call your role does not allow is refused, with the missing permission in the error. The hosted server adds Travel Rule (23 tools), Compliance (9), Marketplace (3), Networks (3) and `didit_transaction_sdk_token`, and every tool the two share takes the same arguments. A local stdio server of the open-source build also offers the 7 account sign-in tools (`didit_account_register`, `_verify_email`, `_resend_otp`, `_login`, `_verify_2fa`, `_device_login_start`, `_device_login_poll`). `didit_org_top_up` and `didit_org_reveal_application_api_key` are local server only; on the hosted server a new key is created with `didit_org_create_api_key`, and credit is added in the Didit console. With `?toolsets=core` the list is 29 tools (27 on an API key connection); with `read_only=true`, 100 (81).
 
 | Group | Main tools |
 |---|---|

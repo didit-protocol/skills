@@ -1,15 +1,15 @@
 {
  "source": {
   "server": "https://mcp.didit.me/mcp",
-  "server_version": "5.1.67",
-  "generated_on": "2026-11-18",
+  "server_version": "5.1.78",
+  "generated_on": "2026-11-21",
   "caller": "a newly registered customer account (organization owner, not Didit staff), signed in as a person; api_key_* profiles are the same account's application API key"
  },
  "profiles": {
   "all": {
-   "total": 206,
-   "read": 97,
-   "write": 75,
+   "total": 212,
+   "read": 100,
+   "write": 78,
    "destructive": 34,
    "tools": [
     {
@@ -91,6 +91,101 @@
       "search",
       "target_id",
       "target_type"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_get",
+     "title": "Authentication Get",
+     "type": "read",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_method_set",
+     "title": "Authentication Method Set",
+     "type": "write",
+     "group": "Authentication",
+     "required": [
+      "enabled",
+      "name"
+     ],
+     "properties": [
+      "application_id",
+      "client_id",
+      "client_secret",
+      "credential_source",
+      "enabled",
+      "name",
+      "organization_id",
+      "workflow_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_onboarding_get",
+     "title": "Authentication Onboarding Get",
+     "type": "read",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_onboarding_update",
+     "title": "Authentication Onboarding Update",
+     "type": "write",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "import_skipped",
+      "organization_id",
+      "sign_in_ui",
+      "test_skipped"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_settings_get",
+     "title": "Authentication Settings Get",
+     "type": "read",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_settings_update",
+     "title": "Authentication Settings Update",
+     "type": "write",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "agent_approval",
+      "agent_humans_only",
+      "agent_idle_timeout",
+      "agent_lifetime",
+      "agent_scopes",
+      "agents_enabled",
+      "application_id",
+      "default_member_role",
+      "mfa_policy",
+      "organization_id",
+      "organizations_enabled",
+      "sign_in_ui",
+      "webhook_events_disabled"
      ],
      "confirm": false
     },
@@ -3978,8 +4073,8 @@
    ]
   },
   "all_read_only": {
-   "total": 97,
-   "read": 97,
+   "total": 100,
+   "read": 100,
    "write": 0,
    "destructive": 0,
    "tools": [
@@ -4029,6 +4124,42 @@
       "search",
       "target_id",
       "target_type"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_get",
+     "title": "Authentication Get",
+     "type": "read",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_onboarding_get",
+     "title": "Authentication Onboarding Get",
+     "type": "read",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_authentication_settings_get",
+     "title": "Authentication Settings Get",
+     "type": "read",
+     "group": "Authentication",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
      ],
      "confirm": false
     },

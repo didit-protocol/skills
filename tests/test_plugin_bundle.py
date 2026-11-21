@@ -721,7 +721,7 @@ class ManifestTests(TreeCase):
                     self.assertEqual(claude[key], codex[key], key)
                     self.assertEqual(claude[key], cursor[key], key)
                 self.assertEqual(claude["name"], base.name)
-                self.assertEqual(claude["version"], "1.1.1")
+                self.assertEqual(claude["version"], "1.1.2")
                 self.assertTrue(claude.get("displayName"))
                 self.assertLessEqual(len(claude["description"]), 200)
                 self.assertEqual(claude["license"], "MIT")
@@ -754,7 +754,7 @@ class ManifestTests(TreeCase):
             with self.subTest(plugin=name):
                 entry = entries[name]
                 self.assertEqual(entry["source"], f"./plugins/{name}")
-                self.assertEqual(entry["version"], "1.1.1")
+                self.assertEqual(entry["version"], "1.1.2")
                 manifest = load_json(self.t.plugins / name / ".claude-plugin" / "plugin.json")
                 self.assertEqual(entry["description"], manifest["description"])
                 self.assertTrue(entry.get("category"))
@@ -1061,14 +1061,14 @@ class SkillTests(TreeCase):
         read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
         self.assertTrue(read_only, "all_read_only is empty")
-        # The hosted server as measured on 2026-11-18 (v5.1.67) with a new customer account (organization owner, not staff).
-        self.assertEqual(len(full), 206)
+        # The hosted server as measured on 2026-11-21 (v5.1.78) with a new customer account (organization owner, not staff).
+        self.assertEqual(len(full), 212)
         self.assertEqual(len(core), 29)
-        self.assertEqual(len(read_only), 97)
+        self.assertEqual(len(read_only), 100)
         expected = {
-            "all": (206, 97, 75, 34),
+            "all": (212, 100, 78, 34),
             "core": (29, 22, 3, 4),
-            "all_read_only": (97, 97, 0, 0),
+            "all_read_only": (100, 100, 0, 0),
             "api_key_all": (178, 81, 66, 31),
             "api_key_core": (27, 21, 3, 3),
             "api_key_read_only": (81, 81, 0, 0),
@@ -1085,11 +1085,15 @@ class SkillTests(TreeCase):
                 self.assertEqual([n for n in names if n.startswith("didit_staff")], [], "staff-only tools in the catalog")
         api_key = {tool["name"] for tool in profiles["api_key_all"]["tools"]}
         self.assertTrue(api_key <= set(full))
-        person_only = set(full) - api_key
-        self.assertEqual(len(person_only), 28)
+        # The sample key is a full-access key with no authentication scope, so the six
+        # Authentication setup tools are not listed to it either; a named key with the
+        # authentication scope lists them.
+        not_on_api_key = set(full) - api_key
+        self.assertEqual(len(not_on_api_key), 34)
         for name in ("didit_org_list_members", "didit_org_create_api_key", "didit_billing_get_plan",
-                     "didit_compliance_requirements", "didit_audit_log_list", "didit_workflow_build_graph"):
-            self.assertIn(name, person_only)
+                     "didit_compliance_requirements", "didit_audit_log_list", "didit_workflow_build_graph",
+                     "didit_authentication_method_set"):
+            self.assertIn(name, not_on_api_key)
         self.assertIn("didit_org_get_balance", api_key)
         travel = {n for n in full if n.startswith("didit_travel_rule_")}
         self.assertEqual(len(travel), 23)
@@ -1196,20 +1200,34 @@ class SkillTests(TreeCase):
         self.assertIn("calling `didit_transaction_rule_install`", block.split("- Forbidden:", 1)[1])
         self.assertNotIn("didit_transaction_rule_install", block.split("- Tools the answer must name:", 1)[1].split("\n", 1)[0])
 
-    def test_authentication_has_no_configuration_tools(self):
-        known = self.t.known_tools()
-        # The catalog has no tool that configures Authentication in this build.
-        for name, tool in known.items():
+    def test_authentication_setup_tools_are_taught(self):
+        profiles = self.t.catalog()["profiles"]
+        full = {tool["name"]: tool for tool in profiles["all"]["tools"]}
+        core = {tool["name"] for tool in profiles["core"]["tools"]}
+        api_key = {tool["name"] for tool in profiles["api_key_all"]["tools"]}
+        setup = {
+            "didit_authentication_get": "read",
+            "didit_authentication_method_set": "write",
+            "didit_authentication_settings_get": "read",
+            "didit_authentication_settings_update": "write",
+            "didit_authentication_onboarding_get": "read",
+            "didit_authentication_onboarding_update": "write",
+        }
+        for name, kind in setup.items():
             with self.subTest(tool=name):
-                self.assertNotIn("authentication", tool.get("permission") or "")
-                self.assertNotRegex(name, r"^didit_(auth|sign_?in|sso|passkey|jwks)")
-        core = {tool["name"] for tool in self.t.catalog()["profiles"]["core"]["tools"]}
+                self.assertIn(name, full)
+                self.assertEqual(full[name]["type"], kind)
+                self.assertEqual(full[name]["group"], "Authentication")
+                self.assertNotIn(name, core, "Authentication setup is its own toolset, not core")
+                self.assertNotIn(name, api_key, "the sample full-access key has no authentication scope")
+        allowed = core | set(setup)
         for where, text in self.t.skill_texts(self.t.plugins / "didit-authentication"):
             for token in set(TOOL_TOKEN.findall(text)) - NOT_TOOLS:
                 with self.subTest(file=where, tool=token):
-                    self.assertIn(token, core, "Authentication skills only use core tools")
+                    self.assertIn(token, allowed, "Authentication skills use only core and setup tools")
         readme = (self.t.plugins / "didit-authentication" / "README.md").read_text(encoding="utf-8")
-        self.assertIn("this plugin provides guidance and documentation search; configuration happens in the didit console", readme.lower())
+        self.assertIn("six MCP tools", readme)
+        self.assertIn("no call turns authentication on for an application", readme.lower())
 
     def test_prompts_cover_every_skill_twice(self):
         for base in self.t.plugin_dirs():
