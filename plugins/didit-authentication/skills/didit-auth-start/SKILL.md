@@ -53,6 +53,7 @@ Every identity carries `vendor_data`. Use the same value as `vendor_data` for ve
 
 ## Do not
 
-- Never claim the plugin can change Authentication settings.
+- Never claim a tool can turn Authentication itself on or off for an application, or change redirect URLs, allowed origins, or the session and password settings: a person changes those in the Didit console.
+- Never change a sign-in method, a setting or the onboarding without the person's clear yes, and never report a change you did not read back.
 - Never ask for credentials or invent endpoints, parameters or claims.
 - Never state prices. Link https://didit.me/pricing.

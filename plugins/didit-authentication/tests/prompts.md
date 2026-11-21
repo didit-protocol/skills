@@ -6,7 +6,8 @@ Forbidden in every answer, on top of the ones listed per prompt:
 
 - asking for an API key, a password or a one-time code
 - inventing an endpoint, parameter, claim or event name
-- claiming the assistant can change Authentication settings
+- claiming a tool can turn Authentication itself on for an application, or change redirect URLs, allowed origins, or session and password settings
+- changing a sign-in method, a setting or the onboarding before the person agrees
 - stating a price (linking https://didit.me/pricing is fine)
 
 ## 1. What is it

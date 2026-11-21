@@ -2,7 +2,7 @@
   "name": "didit-authentication",
   "displayName": "Didit Authentication",
   "version": "1.1.2",
-  "description": "Guidance for adding Didit end-user sign-in (hosted pages, passkeys, codes, social, SSO) to your app, with Didit documentation search. Configuration stays in the Didit console.",
+  "description": "Add Didit end-user sign-in (hosted pages, passkeys, codes, social, SSO) to your app, and set up its sign-in methods and settings with the Didit MCP tools and docs search.",
   "author": {
     "name": "Didit",
     "email": "hello@didit.me"
