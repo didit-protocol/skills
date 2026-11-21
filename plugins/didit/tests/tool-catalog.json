@@ -3,7 +3,7 @@
   "server": "https://mcp.didit.me/mcp",
   "server_version": "5.1.78",
   "generated_on": "2026-11-21",
-  "caller": "a newly registered customer account (organization owner, not Didit staff), signed in as a person; api_key_* profiles are the same account's application API key"
+  "caller": "a newly registered customer account (organization owner, not Didit staff), signed in as a person; api_key_* profiles are the same account's application API key; the six Authentication setup tools were added from the v5.1.78 release, the rest was measured on 2026-11-18 (v5.1.67)"
  },
  "profiles": {
   "all": {
