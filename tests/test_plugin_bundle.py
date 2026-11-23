@@ -1069,17 +1069,17 @@ class SkillTests(TreeCase):
         read_only = profiles["all_read_only"]["tools"]
         core = {tool["name"] for tool in profiles["core"]["tools"]}
         self.assertTrue(read_only, "all_read_only is empty")
-        # The hosted server as measured on 2026-11-21 (v5.1.79) with a new customer account (organization owner, not staff).
-        self.assertEqual(len(full), 212)
+        # The hosted server as measured on 2026-11-23 (v5.1.82) with a new customer account (organization owner, not staff).
+        self.assertEqual(len(full), 233)
         self.assertEqual(len(core), 29)
-        self.assertEqual(len(read_only), 100)
+        self.assertEqual(len(read_only), 113)
         expected = {
-            "all": (212, 100, 78, 34),
+            "all": (233, 113, 85, 35),
             "core": (29, 22, 3, 4),
-            "all_read_only": (100, 100, 0, 0),
-            "api_key_all": (178, 81, 66, 31),
+            "all_read_only": (113, 113, 0, 0),
+            "api_key_all": (199, 94, 73, 32),
             "api_key_core": (27, 21, 3, 3),
-            "api_key_read_only": (81, 81, 0, 0),
+            "api_key_read_only": (94, 94, 0, 0),
         }
         self.assertEqual(set(profiles), set(expected))
         for name, profile in profiles.items():
