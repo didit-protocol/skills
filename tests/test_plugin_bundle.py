@@ -232,6 +232,8 @@ def mcp_problems(base: Path) -> list[str]:
 
 # Tools whose schema declares `confirm`. Kept by hand so a catalog change is noticed here.
 CONFIRM_TOOLS = {
+    "didit_bank_link_create",
+    "didit_bank_renewal_create",
     "didit_case_manage",
     "didit_investigator_accept",
     "didit_investigator_batch_accept",
