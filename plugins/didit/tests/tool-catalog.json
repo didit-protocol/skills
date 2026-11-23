@@ -1,16 +1,16 @@
 {
  "source": {
   "server": "https://mcp.didit.me/mcp",
-  "server_version": "5.1.79",
-  "generated_on": "2026-11-21",
+  "server_version": "5.1.82",
+  "generated_on": "2026-11-23",
   "caller": "a newly registered customer account (organization owner, not Didit staff), signed in as a person; api_key_* profiles are the same account's application API key"
  },
  "profiles": {
   "all": {
-   "total": 212,
-   "read": 100,
-   "write": 78,
-   "destructive": 34,
+   "total": 233,
+   "read": 113,
+   "write": 85,
+   "destructive": 35,
    "tools": [
     {
      "name": "didit_alert_configure",
@@ -186,6 +186,378 @@
       "organizations_enabled",
       "sign_in_ui",
       "webhook_events_disabled"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_get",
+     "title": "Bank Account Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_list",
+     "title": "Bank Account List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_balance_list",
+     "title": "Bank Balance List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_delete",
+     "title": "Bank Connection Delete",
+     "type": "destructive",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_get",
+     "title": "Bank Connection Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_list",
+     "title": "Bank Connection List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "consent_expires_before",
+      "country",
+      "created_after",
+      "cursor",
+      "end_user_reference",
+      "institution_id",
+      "limit",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_simulation_create",
+     "title": "Bank Connection Simulation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "action",
+      "connection_id"
+     ],
+     "properties": [
+      "action",
+      "application_id",
+      "connection_id",
+      "count",
+      "days",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_coverage_get",
+     "title": "Bank Coverage Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_get",
+     "title": "Bank Institution Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "institution_id"
+     ],
+     "properties": [
+      "application_id",
+      "institution_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_list",
+     "title": "Bank Institution List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "country",
+      "cursor",
+      "limit",
+      "organization_id",
+      "q",
+      "segment"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_cancellation_create",
+     "title": "Bank Link Cancellation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "link_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_create",
+     "title": "Bank Link Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "confirm"
+     ],
+     "properties": [
+      "accept_reduced_grant",
+      "access",
+      "allow_one_time_fallback",
+      "allowed_origins",
+      "application_id",
+      "confirm",
+      "connection_id",
+      "consent_days",
+      "country",
+      "data",
+      "duplicates",
+      "end_user",
+      "expires_in",
+      "extended_history",
+      "history_days",
+      "history_from",
+      "institution_id",
+      "language",
+      "mode",
+      "organization_id",
+      "ownership",
+      "redirect_url",
+      "sandbox",
+      "segment",
+      "vendor_data"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_bank_link_get",
+     "title": "Bank Link Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "link_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_simulation_create",
+     "title": "Bank Link Simulation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "error_code",
+      "link_id",
+      "organization_id",
+      "outcome",
+      "persona"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_renewal_create",
+     "title": "Bank Renewal Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "confirm",
+      "connection_id"
+     ],
+     "properties": [
+      "allowed_origins",
+      "application_id",
+      "confirm",
+      "connection_id",
+      "expires_in",
+      "language",
+      "organization_id",
+      "redirect_url"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_bank_revocation_create",
+     "title": "Bank Revocation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_create",
+     "title": "Bank Sync Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id",
+      "wait"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_get",
+     "title": "Bank Sync Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id",
+      "sync_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id",
+      "sync_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_list",
+     "title": "Bank Sync List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_feed_list",
+     "title": "Bank Transaction Feed List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id",
+      "page_token"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_list",
+     "title": "Bank Transaction List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "organization_id",
+      "page_token",
+      "status"
      ],
      "confirm": false
     },
@@ -4074,8 +4446,8 @@
    ]
   },
   "all_read_only": {
-   "total": 100,
-   "read": 100,
+   "total": 113,
+   "read": 113,
    "write": 0,
    "destructive": 0,
    "tools": [
@@ -4161,6 +4533,222 @@
      "properties": [
       "application_id",
       "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_get",
+     "title": "Bank Account Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_list",
+     "title": "Bank Account List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_balance_list",
+     "title": "Bank Balance List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_get",
+     "title": "Bank Connection Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_list",
+     "title": "Bank Connection List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "consent_expires_before",
+      "country",
+      "created_after",
+      "cursor",
+      "end_user_reference",
+      "institution_id",
+      "limit",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_coverage_get",
+     "title": "Bank Coverage Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_get",
+     "title": "Bank Institution Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "institution_id"
+     ],
+     "properties": [
+      "application_id",
+      "institution_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_list",
+     "title": "Bank Institution List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "country",
+      "cursor",
+      "limit",
+      "organization_id",
+      "q",
+      "segment"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_get",
+     "title": "Bank Link Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "link_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_get",
+     "title": "Bank Sync Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id",
+      "sync_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id",
+      "sync_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_list",
+     "title": "Bank Sync List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_feed_list",
+     "title": "Bank Transaction Feed List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id",
+      "page_token"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_list",
+     "title": "Bank Transaction List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "organization_id",
+      "page_token",
+      "status"
      ],
      "confirm": false
     },
@@ -5568,10 +6156,10 @@
    ]
   },
   "api_key_all": {
-   "total": 178,
-   "read": 81,
-   "write": 66,
-   "destructive": 31,
+   "total": 199,
+   "read": 94,
+   "write": 73,
+   "destructive": 32,
    "tools": [
     {
      "name": "didit_alert_configure",
@@ -5622,6 +6210,378 @@
       "date_to",
       "include_timeseries",
       "last_n_days"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_get",
+     "title": "Bank Account Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_list",
+     "title": "Bank Account List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_balance_list",
+     "title": "Bank Balance List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_delete",
+     "title": "Bank Connection Delete",
+     "type": "destructive",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_get",
+     "title": "Bank Connection Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_list",
+     "title": "Bank Connection List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "consent_expires_before",
+      "country",
+      "created_after",
+      "cursor",
+      "end_user_reference",
+      "institution_id",
+      "limit",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_simulation_create",
+     "title": "Bank Connection Simulation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "action",
+      "connection_id"
+     ],
+     "properties": [
+      "action",
+      "application_id",
+      "connection_id",
+      "count",
+      "days",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_coverage_get",
+     "title": "Bank Coverage Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_get",
+     "title": "Bank Institution Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "institution_id"
+     ],
+     "properties": [
+      "application_id",
+      "institution_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_list",
+     "title": "Bank Institution List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "country",
+      "cursor",
+      "limit",
+      "organization_id",
+      "q",
+      "segment"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_cancellation_create",
+     "title": "Bank Link Cancellation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "link_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_create",
+     "title": "Bank Link Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "confirm"
+     ],
+     "properties": [
+      "accept_reduced_grant",
+      "access",
+      "allow_one_time_fallback",
+      "allowed_origins",
+      "application_id",
+      "confirm",
+      "connection_id",
+      "consent_days",
+      "country",
+      "data",
+      "duplicates",
+      "end_user",
+      "expires_in",
+      "extended_history",
+      "history_days",
+      "history_from",
+      "institution_id",
+      "language",
+      "mode",
+      "organization_id",
+      "ownership",
+      "redirect_url",
+      "sandbox",
+      "segment",
+      "vendor_data"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_bank_link_get",
+     "title": "Bank Link Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "link_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_simulation_create",
+     "title": "Bank Link Simulation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "error_code",
+      "link_id",
+      "organization_id",
+      "outcome",
+      "persona"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_renewal_create",
+     "title": "Bank Renewal Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "confirm",
+      "connection_id"
+     ],
+     "properties": [
+      "allowed_origins",
+      "application_id",
+      "confirm",
+      "connection_id",
+      "expires_in",
+      "language",
+      "organization_id",
+      "redirect_url"
+     ],
+     "confirm": true
+    },
+    {
+     "name": "didit_bank_revocation_create",
+     "title": "Bank Revocation Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_create",
+     "title": "Bank Sync Create",
+     "type": "write",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id",
+      "wait"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_get",
+     "title": "Bank Sync Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id",
+      "sync_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id",
+      "sync_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_list",
+     "title": "Bank Sync List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_feed_list",
+     "title": "Bank Transaction Feed List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id",
+      "page_token"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_list",
+     "title": "Bank Transaction List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "organization_id",
+      "page_token",
+      "status"
      ],
      "confirm": false
     },
@@ -8690,8 +9650,8 @@
    ]
   },
   "api_key_read_only": {
-   "total": 81,
-   "read": 81,
+   "total": 94,
+   "read": 94,
    "write": 0,
    "destructive": 0,
    "tools": [
@@ -8715,6 +9675,222 @@
       "date_to",
       "include_timeseries",
       "last_n_days"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_get",
+     "title": "Bank Account Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_account_list",
+     "title": "Bank Account List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_balance_list",
+     "title": "Bank Balance List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_get",
+     "title": "Bank Connection Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_connection_list",
+     "title": "Bank Connection List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "consent_expires_before",
+      "country",
+      "created_after",
+      "cursor",
+      "end_user_reference",
+      "institution_id",
+      "limit",
+      "organization_id",
+      "status",
+      "vendor_data"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_coverage_get",
+     "title": "Bank Coverage Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "application_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_get",
+     "title": "Bank Institution Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "institution_id"
+     ],
+     "properties": [
+      "application_id",
+      "institution_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_institution_list",
+     "title": "Bank Institution List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [],
+     "properties": [
+      "access",
+      "application_id",
+      "country",
+      "cursor",
+      "limit",
+      "organization_id",
+      "q",
+      "segment"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_link_get",
+     "title": "Bank Link Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "link_id"
+     ],
+     "properties": [
+      "application_id",
+      "link_id",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_get",
+     "title": "Bank Sync Get",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id",
+      "sync_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "organization_id",
+      "sync_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_sync_list",
+     "title": "Bank Sync List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_feed_list",
+     "title": "Bank Transaction Feed List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "connection_id"
+     ],
+     "properties": [
+      "application_id",
+      "connection_id",
+      "cursor",
+      "limit",
+      "organization_id",
+      "page_token"
+     ],
+     "confirm": false
+    },
+    {
+     "name": "didit_bank_transaction_list",
+     "title": "Bank Transaction List",
+     "type": "read",
+     "group": "Bank data & Bank Link",
+     "required": [
+      "account_id"
+     ],
+     "properties": [
+      "account_id",
+      "application_id",
+      "date_from",
+      "date_to",
+      "limit",
+      "organization_id",
+      "page_token",
+      "status"
      ],
      "confirm": false
     },
