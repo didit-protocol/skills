@@ -1,0 +1,5 @@
+# Binary files a maintainer has looked at and approved for this public repository, by SHA-256.
+# The name guard (scripts/name_guard.py) never inspects a binary: it publishes only these exact bytes.
+# One digest per line, then a note. A pull request cannot approve its own binary: the guard reads
+# this list from the default branch, so the approval is merged first, by a maintainer.
+8d920fcbcfb1163dbfe955e4f83481eabe71e4845e73e3f116a06d45cb704b6a  plugins/*/assets/didit-icon.png (the Didit icon, 400x400)
