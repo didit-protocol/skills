@@ -3,3 +3,4 @@
 # One digest per line, then a note. A pull request cannot approve its own binary: the guard reads
 # this list from the default branch, so the approval is merged first, by a maintainer.
 8d920fcbcfb1163dbfe955e4f83481eabe71e4845e73e3f116a06d45cb704b6a  plugins/*/assets/didit-icon.png (the Didit icon, 400x400)
+e2bb7abce7ce165da0533d8e2abdb41736f4a4b143ee978465570c5ad582c139  plugins/*/assets/didit-icon.png (the DS v4 Didit icon, white ring on Didit blue, 400x400; 2026-11-24)
