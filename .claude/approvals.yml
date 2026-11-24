@@ -1,0 +1,110 @@
+# Approval policy: what merges by itself, what gets a deeper review, what a repository owner decides.
+# The same file in every repository, rendered from one table: never edit it by hand.
+# The merge process applies this policy today. Claude Approvals only reports on it (mode: observe).
+# Not written here because no path says it: a changed price number and a removed redirect always go to an owner; the size
+# rule leaves generated files out; and every review answers six questions (price or charge, customer data, weaker security,
+# public claim or address, something opened or closed for every customer, infrastructure or merge rules), where one yes
+# goes to an owner. A pull request from a fork always goes to an owner.
+version: 1
+mode: observe
+rules:
+  - purpose: "Every change merges on one approving review of its exact commit and green checks. Nobody is asked here, and Claude doesn't approve."
+    paths:
+      - "**"
+    # keeps automatic reviews as they are set today
+    advisory: ["claude/code_review"]
+    verdict:
+      claude: comments
+      seats: 0
+  - purpose: "Deeper review by the strongest model: money, access, customer data, fraud decisions, migrations, deploys, CI, shared rules, native SDK source. Nobody is asked here."
+    paths:
+      - "**/*{billing,Billing,pricing,Pricing,price,Price,credit,Credit,invoice,Invoice,charge,Charge,refund,Refund,payment,Payment,subscription,Subscription,usage_event,usage-event,usageEvent,UsageEvent,contract,Contract}*"
+      - "**/*{billing,Billing,pricing,Pricing,price,Price,credit,Credit,invoice,Invoice,charge,Charge,refund,Refund,payment,Payment,subscription,Subscription,usage_event,usage-event,usageEvent,UsageEvent,contract,Contract}*/**"
+      - "**/{fee,fees}/**"
+      - "**/{fee,fees}.*"
+      - "**/{fee_,fees_,fee-,fees-}*"
+      - "**/{fee_,fees_,fee-,fees-}*/**"
+      - "**/*{_fee,_fees,-fee,-fees}.*"
+      - "**/*{_fee,_fees,-fee,-fees}/**"
+      - "**/*{_fee_,_fees_,-fee-,-fees-}*"
+      - "**/*{_fee_,_fees_,-fee-,-fees-}*/**"
+      - "**/*{permission,Permission,privilege,Privilege,authentication,Authentication,authorization,Authorization,oauth,Oauth,saml,Saml,passkey,Passkey,password,Password,session_token,session-token,sessionToken,SessionToken,middleware,Middleware}*"
+      - "**/*{permission,Permission,privilege,Privilege,authentication,Authentication,authorization,Authorization,oauth,Oauth,saml,Saml,passkey,Passkey,password,Password,session_token,session-token,sessionToken,SessionToken,middleware,Middleware}*/**"
+      - "**/{auth,sso,mfa}/**"
+      - "**/{auth,sso,mfa}.*"
+      - "**/{auth_,sso_,mfa_,auth-,sso-,mfa-}*"
+      - "**/{auth_,sso_,mfa_,auth-,sso-,mfa-}*/**"
+      - "**/*{_auth,_sso,_mfa,-auth,-sso,-mfa}.*"
+      - "**/*{_auth,_sso,_mfa,-auth,-sso,-mfa}/**"
+      - "**/*{_auth_,_sso_,_mfa_,-auth-,-sso-,-mfa-}*"
+      - "**/*{_auth_,_sso_,_mfa_,-auth-,-sso-,-mfa-}*/**"
+      - "**/*{retention,Retention,purge,Purge,erasure,Erasure,deletion,Deletion,gdpr,Gdpr,anonymi,Anonymi,encrypt,Encrypt,redact,Redact,sentry_filters,sentry-filters,sentryFilters,SentryFilters}*"
+      - "**/*{retention,Retention,purge,Purge,erasure,Erasure,deletion,Deletion,gdpr,Gdpr,anonymi,Anonymi,encrypt,Encrypt,redact,Redact,sentry_filters,sentry-filters,sentryFilters,SentryFilters}*/**"
+      - "**/*{liveness,Liveness,face_match,face-match,faceMatch,FaceMatch,antispoof,Antispoof,injection,Injection,risk_rules,risk-rules,riskRules,RiskRules,threshold,Threshold,sanction,Sanction}*"
+      - "**/*{liveness,Liveness,face_match,face-match,faceMatch,FaceMatch,antispoof,Antispoof,injection,Injection,risk_rules,risk-rules,riskRules,RiskRules,threshold,Threshold,sanction,Sanction}*/**"
+      - "**/{aml}/**"
+      - "**/{aml}.*"
+      - "**/{aml_,aml-}*"
+      - "**/{aml_,aml-}*/**"
+      - "**/*{_aml,-aml}.*"
+      - "**/*{_aml,-aml}/**"
+      - "**/*{_aml_,-aml-}*"
+      - "**/*{_aml_,-aml-}*/**"
+      - "**/migrations/0*.py"
+      - "deploy/**"
+      - "**/Dockerfile*"
+      - ".github/workflows/**"
+      - "amplify.yml"
+      - "**/{CLAUDE,AGENTS,REVIEW,AGENT_PLAYBOOK}.md"
+      - "ios/sdk/**"
+      - "ios/sdk*/**"
+      - "android/sdk*/**"
+      - "!**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
+      - "!**/{locales,messages}/**/*.json"
+      - "!**/CHANGELOG.md"
+      - "!**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
+      - "!**/{__snapshots__,captures,dist,recordings}/**"
+      - "!**/{test,tests,e2e,__tests__,fixtures}/**"
+      - "!**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
+      - "!**/*_test.{go,py}"
+      - "!**/{test_,test-}*.py"
+    verdict:
+      claude: comments
+      seats: 0
+  - purpose: "Deeper review by the strongest model: a very large change. Nobody is asked here."
+    paths:
+      - "**"
+    if: "pr/files_changed > 100 OR pr/diff_lines > 2500"
+    verdict:
+      claude: comments
+      seats: 0
+  - purpose: "A second person with write access looks, and a repository owner decides outside this file: the rules that decide what merges or deploys, infrastructure, published addresses, legal text."
+    paths:
+      - ".claude/approvals.yml"
+      - "**/CODEOWNERS"
+      - "scripts/approval-policy/**"
+      - "scripts/codex-accounts/codex_review_pr.py"
+      - "**/release-gate-required-jobs.txt"
+      - "**/ci_release_gate.py"
+      - "**/tech-ai-pr-war/**"
+      - "**/tech-ai-pr-war.mdc"
+      - "**/*.tf"
+      - "**/{iam,network,vpc}*.{json,yml,yaml}"
+      - "**/{redirect,published-urls,protected-urls}*.{json,js,ts,mjs,txt}"
+      - "**/legal/**"
+      - "**/*{legal_archive,legal-archive,legalArchive,LegalArchive,legal_versions,legal-versions,legalVersions,LegalVersions,sub_processor,sub-processor,subProcessor,SubProcessor,subprocessor,Subprocessor}*"
+      - "**/*{legal_archive,legal-archive,legalArchive,LegalArchive,legal_versions,legal-versions,legalVersions,LegalVersions,sub_processor,sub-processor,subProcessor,SubProcessor,subprocessor,Subprocessor}*/**"
+      - "!**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
+      - "!**/{locales,messages}/**/*.json"
+      - "!**/CHANGELOG.md"
+      - "!**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
+      - "!**/{__snapshots__,captures,dist,recordings}/**"
+      - "!**/{test,tests,e2e,__tests__,fixtures}/**"
+      - "!**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
+      - "!**/*_test.{go,py}"
+      - "!**/{test_,test-}*.py"
+    verdict:
+      claude: comments
+      seats:
+        - count: 1
+          from: [humans, "!pr/authors"]
