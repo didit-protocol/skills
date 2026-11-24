@@ -1,0 +1,158 @@
+# Approval policy: what merges by itself, what gets a deeper review, what a repository owner decides.
+# The same file in every repository, rendered from one table: never edit it by hand.
+# The merge process applies this policy today. Claude Approvals only reports on it (mode: observe).
+# Not written here because no path says it: a changed price number and a removed redirect always go to an owner; the size
+# rule leaves generated files out; names are read as whole words there and as the closest patterns here; and every review answers six questions (price or charge, customer data, weaker security,
+# public claim or address, something opened or closed for every customer, infrastructure or merge rules), where one yes
+# goes to an owner. A pull request from a fork always goes to an owner.
+version: 1
+mode: observe
+rules:
+  - purpose: "Every change merges on one approving review of its exact commit and green checks. Nobody is asked here, and Claude doesn't approve."
+    paths:
+      - "**"
+    # keeps automatic reviews as they are set today
+    advisory: ["claude/code_review"]
+    verdict:
+      claude: comments
+      seats: 0
+  - purpose: "Deeper review by the strongest model: money, access, customer data, fraud decisions, migrations, deploys, CI, shared rules, native SDK source. Nobody is asked here."
+    paths:
+      - "**/*{billing,Billing,BILLING,price,Price,PRICE,pricing,Pricing,PRICING,credit,Credit,CREDIT,invoice,Invoice,INVOICE,charge,Charge,CHARGE,refund,Refund,REFUND,payment,Payment,PAYMENT,subscription,Subscription,SUBSCRIPTION,usage_event,usage-event,usageEvent,UsageEvent,usageevent,Usageevent,USAGE_EVENT,contract,Contract,CONTRACT,balance,Balance,BALANCE,entitlement,Entitlement,ENTITLEMENT,discount,Discount,DISCOUNT,payout,Payout,PAYOUT,ledger,Ledger,LEDGER,chargeback,Chargeback,CHARGEBACK}*"
+      - "**/*{billing,Billing,BILLING,price,Price,PRICE,pricing,Pricing,PRICING,credit,Credit,CREDIT,invoice,Invoice,INVOICE,charge,Charge,CHARGE,refund,Refund,REFUND,payment,Payment,PAYMENT,subscription,Subscription,SUBSCRIPTION,usage_event,usage-event,usageEvent,UsageEvent,usageevent,Usageevent,USAGE_EVENT,contract,Contract,CONTRACT,balance,Balance,BALANCE,entitlement,Entitlement,ENTITLEMENT,discount,Discount,DISCOUNT,payout,Payout,PAYOUT,ledger,Ledger,LEDGER,chargeback,Chargeback,CHARGEBACK}*/**"
+      - "**/{fee,fees,Fee,FEE,Fees,FEES}"
+      - "**/{fee,fees,Fee,FEE,Fees,FEES}/**"
+      - "**/{fee,fees,Fee,FEE,Fees,FEES}{_,-,.}*"
+      - "**/{fee,fees,Fee,FEE,Fees,FEES}{_,-,.}*/**"
+      - "**/{fee,fees,Fee,FEE,Fees,FEES}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/{fee,fees,Fee,FEE,Fees,FEES}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{_,-,.}{fee,fees,Fee,FEE,Fees,FEES}"
+      - "**/*{_,-,.}{fee,fees,Fee,FEE,Fees,FEES}/**"
+      - "**/*{_,-,.}{fee,fees,Fee,FEE,Fees,FEES}{_,-,.}*"
+      - "**/*{_,-,.}{fee,fees,Fee,FEE,Fees,FEES}{_,-,.}*/**"
+      - "**/*{_,-,.}{fee,fees,Fee,FEE,Fees,FEES}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{_,-,.}{fee,fees,Fee,FEE,Fees,FEES}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{Fee,Fees}"
+      - "**/*{Fee,Fees}/**"
+      - "**/*{Fee,Fees}{_,-,.}*"
+      - "**/*{Fee,Fees}{_,-,.}*/**"
+      - "**/*{Fee,Fees}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{Fee,Fees}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{permission,Permission,PERMISSION,privileg,Privileg,PRIVILEG,authn,Authn,AUTHN,authenticat,Authenticat,AUTHENTICAT,authoriz,Authoriz,AUTHORIZ,authoris,Authoris,AUTHORIS,oauth,Oauth,OAUTH,OAuth,oAuth,two_factor,two-factor,twoFactor,TwoFactor,twofactor,Twofactor,TWO_FACTOR,passkey,Passkey,PASSKEY,webauthn,Webauthn,WEBAUTHN,WebAuthn,webAuthn,password,Password,PASSWORD,session_token,session-token,sessionToken,SessionToken,sessiontoken,Sessiontoken,SESSION_TOKEN,middleware,Middleware,MIDDLEWARE,api_key,api-key,apiKey,ApiKey,apikey,Apikey,API_KEY,APIKey,credential,Credential,CREDENTIAL,secret,Secret,SECRET,impersonat,Impersonat,IMPERSONAT,rate_limit,rate-limit,rateLimit,RateLimit,ratelimit,Ratelimit,RATE_LIMIT,rate_limiter,rate-limiter,rateLimiter,RateLimiter,ratelimiter,Ratelimiter,RATE_LIMITER,access_control,access-control,accessControl,AccessControl,accesscontrol,Accesscontrol,ACCESS_CONTROL,member_access,member-access,memberAccess,MemberAccess,memberaccess,Memberaccess,MEMBER_ACCESS}*"
+      - "**/*{permission,Permission,PERMISSION,privileg,Privileg,PRIVILEG,authn,Authn,AUTHN,authenticat,Authenticat,AUTHENTICAT,authoriz,Authoriz,AUTHORIZ,authoris,Authoris,AUTHORIS,oauth,Oauth,OAUTH,OAuth,oAuth,two_factor,two-factor,twoFactor,TwoFactor,twofactor,Twofactor,TWO_FACTOR,passkey,Passkey,PASSKEY,webauthn,Webauthn,WEBAUTHN,WebAuthn,webAuthn,password,Password,PASSWORD,session_token,session-token,sessionToken,SessionToken,sessiontoken,Sessiontoken,SESSION_TOKEN,middleware,Middleware,MIDDLEWARE,api_key,api-key,apiKey,ApiKey,apikey,Apikey,API_KEY,APIKey,credential,Credential,CREDENTIAL,secret,Secret,SECRET,impersonat,Impersonat,IMPERSONAT,rate_limit,rate-limit,rateLimit,RateLimit,ratelimit,Ratelimit,RATE_LIMIT,rate_limiter,rate-limiter,rateLimiter,RateLimiter,ratelimiter,Ratelimiter,RATE_LIMITER,access_control,access-control,accessControl,AccessControl,accesscontrol,Accesscontrol,ACCESS_CONTROL,member_access,member-access,memberAccess,MemberAccess,memberaccess,Memberaccess,MEMBER_ACCESS}*/**"
+      - "**/{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}"
+      - "**/{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}/**"
+      - "**/{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{_,-,.}*"
+      - "**/{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{_,-,.}*/**"
+      - "**/{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{_,-,.}{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}"
+      - "**/*{_,-,.}{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}/**"
+      - "**/*{_,-,.}{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{_,-,.}*"
+      - "**/*{_,-,.}{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{_,-,.}*/**"
+      - "**/*{_,-,.}{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{_,-,.}{auth,auths,oidc,oidcs,saml,samls,sso,ssos,mfa,mfas,2fa,2fas,totp,totps,jwt,jwts,jwks,jwkss,cors,corss,csrf,csrfs,role,roles,rbac,rbacs,Auth,AUTH,Auths,AUTHS,Oidc,OIDC,Oidcs,OIDCS,Saml,SAML,Samls,SAMLS,Sso,SSO,Ssos,SSOS,Mfa,MFA,Mfas,MFAS,2FA,2FAS,Totp,TOTP,Totps,TOTPS,Jwt,JWT,Jwts,JWTS,Jwks,JWKS,Jwkss,JWKSS,Cors,CORS,Corss,CORSS,Csrf,CSRF,Csrfs,CSRFS,Role,ROLE,Roles,ROLES,Rbac,RBAC,Rbacs,RBACS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{Auth,Auths,Oidc,Oidcs,Saml,Samls,Sso,Ssos,Mfa,Mfas,2fa,2fas,Totp,Totps,Jwt,Jwts,Jwks,Jwkss,Cors,Corss,Csrf,Csrfs,Role,Roles,Rbac,Rbacs}"
+      - "**/*{Auth,Auths,Oidc,Oidcs,Saml,Samls,Sso,Ssos,Mfa,Mfas,2fa,2fas,Totp,Totps,Jwt,Jwts,Jwks,Jwkss,Cors,Corss,Csrf,Csrfs,Role,Roles,Rbac,Rbacs}/**"
+      - "**/*{Auth,Auths,Oidc,Oidcs,Saml,Samls,Sso,Ssos,Mfa,Mfas,2fa,2fas,Totp,Totps,Jwt,Jwts,Jwks,Jwkss,Cors,Corss,Csrf,Csrfs,Role,Roles,Rbac,Rbacs}{_,-,.}*"
+      - "**/*{Auth,Auths,Oidc,Oidcs,Saml,Samls,Sso,Ssos,Mfa,Mfas,2fa,2fas,Totp,Totps,Jwt,Jwts,Jwks,Jwkss,Cors,Corss,Csrf,Csrfs,Role,Roles,Rbac,Rbacs}{_,-,.}*/**"
+      - "**/*{Auth,Auths,Oidc,Oidcs,Saml,Samls,Sso,Ssos,Mfa,Mfas,2fa,2fas,Totp,Totps,Jwt,Jwts,Jwks,Jwkss,Cors,Corss,Csrf,Csrfs,Role,Roles,Rbac,Rbacs}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{Auth,Auths,Oidc,Oidcs,Saml,Samls,Sso,Ssos,Mfa,Mfas,2fa,2fas,Totp,Totps,Jwt,Jwts,Jwks,Jwkss,Cors,Corss,Csrf,Csrfs,Role,Roles,Rbac,Rbacs}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{retention,Retention,RETENTION,purge,Purge,PURGE,erase,Erase,ERASE,erasure,Erasure,ERASURE,deletion,Deletion,DELETION,privacy,Privacy,PRIVACY,anonymi,Anonymi,ANONYMI,encrypt,Encrypt,ENCRYPT,decrypt,Decrypt,DECRYPT,redact,Redact,REDACT,sentry_filter,sentry-filter,sentryFilter,SentryFilter,sentryfilter,Sentryfilter,SENTRY_FILTER}*"
+      - "**/*{retention,Retention,RETENTION,purge,Purge,PURGE,erase,Erase,ERASE,erasure,Erasure,ERASURE,deletion,Deletion,DELETION,privacy,Privacy,PRIVACY,anonymi,Anonymi,ANONYMI,encrypt,Encrypt,ENCRYPT,decrypt,Decrypt,DECRYPT,redact,Redact,REDACT,sentry_filter,sentry-filter,sentryFilter,SentryFilter,sentryfilter,Sentryfilter,SENTRY_FILTER}*/**"
+      - "**/{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}"
+      - "**/{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}/**"
+      - "**/{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{_,-,.}*"
+      - "**/{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{_,-,.}*/**"
+      - "**/{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{_,-,.}{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}"
+      - "**/*{_,-,.}{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}/**"
+      - "**/*{_,-,.}{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{_,-,.}*"
+      - "**/*{_,-,.}{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{_,-,.}*/**"
+      - "**/*{_,-,.}{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{_,-,.}{gdpr,gdprs,export,exports,Gdpr,GDPR,Gdprs,GDPRS,Export,EXPORT,Exports,EXPORTS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{Gdpr,Gdprs,Export,Exports}"
+      - "**/*{Gdpr,Gdprs,Export,Exports}/**"
+      - "**/*{Gdpr,Gdprs,Export,Exports}{_,-,.}*"
+      - "**/*{Gdpr,Gdprs,Export,Exports}{_,-,.}*/**"
+      - "**/*{Gdpr,Gdprs,Export,Exports}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{Gdpr,Gdprs,Export,Exports}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{liveness,Liveness,LIVENESS,face_match,face-match,faceMatch,FaceMatch,facematch,Facematch,FACE_MATCH,antispoof,Antispoof,ANTISPOOF,injection,Injection,INJECTION,risk_rule,risk-rule,riskRule,RiskRule,riskrule,Riskrule,RISK_RULE,threshold,Threshold,THRESHOLD,sanction,Sanction,SANCTION,block_list,block-list,blockList,BlockList,blocklist,Blocklist,BLOCK_LIST,allow_list,allow-list,allowList,AllowList,allowlist,Allowlist,ALLOW_LIST}*"
+      - "**/*{liveness,Liveness,LIVENESS,face_match,face-match,faceMatch,FaceMatch,facematch,Facematch,FACE_MATCH,antispoof,Antispoof,ANTISPOOF,injection,Injection,INJECTION,risk_rule,risk-rule,riskRule,RiskRule,riskrule,Riskrule,RISK_RULE,threshold,Threshold,THRESHOLD,sanction,Sanction,SANCTION,block_list,block-list,blockList,BlockList,blocklist,Blocklist,BLOCK_LIST,allow_list,allow-list,allowList,AllowList,allowlist,Allowlist,ALLOW_LIST}*/**"
+      - "**/{aml,amls,Aml,AML,Amls,AMLS}"
+      - "**/{aml,amls,Aml,AML,Amls,AMLS}/**"
+      - "**/{aml,amls,Aml,AML,Amls,AMLS}{_,-,.}*"
+      - "**/{aml,amls,Aml,AML,Amls,AMLS}{_,-,.}*/**"
+      - "**/{aml,amls,Aml,AML,Amls,AMLS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/{aml,amls,Aml,AML,Amls,AMLS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{_,-,.}{aml,amls,Aml,AML,Amls,AMLS}"
+      - "**/*{_,-,.}{aml,amls,Aml,AML,Amls,AMLS}/**"
+      - "**/*{_,-,.}{aml,amls,Aml,AML,Amls,AMLS}{_,-,.}*"
+      - "**/*{_,-,.}{aml,amls,Aml,AML,Amls,AMLS}{_,-,.}*/**"
+      - "**/*{_,-,.}{aml,amls,Aml,AML,Amls,AMLS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{_,-,.}{aml,amls,Aml,AML,Amls,AMLS}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/*{Aml,Amls}"
+      - "**/*{Aml,Amls}/**"
+      - "**/*{Aml,Amls}{_,-,.}*"
+      - "**/*{Aml,Amls}{_,-,.}*/**"
+      - "**/*{Aml,Amls}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*"
+      - "**/*{Aml,Amls}{A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}*/**"
+      - "**/migrations/0*.py"
+      - "deploy/**"
+      - "**/Dockerfile*"
+      - ".github/workflows/**"
+      - "amplify.yml"
+      - "**/{CLAUDE,AGENTS,REVIEW,AGENT_PLAYBOOK}.md"
+      - "ios/sdk/**"
+      - "ios/sdk*/**"
+      - "android/sdk*/**"
+      - "!**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
+      - "!**/{locales,messages}/**/*.json"
+      - "!**/CHANGELOG.md"
+      - "!**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
+      - "!**/{__snapshots__,captures,dist,recordings}/**"
+      - "!**/{test,tests,e2e,__tests__,fixtures}/**"
+      - "!**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
+      - "!**/*_test.{go,py}"
+      - "!**/{test_,test-}*.py"
+    verdict:
+      claude: comments
+      seats: 0
+  - purpose: "Deeper review by the strongest model: a very large change. Nobody is asked here."
+    paths:
+      - "**"
+    if: "pr/files_changed > 100 OR pr/diff_lines > 2500"
+    verdict:
+      claude: comments
+      seats: 0
+  - purpose: "A second person with write access looks, and a repository owner decides outside this file: the rules that decide what merges or deploys, infrastructure, published addresses, legal text."
+    paths:
+      - ".claude/approvals.yml"
+      - "**/CODEOWNERS"
+      - "scripts/approval-policy/**"
+      - "scripts/codex-accounts/codex_review_pr.py"
+      - "**/release-gate-required-jobs.txt"
+      - "**/ci_release_gate.py"
+      - "**/tech-ai-pr-war/**"
+      - "**/tech-ai-pr-war.mdc"
+      - "**/*.tf"
+      - "**/{iam,network,vpc}*.{json,yml,yaml}"
+      - "**/{redirect,published-urls,protected-urls}*.{json,js,ts,mjs,txt}"
+      - "**/*{legal_archive,legal-archive,legalArchive,LegalArchive,legalarchive,Legalarchive,LEGAL_ARCHIVE,legal_version,legal-version,legalVersion,LegalVersion,legalversion,Legalversion,LEGAL_VERSION,sub_processor,sub-processor,subProcessor,SubProcessor,subprocessor,Subprocessor,SUB_PROCESSOR}*"
+      - "**/*{legal_archive,legal-archive,legalArchive,LegalArchive,legalarchive,Legalarchive,LEGAL_ARCHIVE,legal_version,legal-version,legalVersion,LegalVersion,legalversion,Legalversion,LEGAL_VERSION,sub_processor,sub-processor,subProcessor,SubProcessor,subprocessor,Subprocessor,SUB_PROCESSOR}*/**"
+      - "**/legal/**"
+      - "!**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
+      - "!**/{locales,messages}/**/*.json"
+      - "!**/CHANGELOG.md"
+      - "!**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
+      - "!**/{__snapshots__,captures,dist,recordings}/**"
+      - "!**/{test,tests,e2e,__tests__,fixtures}/**"
+      - "!**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
+      - "!**/*_test.{go,py}"
+      - "!**/{test_,test-}*.py"
+    verdict:
+      claude: comments
+      seats:
+        - count: 1
+          from: [humans, "!pr/authors"]
