@@ -1,22 +1,15 @@
-# Approval policy: what merges by itself, what gets a deeper review, what a repository owner decides.
+# Approval policy: what merges on one review, what gets a deeper review, what a repository owner decides.
 # The same file in every repository, rendered from one table: never edit it by hand.
-# The merge process applies this policy today. Claude Approvals only reports on it (mode: observe).
+# Didit's merge process applies it. It is not the configuration of any review bot, model or coding tool.
 # Not written here because no path says it: a changed price number and a removed redirect always go to an owner; the size
-# rule leaves generated files out; names are read as whole words there and as the closest patterns here; and every review answers six questions (price or charge, customer data, weaker security,
-# public claim or address, something opened or closed for every customer, infrastructure or merge rules), where one yes
-# goes to an owner. A pull request from a fork always goes to an owner.
+# rule leaves generated files out; names are read as whole words there and as the closest patterns here.
+# Every review answers the questions below, and one yes goes to an owner. A pull request from a fork always goes to an owner.
 version: 1
-mode: observe
-rules:
-  - purpose: "Every change merges on one approving review of its exact commit and green checks. Nobody is asked here, and Claude doesn't approve."
-    paths:
-      - "**"
-    # keeps automatic reviews as they are set today
-    advisory: ["claude/code_review"]
-    verdict:
-      claude: comments
-      seats: 0
-  - purpose: "Deeper review by the strongest model: money, access, customer data, fraud decisions, migrations, deploys, CI, shared rules, native SDK source. Nobody is asked here."
+tiers:
+  auto:
+    means: "Every other change merges on one approving review of its exact commit and green checks."
+  deep:
+    means: "One review by the strongest model: money, access, customer data, fraud decisions, migrations, deploys, CI, shared rules, native SDK source, or a change larger than 100 files or 2500 lines."
     paths:
       - "**/*{billing,Billing,BILLING,price,Price,PRICE,pricing,Pricing,PRICING,credit,Credit,CREDIT,invoice,Invoice,INVOICE,charge,Charge,CHARGE,refund,Refund,REFUND,payment,Payment,PAYMENT,subscription,Subscription,SUBSCRIPTION,usage_event,usage-event,usageEvent,UsageEvent,usageevent,Usageevent,USAGE_EVENT,contract,Contract,CONTRACT,balance,Balance,BALANCE,entitlement,Entitlement,ENTITLEMENT,discount,Discount,DISCOUNT,payout,Payout,PAYOUT,ledger,Ledger,LEDGER,chargeback,Chargeback,CHARGEBACK}*"
       - "**/*{billing,Billing,BILLING,price,Price,PRICE,pricing,Pricing,PRICING,credit,Credit,CREDIT,invoice,Invoice,INVOICE,charge,Charge,CHARGE,refund,Refund,REFUND,payment,Payment,PAYMENT,subscription,Subscription,SUBSCRIPTION,usage_event,usage-event,usageEvent,UsageEvent,usageevent,Usageevent,USAGE_EVENT,contract,Contract,CONTRACT,balance,Balance,BALANCE,entitlement,Entitlement,ENTITLEMENT,discount,Discount,DISCOUNT,payout,Payout,PAYOUT,ledger,Ledger,LEDGER,chargeback,Chargeback,CHARGEBACK}*/**"
@@ -107,27 +100,23 @@ rules:
       - "ios/sdk/**"
       - "ios/sdk*/**"
       - "android/sdk*/**"
-      - "!**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
-      - "!**/{locales,messages}/**/*.json"
-      - "!**/CHANGELOG.md"
-      - "!**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
-      - "!**/{__snapshots__,captures,dist,recordings}/**"
-      - "!**/{test,tests,e2e,__tests__,fixtures}/**"
-      - "!**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
-      - "!**/*_test.{go,py}"
-      - "!**/{test_,test-}*.py"
-    verdict:
-      claude: comments
-      seats: 0
-  - purpose: "Deeper review by the strongest model: a very large change. Nobody is asked here."
+    excluding:
+      - "**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
+      - "**/{locales,messages}/**/*.json"
+      - "**/CHANGELOG.md"
+      - "**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
+      - "**/{__snapshots__,captures,dist,recordings}/**"
+      - "**/{test,tests,e2e,__tests__,fixtures}/**"
+      - "**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
+      - "**/*_test.{go,py}"
+      - "**/{test_,test-}*.py"
+    larger_than:
+      files: 100
+      lines: 2500
+  owner:
+    means: "A repository owner decides: the rules that decide what merges or deploys, infrastructure, published addresses, legal text."
     paths:
-      - "**"
-    if: "pr/files_changed > 100 OR pr/diff_lines > 2500"
-    verdict:
-      claude: comments
-      seats: 0
-  - purpose: "A second person with write access looks, and a repository owner decides outside this file: the rules that decide what merges or deploys, infrastructure, published addresses, legal text."
-    paths:
+      - ".github/approval-policy.yml"
       - ".claude/approvals.yml"
       - "**/CODEOWNERS"
       - "scripts/approval-policy/**"
@@ -142,17 +131,20 @@ rules:
       - "**/*{legal_archive,legal-archive,legalArchive,LegalArchive,legalarchive,Legalarchive,LEGAL_ARCHIVE,legal_version,legal-version,legalVersion,LegalVersion,legalversion,Legalversion,LEGAL_VERSION,sub_processor,sub-processor,subProcessor,SubProcessor,subprocessor,Subprocessor,SUB_PROCESSOR}*"
       - "**/*{legal_archive,legal-archive,legalArchive,LegalArchive,legalarchive,Legalarchive,LEGAL_ARCHIVE,legal_version,legal-version,legalVersion,LegalVersion,legalversion,Legalversion,LEGAL_VERSION,sub_processor,sub-processor,subProcessor,SubProcessor,subprocessor,Subprocessor,SUB_PROCESSOR}*/**"
       - "**/legal/**"
-      - "!**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
-      - "!**/{locales,messages}/**/*.json"
-      - "!**/CHANGELOG.md"
-      - "!**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
-      - "!**/{__snapshots__,captures,dist,recordings}/**"
-      - "!**/{test,tests,e2e,__tests__,fixtures}/**"
-      - "!**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
-      - "!**/*_test.{go,py}"
-      - "!**/{test_,test-}*.py"
-    verdict:
-      claude: comments
-      seats:
-        - count: 1
-          from: [humans, "!pr/authors"]
+    excluding:
+      - "**/{package-lock.json,pnpm-lock.yaml,Pipfile.lock,yarn.lock}"
+      - "**/{locales,messages}/**/*.json"
+      - "**/CHANGELOG.md"
+      - "**/*.{png,jpg,jpeg,webp,gif,svg,npz,snap,csv,mp4,pdf,woff,woff2}"
+      - "**/{__snapshots__,captures,dist,recordings}/**"
+      - "**/{test,tests,e2e,__tests__,fixtures}/**"
+      - "**/*.{test,spec}.{js,jsx,ts,tsx,mjs}"
+      - "**/*_test.{go,py}"
+      - "**/{test_,test-}*.py"
+questions:
+  - "Does it change what a customer pays, who is charged, when, or what is free?"
+  - "Does it delete customer data, keep it longer, or show or send it to someone new?"
+  - "Does it weaken sign-in, permissions, two-factor, rate limits, or a fraud, liveness or face-match decision?"
+  - "Does it put a supplier's name, a public or compliance claim, or a published address in front of a customer, or change one?"
+  - "Does it open, close or redesign a product, a flag default, a country or a screen for every customer, with no approved design named in the pull request?"
+  - "Does it touch infrastructure, access keys, secrets, or the rules that decide what merges and deploys?"
